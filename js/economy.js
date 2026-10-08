@@ -349,6 +349,7 @@ EC.daily = function () {
         p.milEff[t] = Math.min(1, p.milEff[t] + 0.02);
       }
     }
+    if (p.fort && !p.siege && p.walls != null && p.walls < 100) p.walls = Math.min(100, p.walls + 2);   // surlar onarılır
     if (p.fort && !p.siege) {
       const target = EC.garrisonTarget(p);
       if (p.garrison < target) {
@@ -423,7 +424,7 @@ EC.ai = function () {
 };
 
 // ------------------------------------------------------------ kuşatma ve kale
-EC.siegeNeed = p => (p.kind === 'rural' ? 30 : 70) + p.fort * 110;
+EC.siegeNeed = p => (p.kind === 'rural' ? 30 : 70);   // kaleler ayrı işler (sim.js: stepFortSiege)
 EC.fortMod = (p, defTag) => (p.ctrl === defTag || G.sameRealm(p.ctrl, defTag) ? 1 + 0.12 * (p.fort || 0) : 1);
 
 // Ordudan garnizona asker aktar

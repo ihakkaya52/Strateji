@@ -183,8 +183,7 @@
         <tr><td>Aylık insan gücü</td><td>${G.fmtNum((p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140) * (1 + p.farm * 0.25 * (p.res === 'tahil' ? 1.5 : 1)))}</td></tr>
         <tr><td>Binalar</td><td>⚒ ${p.civ} · ⚔ ${p.mil} · ♜ ${p.fort} · ⛏ ${p.mine} · 🌾 ${p.farm}</td></tr>
       </table>
-      ${p.siege ? `<h3>Kuşatma</h3>${U.nlink(p.siege.by)} kuşatıyor${p.siege.stalled ? ' <span class="bad">(garnizon çok güçlü)</span>' : ''}
-        <div class="bar"><div style="width:${Math.min(100, p.siege.progress / p.siege.need * 100)}%"></div></div>` : ''}
+      ${U.siegeHtml(p)}
       ${U.portSection(p)}
       ${armies.length ? `<h3>Ordular</h3>${armies.map(a => `<div>${U.flag(a.tag)} ${G.esc(a.name)} · ${G.esc(a.general.name)} · ${G.fmtK(a.men)}</div>`).join('')}` : ''}
       ${queued.length ? `<h3>İnşaatta</h3><div class="muted">${queued.map(b => EC.BUILD[b.kind].name).join(', ')}</div>` : ''}`;
@@ -196,15 +195,17 @@
         <table>
           <tr><td>Kale seviyesi</td><td>${p.fort} / ${EC.MAX_FORT}</td></tr>
           <tr><td>Savunma</td><td>+%${p.fort * 12}</td></tr>
-          <tr><td>Kuşatma süresi</td><td>${G.fmtNum(EC.siegeNeed(p))} ordu-saat</td></tr>
+          <tr><td>Surlar</td><td>%${Math.round(p.walls ?? 100)}</td></tr>
+          <tr><td>Erzak</td><td>${G.fmtNum(G.SIEGE.FOOD_BASE + G.SIEGE.FOOD_PER_LEVEL * p.fort)} gün</td></tr>
           <tr><td>Garnizon</td><td><b>${G.fmtNum(p.garrison)}</b> / ${G.fmtNum(max)} asker</td></tr>
           <tr><td>Hedef garnizon</td><td>${G.fmtNum(target)} (${pctTxt(p.garTarget ?? 1)})</td></tr>
           <tr><td>Aylık gider</td><td>${g1(p.garrison / 1000 * 0.3)} altın</td></tr>
         </table>
         <div class="bar gar"><div style="width:${max ? p.garrison / max * 100 : 0}%"></div></div>
+        ${U.siegeHtml(p)}
         ${p.ctrl === me ? `<h3>Garnizon büyüklüğü</h3>
           <div class="muted small">Garnizon insan gücünden doldurulur; küçültülen garnizonun askerleri insan gücüne döner.
-            Kuşatma için garnizonun en az iki katı asker gerekir.</div>
+            Kaleyi kuşatmak için garnizonun en az bir buçuk katı asker gerekir.</div>
           <div class="seg">${[0, 0.25, 0.5, 0.75, 1].map(v => `<button data-gar="${v}" class="${Math.abs((p.garTarget ?? 1) - v) < 0.01 ? 'on' : ''}">${pctTxt(v)}</button>`).join('')}</div>
           ${myArmy ? `<div class="row-btns"><button data-transfer="1000">${G.esc(myArmy.name)} ordusundan 1.000 asker aktar</button></div>` : ''}` : ''}
         ${mine ? `<div class="row-btns">${buildBtn(p, 'fort', 'Kaleyi güçlendir')}</div>` : ''}`
@@ -267,6 +268,7 @@
       if (b.dataset.tab) U.provTab = b.dataset.tab;
       else if (b.dataset.build) { if (!EC.queue(me, p.id, b.dataset.build)) U.addLog(G.fmtDate(S.time, false), 'İnşaat başlatılamadı.', 'war'); }
       else if (b.dataset.gar != null) p.garTarget = +b.dataset.gar;
+      else if (b.dataset.assault) { if (!G.startAssault(p)) U.addLog(G.fmtDate(S.time, false), 'Hücum için ordularınızın örgütlenmesi en az %30 olmalı.', 'war'); }
       else if (b.dataset.transfer) {
         const a = G.armiesIn(p.id).find(x => x.tag === me && x.attacking == null && x.men > 2000);
         if (a) EC.reinforceGarrison(p, a, +b.dataset.transfer);
@@ -277,6 +279,30 @@
       EC.totals(n);
       U.refreshProvince(); U.refreshProduction(); U.refreshTop(); G.mapDirty = true;
     };
+  };
+
+  // Kuşatma durumu: kalesiz yerde ilerleme çubuğu, kalede surlar / erzak / garnizon ve hücum
+  U.siegeHtml = function (p) {
+    const S = G.S, sg = p.siege;
+    if (!sg) return '';
+    const mine = sg.by === S.player;
+    if (!sg.fort) {
+      return `<h3>Kuşatma</h3>${U.nlink(sg.by)} kuşatıyor
+        <div class="bar"><div style="width:${Math.min(100, sg.progress / sg.need * 100)}%"></div></div>`;
+    }
+    const days = Math.floor((S.hour - sg.start) / 24);
+    const est = mine && !sg.assault ? G.assaultEstimate(p) : null;
+    return `<h3>Kale kuşatması</h3>
+      <div>${U.nlink(sg.by)} · ${days} gündür${sg.stalled ? ' · <span class="bad">abluka yok: garnizonun 1,5 katı asker gerekir</span>' : ''}</div>
+      <table class="siege-tab">
+        <tr><td>Surlar</td><td><div class="bar walls"><div style="width:${p.walls}%"></div></div></td><td>%${Math.round(p.walls)}</td></tr>
+        <tr><td>Erzak</td><td><div class="bar food"><div style="width:${sg.food / sg.foodMax * 100}%"></div></div></td><td>${Math.ceil(sg.food)} gün</td></tr>
+        <tr><td>Garnizon</td><td><div class="bar gar"><div style="width:${Math.min(100, p.garrison / Math.max(1, G.econ.maxGarrison(p)) * 100)}%"></div></div></td><td>${G.fmtNum(p.garrison)}</td></tr>
+      </table>
+      ${sg.assault ? `<div class="assault">⚔ HÜCUM sürüyor: ${sg.assault.hours} saat · kaybımız ${G.fmtNum(sg.cas)} · garnizon kaybı ${G.fmtNum(sg.gcas)}</div>`
+        : `<div class="muted small">Surlar yıkılınca kale düşer; erzak bitince garnizon açlıktan erir. Hücum hızlıdır ama kanlıdır: surlar ne kadar sağlamsa kayıp o kadar büyük.</div>`}
+      ${est ? `<div class="row-btns"><button data-assault="1" class="danger">⚔ Hücum et</button>
+        <span class="muted small">tahmini ${Math.ceil(est.hours / 24)} gün, ~${G.fmtK(est.loss)} kayıp</span></div>` : ''}`;
   };
 
   // eski bina bölümü artık il panelinde

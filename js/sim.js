@@ -133,8 +133,41 @@ G.stepArmies = function () {
 
 G.fortMod = (p, defTag) => G.econ.fortMod(p, defTag);
 
+// ------------------------------------------------------------ muharebe
+// Ortaçağ muharebesi: cephe genişliği (yalnızca ön saftakiler savaşır, gerisi yedekte bekler),
+// evreler (ok yağmuru → süvari hücumu → göğüs göğüse), her evrede iki tarafın zarı ve komutan becerisi.
+G.BATTLE = {
+  WIDTH: 14000,           // her taraftan aynı anda çarpışabilecek en fazla asker
+  PHASE_HOURS: 8,
+  PHASES: [
+    { key: 'ok', name: 'Ok yağmuru', inf: 0.5, arch: 2.0, cav: 0.5 },
+    { key: 'hucum', name: 'Süvari hücumu', inf: 0.8, arch: 0.5, cav: 2.2 },
+    { key: 'yakin', name: 'Göğüs göğüse', inf: 1.4, arch: 0.7, cav: 1.0 },
+  ],
+  LOSS: 0.0034,           // ön saftaki askerlerin saatlik kayıp oranı (oran 1'de)
+};
+
+// Ordunun bir evredeki etkinliği (piyade / okçu / süvari karışımına göre)
+G.phaseMult = (a, ph) => {
+  const cav = a.cav, rest = 1 - cav, arch = rest * 0.3, inf = rest - arch;
+  return inf * ph.inf + arch * ph.arch + cav * ph.cav;
+};
+
+G.armyPower = function (a, att, ph, frac) {
+  const S = G.S, n = S.nations[a.tag];
+  let v = a.men * frac / 1000 * (0.35 + 0.65 * a.org / 100) * G.econ.combatFactor(a) * G.phaseMult(a, ph);
+  if (att) {
+    // süvari, saldırıda hareket üstünlüğü sağlar; piyade savunmada sağlamdır
+    v *= (1 + 0.45 * a.cav) * n.atkMult * (1 + G.command.bonus(a, 'atk'));
+    if (a.fleet != null) v *= (G.navy.fleet(a.fleet) || {}).harborWon ? 0.9 : 0.55;   // denizden çıkarma
+  } else v *= (1 + 0.2 * (1 - a.cav)) * n.defMult * (1 + G.command.bonus(a, 'def'));
+  return v;
+};
+
+G.bestSkill = arr => Math.max(1, ...arr.map(a => (a.general ? a.general.skill : 1) + (a.marshal != null && G.command.marshal(a.marshal) ? 1 : 0)));
+
 G.stepBattles = function () {
-  const S = G.S, P = S.provinces;
+  const S = G.S, P = S.provinces, B = G.BATTLE;
   const groups = new Map();
   for (const a of S.armies) {
     if (a.attacking == null) continue;
@@ -152,34 +185,50 @@ G.stepBattles = function () {
     if (!def.length) { for (const a of atk) a.attacking = null; continue; }
     live.add(k);
     const tp = P[target];
-    const power = (arr, att) => arr.reduce((s, a) => s + a.men / 1000 * (0.35 + 0.65 * a.org / 100) * G.econ.combatFactor(a) *
-      (att ? (1 + 0.55 * a.cav) * S.nations[a.tag].atkMult * (1 + G.command.bonus(a, 'atk')) * (a.fleet != null ? ((G.navy.fleet(a.fleet) || {}).harborWon ? 0.9 : 0.55) : 1)
-        : (1 + 0.25 * (1 - a.cav)) * S.nations[a.tag].defMult * (1 + G.command.bonus(a, 'def'))), 0);
-    const ap = power(atk, true);
-    const dp = power(def, false) * G.fortMod(tp, def[0].tag) * (tp.owner === def[0].tag ? 1.1 : 1);
-    const ratio = G.clamp(ap / Math.max(0.01, dp), 0.2, 5);
-    for (const d of def) {
-      d.org -= 2.6 * ratio * G.rand(0.7, 1.3);
-      G.war.kill(d, d.men * 0.0022 * ratio * G.rand(0.6, 1.4), tag);
-      d.inCombat = S.hour;
-    }
-    for (const d of def) G.command.gainXp(d, 0.08);
-    for (const a of atk) {
-      G.command.gainXp(a, 0.08 * Math.min(2, ratio));
-      a.org -= 2.6 / ratio * G.rand(0.7, 1.3);
-      G.war.kill(a, a.men * 0.0022 / ratio * G.rand(0.6, 1.4), def[0].tag);
-      a.inCombat = S.hour;
-    }
     let b = S.battles.get(k);
     if (!b) {
       const from = atk[0].fleet != null ? target : atk[0].prov;
-      b = { target, from, tag, defTag: def[0].tag, start: S.hour };
+      b = { key: k, target, from, tag, defTag: def[0].tag, start: S.hour, casA: 0, casD: 0, phase: 0, hour: 0,
+        diceA: 1 + Math.floor(G.rng() * 6), diceD: 1 + Math.floor(G.rng() * 6), atkIds: [], defIds: [] };
       S.battles.set(k, b);
       if (tag === S.player || def[0].tag === S.player) {
         G.log(`${tp.name} muharebesi başladı (${S.nations[tag].name} – ${S.nations[def[0].tag].name}).`, 'war', [tag, def[0].tag]);
       }
     }
+    // evre ve zar: her evre başında yeniden atılır
+    if (b.hour > 0 && b.hour % B.PHASE_HOURS === 0) {
+      b.phase = (b.phase + 1) % B.PHASES.length;
+      b.diceA = 1 + Math.floor(G.rng() * 6); b.diceD = 1 + Math.floor(G.rng() * 6);
+    }
+    b.hour++;
+    const ph = B.PHASES[b.phase];
+    const menA = atk.reduce((t, a) => t + a.men, 0), menD = def.reduce((t, a) => t + a.men, 0);
+    const fA = Math.min(1, B.WIDTH / Math.max(1, menA)), fD = Math.min(1, B.WIDTH / Math.max(1, menD));
+    const skA = G.bestSkill(atk), skD = G.bestSkill(def);
+    const fort = G.fortMod(tp, def[0].tag) * (tp.owner === def[0].tag ? 1.1 : 1);
+    // nehir / dağ yok; bunun yerine saldıranın süvari üstünlüğü hücum evresinde kanat sarar
+    const cavA = atk.reduce((t, a) => t + a.men * a.cav, 0), cavD = def.reduce((t, a) => t + a.men * a.cav, 0);
+    const flank = ph.key === 'hucum' && cavA > cavD * 1.5 ? 1.2 : ph.key === 'hucum' && cavD > cavA * 1.5 ? 0.85 : 1;
+    const ap = atk.reduce((t, a) => t + G.armyPower(a, true, ph, fA), 0) * (0.7 + b.diceA * 0.06 + skA * 0.04) * flank;
+    const dp = def.reduce((t, a) => t + G.armyPower(a, false, ph, fD), 0) * (0.7 + b.diceD * 0.06 + skD * 0.04) * fort;
+    const ratio = G.clamp(ap / Math.max(0.01, dp), 0.2, 5);
     b.ratio = ratio; b.from = atk[0].fleet != null ? target : atk[0].prov;
+    b.menA = menA; b.menD = menD; b.engA = menA * fA; b.engD = menD * fD; b.skA = skA; b.skD = skD; b.flank = flank;
+    b.atkIds = atk.map(a => a.id); b.defIds = def.map(a => a.id);
+    for (const d of def) {
+      d.org -= 2.6 * ratio * G.rand(0.7, 1.3);
+      const l = d.men * fD * B.LOSS * ratio * G.rand(0.6, 1.4);
+      G.war.kill(d, l, tag); b.casD += l;
+      d.inCombat = S.hour;
+      G.command.gainXp(d, 0.08);
+    }
+    for (const a of atk) {
+      G.command.gainXp(a, 0.08 * Math.min(2, ratio));
+      a.org -= 2.6 / ratio * G.rand(0.7, 1.3);
+      const l = a.men * fA * B.LOSS / ratio * G.rand(0.6, 1.4);
+      G.war.kill(a, l, def[0].tag); b.casA += l;
+      a.inCombat = S.hour;
+    }
     // sonuçlar
     for (const d of def) {
       if (d.men < 500) { G.destroyArmy(d, `${d.name} (${S.nations[d.tag].name}) ${tp.name}'da yok edildi.`, tag); continue; }
@@ -189,19 +238,28 @@ G.stepBattles = function () {
       if (a.men < 500) { G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) saldırıda yok edildi.`, def[0].tag); continue; }
       if (a.org <= 3) { a.attacking = null; a.path = []; }
     }
-    if (!G.hostileArmiesIn(target, tag).some(d => !d.retreating)) {
-      live.delete(k);
-      if (tag === S.player || b.defTag === S.player) {
-        G.log(`${tp.name} muharebesini ${S.nations[tag].name} kazandı.`, tag === S.player ? 'good' : 'war', [tag, b.defTag]);
-      }
-    } else if (!atk.some(a => a.attacking === target)) {
-      live.delete(k);
-      if (tag === S.player || b.defTag === S.player) {
-        G.log(`${tp.name} muharebesini ${S.nations[b.defTag].name} kazandı.`, b.defTag === S.player ? 'good' : 'war', [tag, b.defTag]);
-      }
-    }
+    let winner = null;
+    if (!G.hostileArmiesIn(target, tag).some(d => !d.retreating)) winner = tag;
+    else if (!atk.some(a => S.armies.includes(a) && a.attacking === target)) winner = b.defTag;
+    if (winner) { live.delete(k); G.endBattle(b, winner); }
   }
-  for (const k of [...S.battles.keys()]) if (!live.has(k)) S.battles.delete(k);
+  for (const [k, b] of [...S.battles]) if (!live.has(k)) { S.battles.delete(k); if (!b.over) G.endBattle(b, null); }
+};
+
+G.endBattle = function (b, winner) {
+  const S = G.S, tp = S.provinces[b.target];
+  if (b.over) return;
+  b.over = true;
+  S.battles.delete(b.key);
+  if (b.tag !== S.player && b.defTag !== S.player) return;
+  const days = Math.max(1, Math.round((S.hour - b.start) / 24));
+  const cas = `kayıplar: ${S.nations[b.tag].name} ${G.fmtNum(b.casA)}, ${S.nations[b.defTag].name} ${G.fmtNum(b.casD)}`;
+  if (winner) {
+    G.log(`${tp.name} muharebesini ${S.nations[winner].name} kazandı (${days} gün; ${cas}).`, winner === S.player ? 'good' : 'war', [b.tag, b.defTag]);
+  }
+  S.lastBattles ||= [];
+  S.lastBattles.unshift({ ...b, winner, end: S.hour });
+  S.lastBattles.length = Math.min(S.lastBattles.length, 12);
 };
 
 // Ordu yok edilir: geride kalan askerler ölür ya da esir düşer
@@ -228,11 +286,19 @@ G.retreat = function (a, byTag) {
   a.retreating = true;
 };
 
+// Kuşatmalar. Kalesiz yerlerde basit ilerleme; kalelerde sur yıkımı, erzak, açlık ve hücum.
+G.SIEGE = {
+  WALL_DMG: 0.03,         // ordu-saat başına sur hasarı (kale seviyesine bölünür)
+  FOOD_BASE: 40,          // garnizonun erzakı (gün) = 40 + 20 × kale seviyesi
+  FOOD_PER_LEVEL: 20,
+  STARVE: 0.0015,         // erzak bitince garnizonun saatlik kaybı
+};
+
 G.stepSieges = function () {
   const S = G.S, P = S.provinces;
   const besiegers = new Map();
   for (const a of S.armies) {
-    if (a.attacking != null || a.fleet != null) continue;
+    if (a.attacking != null || a.fleet != null || a.retreating) continue;
     const p = P[a.prov];
     if (G.atWar(a.tag, p.ctrl)) {
       if (!besiegers.has(p.id)) besiegers.set(p.id, []);
@@ -241,6 +307,8 @@ G.stepSieges = function () {
   }
   for (const p of P) {
     if (p.siege && !besiegers.has(p.id)) {
+      // kuşatma kalktı: kalesiz yerde ilerleme söner, kalede erzak yeniden toplanır
+      if (p.siege.fort) { p.siege = null; G.mapDirty = true; continue; }
       p.siege.progress -= 2;
       if (p.siege.progress <= 0) { p.siege = null; G.mapDirty = true; }
     }
@@ -248,36 +316,130 @@ G.stepSieges = function () {
   for (const [pid, arr] of besiegers) {
     const p = P[pid];
     const tag = arr.reduce((b, a) => (a.men > b.men ? a : b)).tag;
+    if (p.fort) { G.stepFortSiege(p, tag, arr); continue; }
     let need = G.econ.siegeNeed(p);
     if (p.owner === tag) need /= 3;   // kendi toprağını kurtarmak kolaydır
     if (!p.siege || p.siege.by !== tag) p.siege = { by: tag, progress: 0, need };
-    const men = arr.reduce((s, a) => s + a.men, 0);
-    const maxG = G.econ.maxGarrison(p);
-    // garnizon kuşatanlara kayıp verdirir, kuşatanlar da garnizonu eritir
-    if (p.garrison > 0) {
-      for (const a of arr) G.war.kill(a, a.men * 0.0004 * (p.garrison / 1000), p.ctrl);
-      const gl = Math.min(p.garrison, men * 0.0006);
-      p.garrison -= gl;
-      G.war.record(p.ctrl, gl, tag);
-    }
-    // garnizonun iki katından az askerle kuşatma ilerlemez
-    if (p.garrison > 0 && men < p.garrison * 2) { p.siege.stalled = true; continue; }
-    p.siege.stalled = false;
     const power = arr.reduce((s, a) => s + a.men / G.ARMY_MEN * (1 + G.command.bonus(a, 'siege')) * (S.nations[a.tag].siegeMult || 1), 0);
-    p.siege.progress += power * (maxG ? 1 - 0.5 * p.garrison / maxG : 1);
-    if (p.siege.progress >= p.siege.need) {
-      const old = p.ctrl;
-      const wasCapital = G.econ.isCapital(p) && p.owner === old;
-      p.ctrl = tag; p.siege = null; p.garrison = 0;
-      G.mapDirty = true;
-      for (const a of arr) a.besieging = false;
-      if (p.kind !== 'rural' || tag === S.player || old === S.player) {
-        const verb = p.owner === tag ? 'geri aldı' : 'ele geçirdi';
-        G.log(`${S.nations[tag].name} ${p.fort ? `${p.name} kalesini` : `${p.name}'ı`} ${verb}.`, tag === S.player ? 'good' : 'war', [tag, old]);
-      }
-      if (wasCapital) G.checkCapitulation(old);
+    p.siege.progress += power;
+    if (p.siege.progress >= p.siege.need) G.captureProvince(p, tag, arr);
+  }
+};
+
+G.siegePower = (arr) => arr.reduce((s, a) => s + a.men / G.ARMY_MEN * (1 + G.command.bonus(a, 'siege')) * (G.S.nations[a.tag].siegeMult || 1), 0);
+
+// Kale kuşatması: abluka, sur yıkımı, açlık; isteğe bağlı hücum
+G.stepFortSiege = function (p, tag, arr) {
+  const S = G.S, SG = G.SIEGE;
+  if (p.walls == null) p.walls = 100;
+  if (!p.siege || p.siege.by !== tag || !p.siege.fort) {
+    const food = SG.FOOD_BASE + SG.FOOD_PER_LEVEL * p.fort;
+    p.siege = { by: tag, fort: true, food, foodMax: food, start: S.hour, assault: null, cas: 0, gcas: 0 };
+    if (tag === S.player || p.ctrl === S.player) {
+      G.log(`${p.name} kalesi kuşatıldı (${S.nations[tag].name}). Surlar %${Math.round(p.walls)}, garnizon ${G.fmtNum(p.garrison)}.`, tag === S.player ? 'good' : 'war', [tag, p.ctrl]);
     }
   }
+  const sg = p.siege, def = p.ctrl;
+  const men = arr.reduce((s, a) => s + a.men, 0);
+  // kendi kalesini kurtaran ordu: içeride dost kalmadığı için hızla alır
+  if (p.owner === tag && p.garrison <= 0) { G.captureProvince(p, tag, arr); return; }
+  // hücum sürüyor
+  if (sg.assault) {
+    const wallF = p.walls / 100;
+    const aLoss = 0.004 * (0.5 + wallF) * (1 + 0.15 * p.fort);
+    let lost = 0;
+    for (const a of arr) {
+      const l = a.men * aLoss * G.rand(0.7, 1.3);
+      G.war.kill(a, l, def); lost += l;
+      a.org = Math.max(0, a.org - 1.2 * G.rand(0.6, 1.4));
+      a.inCombat = S.hour;
+    }
+    const gLoss = Math.min(p.garrison, men / 1000 * 6 * (1.6 - wallF) / Math.sqrt(p.fort) * G.rand(0.7, 1.3) *
+      (S.nations[tag].atkMult || 1));
+    p.garrison -= gLoss;
+    G.war.record(def, gLoss, tag);
+    sg.cas += lost; sg.gcas += gLoss; sg.assault.hours++;
+    if (p.garrison <= 1) {
+      if (tag === S.player || def === S.player) G.log(`${p.name} kalesine hücum başarılı! Kale düştü (kaybımız ${G.fmtNum(sg.cas)}).`, tag === S.player ? 'good' : 'war', [tag, def]);
+      G.captureProvince(p, tag, arr);
+      return;
+    }
+    const org = arr.reduce((s, a) => s + a.org * a.men, 0) / Math.max(1, men);
+    if (org < 12) {
+      sg.assault = null;
+      if (tag === S.player || def === S.player) G.log(`${p.name} kalesine hücum püskürtüldü. Kuşatanlar ${G.fmtNum(sg.cas)} kayıp verdi.`, def === S.player ? 'good' : 'war', [tag, def]);
+    }
+    return;
+  }
+  // abluka: garnizonun en az bir buçuk katı asker gerekir
+  const blockade = men >= Math.max(1500, p.garrison * 1.5);
+  sg.stalled = !blockade;
+  // çıkış baskınları: garnizon kuşatanları hırpalar
+  if (p.garrison > 0) {
+    for (const a of arr) G.war.kill(a, a.men * 0.00015 * Math.min(3, p.garrison / 1000), def);
+    const gl = Math.min(p.garrison, Math.min(men, p.garrison * 6) * 0.00003);
+    p.garrison -= gl; G.war.record(def, gl, tag);
+  }
+  if (!blockade) return;
+  // mancınıklar surları döver
+  p.walls = Math.max(0, p.walls - G.siegePower(arr) * SG.WALL_DMG / p.fort);
+  // erzak tükenir, sonra açlık başlar
+  sg.food = Math.max(0, sg.food - 1 / 24);
+  if (sg.food <= 0 && p.garrison > 0) {
+    const l = Math.max(2, p.garrison * SG.STARVE);
+    p.garrison = Math.max(0, p.garrison - l); G.war.record(def, l, tag);
+  }
+  if (p.garrison <= 1) {
+    if (tag === S.player || def === S.player) G.log(`${p.name} garnizonu açlıktan teslim oldu.`, tag === S.player ? 'good' : 'war', [tag, def]);
+    G.captureProvince(p, tag, arr); return;
+  }
+  if (p.walls <= 0) {
+    // gedik açıldı: kale düşer, son savunucular kılıçtan geçirilir ama saldırana da pahalıya patlar
+    for (const a of arr) G.war.kill(a, p.garrison * 0.6 * a.men / men, def);
+    G.war.record(def, p.garrison, tag);
+    if (tag === S.player || def === S.player) G.log(`${p.name} surlarında gedik açıldı, kale düştü!`, tag === S.player ? 'good' : 'war', [tag, def]);
+    G.captureProvince(p, tag, arr); return;
+  }
+  // yapay zekâ hücuma karar verir
+  if (tag !== S.player && S.hour % 24 === 0 && G.siegeShouldAssault(p, men)) G.startAssault(p);
+};
+
+G.siegeShouldAssault = (p, men) => (p.walls < 35 && men > p.garrison * 4) || (p.walls < 15 && men > p.garrison * 2) ||
+  (men > p.garrison * 10 && p.walls < 70);
+
+G.startAssault = function (p) {
+  const S = G.S, sg = p.siege;
+  if (!sg || !sg.fort || sg.assault) return false;
+  const arr = S.armies.filter(a => a.prov === p.id && a.tag === sg.by && a.fleet == null && !a.retreating);
+  if (!arr.length || arr.reduce((s, a) => s + a.org * a.men, 0) / arr.reduce((s, a) => s + a.men, 0) < 30) return false;
+  sg.assault = { hours: 0, start: S.hour };
+  if (sg.by === S.player || p.ctrl === S.player) G.log(`${S.nations[sg.by].name}, ${p.name} kalesine hücum ediyor!`, sg.by === S.player ? 'good' : 'war', [sg.by, p.ctrl]);
+  return true;
+};
+
+// Hücumun kabaca bedeli (oyuncuya gösterilir)
+G.assaultEstimate = function (p) {
+  const S = G.S, sg = p.siege;
+  const arr = S.armies.filter(a => a.prov === p.id && a.tag === sg.by && a.fleet == null);
+  const men = arr.reduce((s, a) => s + a.men, 0);
+  if (!men) return null;
+  const wallF = p.walls / 100;
+  const gPerH = men / 1000 * 6 * (1.6 - wallF) / Math.sqrt(p.fort);
+  const hours = p.garrison / Math.max(1, gPerH);
+  return { hours, loss: Math.min(men, men * 0.004 * (0.5 + wallF) * (1 + 0.15 * p.fort) * hours) };
+};
+
+G.captureProvince = function (p, tag, arr) {
+  const S = G.S, old = p.ctrl;
+  const wasCapital = G.econ.isCapital(p) && p.owner === old;
+  p.ctrl = tag; p.siege = null; p.garrison = 0;
+  G.mapDirty = true;
+  for (const a of arr) a.besieging = false;
+  if (p.kind !== 'rural' || tag === S.player || old === S.player) {
+    const verb = p.owner === tag ? 'geri aldı' : 'ele geçirdi';
+    G.log(`${S.nations[tag].name} ${p.fort ? `${p.name} kalesini` : `${p.name}'ı`} ${verb}.`, tag === S.player ? 'good' : 'war', [tag, old]);
+  }
+  if (wasCapital) G.checkCapitulation(old);
 };
 
 G.checkCapitulation = function (tag) {

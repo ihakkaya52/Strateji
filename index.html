@@ -48,6 +48,7 @@
 
 <!-- Savaş durumu: üstte açılır kapanır -->
 <div id="warpanel" class="hidden"></div>
+<div id="battlepanel" class="hidden"></div>
 
 <!-- Sol panel: eyalet / ülke bilgisi -->
 <div id="panel" class="hidden"></div>
@@ -69,8 +70,15 @@
 
 <!-- Harita modları -->
 <div id="mapmodes" class="hidden">
-  <button data-mode="political" class="active" title="Siyasi harita">Siyasi</button>
-  <button data-mode="religion" title="Din haritası">Din</button>
+  <div class="mm-group" id="barmodes">
+    <button data-bar="kara" class="active" title="Kara kuvvetleri: mareşaller ve ordular">⚔ Kara</button>
+    <button data-bar="donanma" title="Donanma: amiraller, gemiler, kaptanlar ve gemideki askerler">⚓ Donanma</button>
+    <button data-bar="garnizon" title="Garnizonlar: kaleler haritada parlar, garnizon sayıları görünür">♜ Garnizon</button>
+  </div>
+  <div class="mm-group">
+    <button data-mode="political" class="active" title="Siyasi harita">Siyasi</button>
+    <button data-mode="religion" title="Din haritası">Din</button>
+  </div>
 </div>
 
 <div id="tooltip" class="hidden"></div>
@@ -160,6 +168,8 @@
 <script src="js/ui_dip.js"></script>
 <script src="js/ui_econ.js"></script>
 <script src="js/ui_war.js"></script>
+<script src="js/ui_battle.js"></script>
+<script src="js/ui_bars.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

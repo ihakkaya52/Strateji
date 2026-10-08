@@ -476,6 +476,7 @@ M.draw = function () {
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
   M.drawUnexploredNames();
+  if (S && M.garrisonView) M.drawGarrisons(vis, P, true);
   M.drawLabels(vis, P);
   if (S) {
     M.drawSeaNames();
@@ -559,17 +560,30 @@ M.star = function (ctx, x, y, r1, r2) {
 };
 
 M.drawSieges = function (vis, P) {
-  const ctx = M.ctx;
+  const ctx = M.ctx, S = G.S;
   for (const i of vis) {
     const p = P[i];
     if (!p.siege) continue;
-    const s = M.toScreen(p.x, p.y);
-    const f = G.clamp(p.siege.progress / p.siege.need, 0, 1);
+    const s = M.toScreen(p.x, p.y), sg = p.siege, col = S.nations[sg.by].color;
     ctx.fillStyle = 'rgba(0,0,0,0.75)';
-    ctx.fillRect(s.x - 17, s.y + 10, 34, 6);
-    ctx.fillStyle = G.S.nations[p.siege.by].color;
-    ctx.fillRect(s.x - 16, s.y + 11, 32 * f, 4);
-    if (p.siege.stalled) { ctx.strokeStyle = '#ff5a3a'; ctx.lineWidth = 1.5; ctx.strokeRect(s.x - 17.5, s.y + 9.5, 35, 7); }
+    if (!sg.fort) {
+      const f = G.clamp(sg.progress / sg.need, 0, 1);
+      ctx.fillRect(s.x - 17, s.y + 10, 34, 6);
+      ctx.fillStyle = col;
+      ctx.fillRect(s.x - 16, s.y + 11, 32 * f, 4);
+      continue;
+    }
+    // kale: üstte sur, altta erzak çubuğu
+    ctx.fillRect(s.x - 20, s.y + 10, 40, 10);
+    ctx.fillStyle = '#c8b48a'; ctx.fillRect(s.x - 19, s.y + 11, 38 * p.walls / 100, 3.5);
+    ctx.fillStyle = '#7fbf5a'; ctx.fillRect(s.x - 19, s.y + 15.5, 38 * sg.food / sg.foodMax, 3.5);
+    ctx.strokeStyle = sg.assault ? ((S.hour >> 1) % 2 ? '#ff3b2a' : '#ffd060') : sg.stalled ? '#ff5a3a' : col;
+    ctx.lineWidth = sg.assault ? 2.5 : 1.5;
+    ctx.strokeRect(s.x - 20.5, s.y + 9.5, 41, 11);
+    if (sg.assault) {
+      ctx.font = `14px ${G.FONT_BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffd060'; ctx.fillText('⚔', s.x + 28, s.y + 15);
+    }
   }
 };
 
@@ -667,6 +681,7 @@ M.drawCounters = function () {
 
 M.drawBattles = function () {
   const ctx = M.ctx, S = G.S, P = S.provinces;
+  M.battleRects = [];
   for (const b of S.battles.values()) {
     const a = P[b.from], t = P[b.target];
     const s1 = M.toScreen(a.x, a.y), s2 = M.toScreen(t.x, t.y);
@@ -682,8 +697,11 @@ M.drawBattles = function () {
     ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.font = `13px ${G.FONT_BODY}`;
     ctx.fillText('⚔', x, y + 1);
+    if (G.ui.battleKey === b.key) { ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2); ctx.stroke(); }
+    M.battleRects.push({ x: x - 13, y: y - 13, w: 26, h: 26, key: b.key });
   }
 };
+M.battleAt = (sx, sy) => (M.battleRects || []).find(r => sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h);
 
 // ------------------------------------------------------------ cepheler ve taarruz okları
 M.frontCache = new Map();
@@ -747,6 +765,44 @@ M.drawArrows = function () {
     const cy = us.reduce((s, a) => s + P[a.prov].y, 0) / us.length;
     const a = M.toScreen(cx, cy), b = M.toScreen(P[o.target].x, P[o.target].y);
     M.arrow(ctx, a.x, a.y, b.x, b.y, 'rgba(200,60,45,0.85)', 5);
+  }
+};
+
+// ------------------------------------------------------------ garnizon görünümü
+// Harita kararır, kaleler parlar ve garnizon sayıları yazılır
+M.drawGarrisons = function (vis, P) {
+  const ctx = M.ctx, S = G.S, sc = M.cam.scale, me = S.player;
+  ctx.fillStyle = 'rgba(10,8,5,0.42)';
+  ctx.fillRect(0, 0, M.w, M.h);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const i of vis) {
+    const p = P[i];
+    if (!p.fort || !p.ctrl) continue;
+    const mine = G.sameRealm(p.ctrl, me), enemy = G.atWar(me, p.ctrl);
+    if (!mine && !enemy && sc < 45) continue;
+    const s = M.toScreen(p.x, p.y);
+    if (s.x < -40 || s.x > M.w + 40 || s.y < -40 || s.y > M.h + 40) continue;
+    const col = mine ? '255,214,110' : enemy ? '255,90,60' : '190,180,160';
+    const r = 10 + p.fort * 4;
+    const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, r * 1.8);
+    g.addColorStop(0, `rgba(${col},${mine || enemy ? 0.75 : 0.35})`); g.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(s.x, s.y, r * 1.8, 0, Math.PI * 2); ctx.fill();
+    // kale simgesi
+    ctx.font = `${12 + p.fort * 2}px ${G.FONT_BODY}`;
+    ctx.fillStyle = mine ? '#fff3c8' : enemy ? '#ffd0c0' : '#ddd';
+    ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.lineWidth = 3;
+    ctx.strokeText('♜', s.x, s.y - 2); ctx.fillText('♜', s.x, s.y - 2);
+    if (sc >= 9 && (mine || enemy || sc > 30)) {
+      const max = G.econ.maxGarrison(p);
+      const txt = mine || sc > 40 ? G.fmtK(p.garrison) : '?';
+      ctx.font = `600 ${sc > 30 ? 13 : 11}px ${G.FONT_BODY}`;
+      ctx.strokeText(txt, s.x, s.y + 13); ctx.fillText(txt, s.x, s.y + 13);
+      if (mine && sc > 14) {
+        ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(s.x - 15, s.y + 21, 30, 4);
+        ctx.fillStyle = '#e0a060'; ctx.fillRect(s.x - 14, s.y + 22, 28 * (max ? p.garrison / max : 0), 2);
+      }
+    }
   }
 };
 

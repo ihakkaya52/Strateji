@@ -237,6 +237,42 @@ N.formMarines = function (f) {
   return a;
 };
 
+// Seçili gemileri yeni bir filoya ayırır (yeni bir amiral atanır)
+N.splitFleet = function (f, shipIds) {
+  const S = G.S;
+  const move = f.ships.filter(sh => shipIds.includes(sh.id));
+  if (!move.length || move.length === f.ships.length) return null;
+  if (f.path.length || f.order) return null;   // yoldayken ayrılamaz
+  const ref = f.docked != null ? S.provinces[f.docked]
+    : S.provinces.find(p => p.sea && p.sea.includes(f.zone)) || S.provinces.find(p => p.owner === f.tag && p.sea && p.sea.length);
+  if (!ref) return null;
+  const nf = N.createFleet(f.tag, ref.id);
+  nf.zone = f.zone; nf.docked = f.docked;
+  nf.name = `${f.name} (${move.length} gemi)`;
+  f.ships = f.ships.filter(sh => !shipIds.includes(sh.id));
+  nf.ships = move;
+  // deniz piyadeleri gemilerle birlikte ayrılır
+  const total = N.maxMarines(f) + N.maxMarines(nf);
+  const share = total ? N.maxMarines(nf) / total : 0;
+  nf.marines = Math.round(f.marines * share); f.marines -= nf.marines;
+  return nf;
+};
+
+// En yakın dost limana dön
+N.orderHome = function (f) {
+  const S = G.S;
+  let best = null;
+  for (const p of S.provinces) {
+    if (!N.friendlyPort(f.tag, p)) continue;
+    if (p.sea.includes(f.zone)) { best = { p: p.id, d: 0 }; break; }
+    const b = N.bestZoneFor(f, p.id);
+    if (b && (!best || b.path.length < best.d)) best = { p: p.id, d: b.path.length };
+  }
+  if (!best) return 'Menzil içinde dost liman yok.';
+  if (f.plan) N.endPlan(f, false);
+  return N.orderDock(f, best.p);
+};
+
 N.embark = function (f, units) {
   if (f.docked == null) return 'Filo limanda değil.';
   let free = N.cap(f) - N.cargoMen(f), n = 0;

@@ -80,6 +80,16 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   2. Orduyu seçip deniz aşırı bir düşman kıyısına sağ tıklayın (ya da Ctrl + sağ tık): ordu en uygun limana yürür,
      boştaki bir filo oraya gelir, ordu biner ve filo çıkarma yapar. Ordu panelindeki "Gemiye bindir" yalnızca bindirir;
      sonra filoyu seçip kıyıya sağ tıklarsınız.
+- **Muharebe:** Cephe genişliği (her taraftan en fazla 14.000 asker aynı anda çarpışır, gerisi yedekte),
+  8 saatlik evreler (🏹 ok yağmuru → 🐎 süvari hücumu → ⚔ göğüs göğüse), her evrede zar ve komutan becerisi.
+  Okçular ok evresinde, süvari hücum evresinde (üstün süvari kanat sarar), piyade göğüs göğüse evresinde güçlüdür.
+  Haritadaki ⚔ işaretine tıklayınca muharebe penceresi açılır.
+- **Kale kuşatması:** Kaleler ablukaya alınır (garnizonun 1,5 katı asker gerekir), mancınıklar surları döver,
+  erzak biter ve garnizon açlıktan erir. Surlar yıkılınca kale düşer. İstenirse hücum edilir: hızlıdır ama surlar
+  sağlamken çok kanlıdır. Kuşatma kalkınca surlar yavaşça onarılır.
+- **Alt çubuk kipleri (sağ alt):** ⚔ Kara (mareşaller ve ordular), ⚓ Donanma (amiraller, her gemi ve kaptanı,
+  deniz piyadeleri, gemideki ordular; gemileri seçip yeni filo kurma, limana dönme, asker indirme),
+  ♜ Garnizon (harita kararır, kaleler parlar, garnizon sayıları görünür; kale listesi ve toplu garnizon ayarı).
 - **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
   yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
 - **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,
@@ -117,6 +127,8 @@ js/state.js           oyun durumu, ülkeler, ordular, savaş / barış
 js/sim.js             zaman, hareket, muharebe, kuşatma, insan gücü
 js/warfare.js         kayıplar, ikmal ve kuşatılmış ordular, bozgun, teslimiyet teklifleri
 js/ui_war.js          savaş durumu paneli ve grafiği
+js/ui_battle.js       muharebe penceresi
+js/ui_bars.js         alt çubuk kipleri: kara, donanma, garnizon
 js/ai.js              yapay zekâ
 js/diplomacy.js       ilişkiler, elçiler, ittifak, garanti, geçiş hakkı, savaş gerekçesi
 js/focus_trees.js     büyük güçlerin ve ortak odak ağaçları

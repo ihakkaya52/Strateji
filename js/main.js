@@ -155,6 +155,8 @@
       if (pid != null) U.setTarget(pid); else U.endTargetMode();
       return;
     }
+    const bt = M.battleAt(x, y);
+    if (bt) { U.showBattle(bt.key); return; }
     const fl = M.fleetAt(x, y);
     if (fl) {
       if (fl.tag === G.S.player) G.selectFleet(fl); else U.showNation(fl.tag);
@@ -306,6 +308,7 @@
     else if (e.key === '-' || e.code === 'NumpadSubtract') U.setSpeed(G.S.speed - 1);
     else if (e.key === 'Escape') {
       if (U.targetOrdu) U.endTargetMode();
+      else if (U.battleKey) U.closeBattle();
       else if (!document.getElementById('dipwin').classList.contains('hidden')) U.closeDiplomacy();
       else if (!document.getElementById('prodwin').classList.contains('hidden')) document.getElementById('prodwin').classList.add('hidden');
       else if (!document.getElementById('navywin').classList.contains('hidden')) document.getElementById('navywin').classList.add('hidden');
@@ -382,6 +385,7 @@
           lastUi = now; U.refreshArmyPanel(); U.refreshOrdular();
           if (U.provId != null) U.refreshProvince();
           if (now - (U.lastNavy || 0) > 1000) { U.lastNavy = now; U.refreshNavy(); U.refreshDiplomacy(); U.refreshProduction(); U.refreshWarPanel(); }
+          U.refreshBattle();
         }
       }
     } else acc = 0;

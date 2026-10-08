@@ -89,10 +89,12 @@ U.initGame = function () {
   sp.innerHTML = [1, 2, 3, 4, 5].map(i => `<span data-s="${i}"></span>`).join('');
   sp.onclick = e => { const s = e.target.dataset.s; if (s) U.setSpeed(+s); };
   $('mapmodes').onclick = e => {
+    const bar = e.target.closest('[data-bar]');
+    if (bar) { U.setBarMode(bar.dataset.bar); return; }
     const m = e.target.dataset.mode;
     if (!m) return;
     G.map.mode = m; G.mapDirty = true;
-    for (const b of $('mapmodes').children) b.classList.toggle('active', b.dataset.mode === m);
+    for (const b of $('mapmodes').querySelectorAll('[data-mode]')) b.classList.toggle('active', b.dataset.mode === m);
   };
   document.body.addEventListener('click', e => {
     const t = e.target.closest('[data-nation]');
