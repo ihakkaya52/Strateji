@@ -7,7 +7,7 @@
   const initials = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
   // Komutan portresi: yordamsal minyatür (portraits.js), yoksa baş harfler
   const portrait = (g, color, big, tag, kind) => G.portrait
-    ? `<div class="portrait pimg ${big ? 'big' : ''}" style="--pc:${color}">${G.portrait.leader(g, tag || G.S.player, kind || 'general')}<i class="pstars">${'★'.repeat(g.skill)}</i></div>`
+    ? `<div class="portrait pimg ${big ? 'big' : ''}" style="--pc:${color}">${G.portrait.leader(g, tag || G.S.player, kind || 'general', { size: big ? 36 : 30 })}<i class="pstars">${'★'.repeat(g.skill)}</i></div>`
     : `<div class="portrait ${big ? 'big' : ''}" style="--pc:${color}">
       <span>${G.esc(initials(g.name))}</span><i class="pstars">${'★'.repeat(g.skill)}</i></div>`;
   const FLEET_COLORS = ['#4f8ad0', '#3aa0a0', '#7a6ad0', '#5aa06a', '#c0904a', '#a05a8a', '#6a8aa0'];

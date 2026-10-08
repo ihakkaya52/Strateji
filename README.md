@@ -103,7 +103,16 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Yapay zekâ:** Savaş ilan eder, cephe kurar, kuşatır, barış yapar ve asker toplar.
 - **Olaylar:** Macbeth'in tahta çıkışı (1040), Petar Delyan ayaklanması (1040), Normanların Melfi'yi alışı (1041),
   Büyük Ayrılık (1054).
-- **Harita modları:** Siyasi ve din.
+- **Harita modları:** Siyasi, din ve coğrafi. Coğrafi kip eski atlaslar gibi çizilir: boyalı arazi zemini, dağ, tepe,
+  orman, tayga, çöl kumulu, bozkır otu ve bataklık simgeleri, nehirler ve Türkçe dağ / çöl / nehir adları
+  (Natural Earth verisinden).
+- **Arazi:** Her eyaletin bir arazisi var (ova, orman, tayga, bozkır, çöl, tepe, dağ, bataklık, tundra). Dağ, orman ve
+  bataklık savunanı güçlendirir, süvarinin kanat sarmasını engeller ve orduları yavaşlatır.
+- **Portreler:** Bütün hükümdarlara ve komutanlara yordamsal minyatür portreler: Bizans ikonası gibi yaldızlı zemin,
+  kültüre göre taç, sarık, börk, miğfer ve giysiler; yaşa göre ak saç; dinlere göre hale ve süsler.
+- **Müzik:** Web Audio ile yordamsal ortaçağ müziği (ses dosyası yok): Latin estampie, Bizans ilahisi, makam / dastgah,
+  bozkır türküsü, kuzey ezgileri, Çin pentatoniği; barış ve savaş kipleri, menü teması ve ses efektleri.
+  Üst çubuktaki ♫ simgesinden ses düzeyi ve sessiz.
 - **Görünüm:** Parşömen dokulu eski harita görünümü, doğal kıvrımlı sınırlar, Cinzel ve EB Garamond fontları.
   Ülke adları yalnızca kendi topraklarına sığacak boyutta yazılır.
 
@@ -130,6 +139,11 @@ js/warfare.js         kayıplar, ikmal ve kuşatılmış ordular, bozgun, teslim
 js/ui_war.js          savaş durumu paneli ve grafiği
 js/ui_battle.js       muharebe penceresi
 js/ui_bars.js         alt çubuk kipleri: kara, donanma, garnizon
+js/geo.js             coğrafi harita, arazi türleri
+js/portraits.js       yordamsal hükümdar ve komutan portreleri
+js/music.js           yordamsal müzik ve ses efektleri
+js/ui_art.js          portreleri, müziği ve ses efektlerini arayüze bağlar
+css/ornate.css        süslemeler
 js/ai.js              yapay zekâ
 js/diplomacy.js       ilişkiler, elçiler, ittifak, garanti, geçiş hakkı, savaş gerekçesi
 js/focus_trees.js     büyük güçlerin ve ortak odak ağaçları

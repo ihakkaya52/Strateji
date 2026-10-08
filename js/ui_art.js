@@ -39,7 +39,7 @@
     if (P()) {
       const fl = $('tb-flag');
       fl.classList.add('tb-portrait');
-      fl.innerHTML = P().ruler(S.player);
+      fl.innerHTML = P().ruler(S.player, { size: 26 });
       fl.title = n.ruler;
     }
     U.musicMood(true);

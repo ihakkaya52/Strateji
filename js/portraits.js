@@ -50,7 +50,7 @@
   const sk = (sw, x) => sw ? ` stroke-width="${sw}"` : x.includes(' stroke=') ? '' : ' stroke="none"';
   const P = (d, f, sw = 0.9, x = '') => `<path d="${d}" fill="${f}"${sk(sw, x)}${x}/>`;
   const C = (x, y, r, f, sw = 0.6, x2 = '') => `<circle cx="${x}" cy="${y}" r="${r}" fill="${f}"${sk(sw, x2)}${x2}/>`;
-  const L = (d, s, w, x = '') => `<path d="${d}" fill="none" stroke="${s}" stroke-width="${w}" stroke-linecap="round"${x}/>`;
+  const L = (d, s, w, x = '') => `<path d="${d}" fill="none" stroke="${s}" stroke-width="${w}"${x}/>`;
   const gem = (x, y, r, col) => C(x, y, r, col, 0.5) + (r >= 1.5 ? C(x - r * 0.3, y - r * 0.3, r * 0.35, '#fff8', 0) : '');
   // inci dizisi: yuvarlak uçlu kesik çizgi
   const pearls = (d, gap = 3.4, w = 2.5) => L(d, OL, w + 0.8, ` stroke-dasharray="0 ${gap}"`) + L(d, '#f4efe2', w, ` stroke-dasharray="0 ${gap}"`);
@@ -612,7 +612,7 @@
     const id = c.id, rel = c.rel;
     let s = C(x, y, 4.6, `url(#${id}g)`, 0.8);
     if (CHRIST[rel]) s += P(`M${x - 0.9},${y - 3}h1.8v2.1h2.1v1.8h-2.1v2.1h-1.8v-2.1h-2.1v-1.8h2.1Z`, '#8b2a1a', 0);
-    else if (MUSLIM[rel]) s += P(`M${x + 1},${y - 3}A3,3 0 1 0 ${x + 1},${y + 3}A2.4,2.4 0 1 1 ${x + 1},${y - 3}Z`, '#1f5e4a', 0);
+    else if (MUSLIM[rel]) s += P(`M${x + 1},${y - 3}A3,3 0 1 0 ${x + 1},${y + 3}A3.8,3.8 0 0 1 ${x + 1},${y - 3}Z`, '#1f5e4a', 0);
     else if (DHARMA[rel]) s += P(`M${x},${y - 3}C${x + 1.5},${y - 1} ${x + 1.5},${y + 1} ${x},${y + 2.5}C${x - 1.5},${y + 1} ${x - 1.5},${y - 1} ${x},${y - 3}ZM${x - 3.2},${y - 0.6}C${x - 1.2},${y} ${x - 0.6},${y + 1.6} ${x},${y + 2.5}C${x - 2},${y + 2.2} ${x - 3},${y + 1} ${x - 3.2},${y - 0.6}ZM${x + 3.2},${y - 0.6}C${x + 1.2},${y} ${x + 0.6},${y + 1.6} ${x},${y + 2.5}C${x + 2},${y + 2.2} ${x + 3},${y + 1} ${x + 3.2},${y - 0.6}Z`, '#a3302a', 0);
     else s += C(x, y, 2, '#8b2a1a', 0) + L(`M${x},${y - 3.4}v1M${x},${y + 2.4}v1M${x - 3.4},${y}h1M${x + 2.4},${y}h1`, '#8b2a1a', 0.8);
     return s;
@@ -632,7 +632,7 @@
     // nimbus
     if (c.kind === 'ruler') {
       const cy = c.ey - 8, R = c.fw + 13, rel = c.rel;
-      if (CHRIST[rel]) s += C(50, cy, R, GOLD_L, 1.1, ' stroke="#8b2a1a"') + C(50, cy, R - 2.6, 'none', 0, ` stroke="${GOLD_D}" stroke-width="1.2" stroke-dasharray=".1 2.4" stroke-linecap="round"`);
+      if (CHRIST[rel]) s += C(50, cy, R, GOLD_L, 1.1, ' stroke="#8b2a1a"') + C(50, cy, R - 2.6, 'none', 0, ` stroke="${GOLD_D}" stroke-width="1.2" stroke-dasharray=".1 2.4"`);
       else if (DHARMA[rel]) s += C(50, cy, R, '#2f6e58', 0.9) + C(50, cy, R - 3, '#c9893a', 0.6) + C(50, cy, R - 5.5, GOLD_L, 0.5);
       else if (MUSLIM[rel]) s += C(50, cy, R, mix(GOLD_L, '#fff8e6', 0.4), 0.8) + C(50, cy, R - 2.2, 'none', 0, ` stroke="${GOLD}" stroke-width="1"`);
       else s += C(50, cy, R, GOLD_L, 0.8);
@@ -644,10 +644,10 @@
     const id = c.id, hole = c.kind === 'ruler' ? ARCH : RECT;
     let s = P('M0,0H100V120H0Z' + hole, `url(#${id}g)`, 1, ' fill-rule="evenodd"');
     s += P(hole, 'none', c.small ? 2 : 1.4) + P(hole, 'none', 0, ` stroke="${c.kind === 'ruler' ? '#8b2a1a' : GOLD_L}" stroke-width=".7" transform="translate(50 60) scale(.975) translate(-50 -60)"`);
-    if (!c.small) s += P('M3.5,3.5H96.5V116.5H3.5Z', 'none', 0, ` stroke="${GOLD_D}" stroke-width=".8" stroke-dasharray=".1 2.6" stroke-linecap="round"`);
+    if (!c.small) s += P('M3.5,3.5H96.5V116.5H3.5Z', 'none', 0, ` stroke="${GOLD_D}" stroke-width=".8" stroke-dasharray=".1 2.6"`);
     if (c.kind === 'ruler') {
       s += gem(11, 11, 2.4, '#b3202a') + gem(89, 11, 2.4, '#b3202a');
-      if (MUSLIM[c.rel]) s += P('M25,4.6A2.6,2.6 0 1 0 25,9.8A2,2 0 1 1 25,4.6ZM75,4.6A2.6,2.6 0 1 1 75,9.8A2,2 0 1 0 75,4.6Z', '#1f5e4a', 0);
+      if (MUSLIM[c.rel]) s += P('M25,4.6A2.6,2.6 0 1 0 25,9.8A3.3,3.3 0 0 1 25,4.6ZM75,4.6A2.6,2.6 0 1 1 75,9.8A3.3,3.3 0 0 0 75,4.6Z', '#1f5e4a', 0);
     } else {
       for (const [x, y] of [[3.5, 3.5], [96.5, 3.5], [3.5, 116.5], [96.5, 116.5]]) s += C(x, y, 1.6, GOLD_L, 0.5);
     }
@@ -737,7 +737,7 @@
     if (c.earring) c.ears = true;
 
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"${o.size ? ` width="${o.size}" height="${f(o.size * 1.2)}"` : ''}>`;
-    s += defs(c) + `<g stroke="${OL}" stroke-linejoin="round"><g clip-path="url(#${c.id}c)">` + background(c);
+    s += defs(c) + `<g stroke="${OL}" stroke-linejoin="round" stroke-linecap="round"><g clip-path="url(#${c.id}c)">` + background(c);
     s += hairBack(c);
     s += P(`M44,${c.chin - 8}L44,95L56,95L56,${c.chin - 8}Z`, c.skinD, 0.8);
     s += body(c);

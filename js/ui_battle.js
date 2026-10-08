@@ -32,7 +32,7 @@
     const arch = (all - cav) * 0.3, inf = all - cav - arch;
     return `<div class="bt-side ${att ? 'att' : 'def'}">
       <div class="bt-nat">${U.flag(tag)} <b>${G.esc(n.name)}</b> <span class="muted">${att ? 'saldıran' : 'savunan'}</span></div>
-      ${best ? `<div class="bt-gen">${G.portrait ? `<span class="bt-face">${G.portrait.leader(best.general, tag, 'general')}</span>` : ''}${G.esc(best.general.name)}<br><span class="stars">${stars(sk)}</span></div>` : ''}
+      ${best ? `<div class="bt-gen">${G.portrait ? `<span class="bt-face">${G.portrait.leader(best.general, tag, 'general', { size: 34 })}</span>` : ''}${G.esc(best.general.name)}<br><span class="stars">${stars(sk)}</span></div>` : ''}
       <div class="bt-dice" title="Bu evrenin zarı">${DICE[dice] || ''}<small>${dice}</small></div>
       <table>
         <tr><td>Asker</td><td>${G.fmtNum(men || 0)}</td></tr>
