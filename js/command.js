@@ -79,7 +79,7 @@ C.gainXp = function (a, amount) {
   if (g.xp >= need) {
     g.xp -= need;
     g.skill++;
-    a.maxMen = C.capFor(g.skill);
+    a.maxMen = C.capFor(g.skill) + (G.S.nations[a.tag].capBonus || 0);
     if (a.tag === G.S.player) G.log(`${g.name} terfi etti (${g.skill} yıldız). Ordusu artık ${G.fmtK(a.maxMen)} asker alabilir.`, 'good', [a.tag]);
   }
 };

@@ -106,8 +106,8 @@ G.FOCUS_TREES = {
 G.focus.power = tag => G.nationStats(tag).men + G.S.nations[tag].manpower * 0.4;
 G.focus.alive = tag => !!(G.S.nations[tag] && G.S.nations[tag].alive);
 
-G.focus.tree = tag => G.FOCUS_TREES[tag] || null;
-G.focus.get = (tag, id) => (G.FOCUS_TREES[tag] || []).find(f => f.id === id);
+G.focus.tree = tag => G.FOCUS_TREES[tag] || G.FOCUS_TREES.GENERIC || null;
+G.focus.get = (tag, id) => (G.focus.tree(tag) || []).find(f => f.id === id);
 
 G.focus.spawnArmies = function (n, count, name) {
   const spawn = G.spawnPoint(n.tag);
@@ -141,14 +141,17 @@ G.focus.start = function (tag, id) {
 
 G.focus.daily = function () {
   const S = G.S;
-  for (const tag of Object.keys(G.FOCUS_TREES)) {
-    const n = S.nations[tag];
-    if (!n || !n.alive) continue;
-    const fs = n.focus;
+  for (const n of Object.values(S.nations)) {
+    if (!n.alive) continue;
+    const tag = n.tag, fs = n.focus;
     if (!fs.cur && tag !== S.player) {
-      // yapay zekâ: sıradaki uygun odağı seç
-      const next = G.FOCUS_TREES[tag].find(f => G.focus.canStart(n, f) && (!f.ai || f.ai(n)));
-      if (next) G.focus.start(tag, next.id);
+      // yapay zekâ: uygun odaklardan birini seç (ağacın üst sıralarına öncelik)
+      const opts = G.focus.tree(tag).filter(f => G.focus.canStart(n, f) && (!f.ai || f.ai(n)));
+      if (opts.length) {
+        const minY = Math.min(...opts.map(f => f.y));
+        const top = opts.filter(f => f.y <= minY + 1);
+        G.focus.start(tag, G.pick(top).id);
+      }
     }
     if (!fs.cur) continue;
     const f = G.focus.get(tag, fs.cur);

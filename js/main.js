@@ -169,15 +169,20 @@
     const pid = M.provinceAt(x, y);
     if (!shift) G.clearSelection();
     if (pid == null) { U.closePanel(); return; }
-    const p = G.S.provinces[pid];
-    // aynı eyalete ikinci tık: ülke paneli
-    if (U.panelKind === 'prov' && U.panelId === pid && p.owner) U.showNation(p.owner);
-    else U.showProvince(pid);
+    U.showProvince(pid);
   }
 
   canvas.addEventListener('contextmenu', e => {
     e.preventDefault();
     if (G.S && G.selFleet) { fleetOrder(e.clientX, e.clientY); return; }
+    if (G.S && !G.selected.size) {
+      // seçili birlik yokken sağ tık: ülkenin diplomasi / bilgi sayfası
+      const pid = M.provinceAt(e.clientX, e.clientY);
+      if (pid == null) return;
+      const p = G.S.provinces[pid];
+      if (p.owner) U.showDiplomacy(p.owner);
+      return;
+    }
     if (!G.S || !G.selected.size) return;
     const pid = M.provinceAt(e.clientX, e.clientY);
     if (pid == null) return;
@@ -276,6 +281,7 @@
     else if (e.key === '-' || e.code === 'NumpadSubtract') U.setSpeed(G.S.speed - 1);
     else if (e.key === 'Escape') {
       if (U.targetOrdu) U.endTargetMode();
+      else if (!document.getElementById('dipwin').classList.contains('hidden')) U.closeDiplomacy();
       else if (!document.getElementById('navywin').classList.contains('hidden')) document.getElementById('navywin').classList.add('hidden');
       else { G.clearSelection(); U.closePanel(); }
     }
@@ -317,7 +323,7 @@
         if (now - lastUi > 400) {
           lastUi = now; U.refreshArmyPanel(); U.refreshOrdular();
           if (U.panelKind === 'prov') U.showProvince(U.panelId);
-          if (now - (U.lastNavy || 0) > 1000) { U.lastNavy = now; U.refreshNavy(); }
+          if (now - (U.lastNavy || 0) > 1000) { U.lastNavy = now; U.refreshNavy(); U.refreshDiplomacy(); }
         }
       }
     } else acc = 0;

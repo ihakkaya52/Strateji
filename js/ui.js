@@ -171,6 +171,7 @@ U.showProvince = function (pid) {
 
 U.showNation = function (tag) {
   const S = G.S, n = S.nations[tag], me = S.nations[S.player];
+  if (tag !== S.player && U.showDiplomacy) { U.showDiplomacy(tag); return; }
   U.panelKind = 'nation'; U.panelId = tag;
   G.map.selNation = tag; G.map.selProv = null; G.mapDirty = true;
   const st = G.nationStats(tag);
@@ -316,7 +317,8 @@ U.showWelcome = function () {
     (wars.length ? `Ülkeniz şu anda ${wars.join(', ')} ile savaşta! ` : '') +
     (n.overlord ? `Ülkeniz ${S.nations[n.overlord].name} tacının vasalı ve insan gücünün dörtte birini haraç olarak ödüyor. ` +
       'Üst çubuktaki odak düğmesinden bağımsızlık yolunu seçebilirsiniz. ' : '') +
-    'Ordularınızı seçip sağ tıkla yürütün, düşman şehirlerini kuşatın. Başka bir ülkeye tıklayarak savaş ilan edebilirsiniz. ' +
+    'Ordularınızı seçip sağ tıkla yürütün. Başka bir ülkeye sağ tıklayınca diplomasi penceresi açılır: elçi, ittifak, ' +
+    'garanti, geçiş hakkı ve savaş buradan yönetilir. Savaş ilan etmek için önce bir savaş gerekçesi hazırlamalısınız. ' +
     'Oyunu başlatmak için Boşluk tuşuna basın.', [{ text: 'Tarihi yazmaya başla' }]);
 };
 

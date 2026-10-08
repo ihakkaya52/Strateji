@@ -103,7 +103,7 @@ N.hp = f => f.ships.reduce((s, sh) => s + sh.hp, 0);
 N.maxHp = f => f.ships.reduce((s, sh) => s + G.SHIP_TYPES[sh.type].hp, 0);
 N.crew = f => f.ships.reduce((s, sh) => s + G.SHIP_TYPES[sh.type].crew, 0);
 N.power = f => f.ships.reduce((s, sh) => s + G.SHIP_TYPES[sh.type].atk * (sh.type === 'dromon' ? 1.3 : 1), 0) *
-  (1 + 0.05 * f.admiral.skill + (f.admiral.trait === 'denizci' ? 0.15 : 0));
+  (1 + 0.05 * f.admiral.skill + (f.admiral.trait === 'denizci' ? 0.15 : 0)) * (G.S.nations[f.tag].navalMult || 1);
 
 N.friendlyPort = (tag, p) => N.isPort(p) && G.sameRealm(p.ctrl, tag);
 

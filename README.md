@@ -9,10 +9,10 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 
 | Kontrol | İşlev |
 |---|---|
-| Sol tık | Eyalet seç (aynı eyalete ikinci tık ülke panelini açar) / orduya tıkla |
+| Sol tık | Eyalet seç / orduya tıkla |
 | Sol tıkla sürükle, WASD, ok tuşları | Haritayı kaydır |
 | Shift + sürükle | Kutu içindeki orduları seç |
-| Sağ tık | Seçili bölükleri yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder |
+| Sağ tık | Seçili orduları yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder. Seçim yokken: ülkenin diplomasi sayfası |
 | O | Alt ortadaki komuta çubuğunu küçült / büyüt |
 | N | Donanma arayüzü |
 | Fare tekerleği | Yakınlaştır / uzaklaştır |
@@ -28,8 +28,16 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Vasallık:** İngiltere, Danimarka tacının vasalı olarak başlar. Vasallar efendilerinin savaşlarına katılır,
   insan gücünün %25'ini haraç olarak öder ve kendi başına savaş ilan edemez. Aynı diyardaki ordular birbirinin
   topraklarından geçebilir.
-- **Odak ağacı:** Madalyonlu, simgeli HOI4 tarzı görünüm. İngiltere'ye özel 14 odaklı bağımsızlık ağacı (Witenagemot, Danegeld'i reddet, Edward'ı sürgünden
-  çağır, Bağımsızlık İlanı, Sakson Tacı...). Yapay zekâ İngiltere'si de bu ağacı izler.
+- **Odak ağaçları:** Madalyonlu, simgeli HOI4 tarzı görünüm. 10 büyük gücün her birine özel 19 odaklı ağaç
+  (siyasi, ekonomik, askerî / teknolojik kollar ve final odağı), İngiltere'ye özel bağımsızlık ağacı, diğer bütün
+  ülkelere ortak ağaç. Odaklar insan gücü, saldırı, savunma, kuşatma, hız, deniz gücü, ordu kapasitesi, tersane,
+  elçi, yeni ordular ve savaş gerekçeleri verir. Yapay zekâ da odak seçer.
+- **Diplomasi:** Bir ülkeye sağ tıklayınca HOI4 / EU4 tarzı diplomasi sayfası açılır: ilişki puanı ve sebepleri,
+  antlaşmalar, elçi gönderme, ittifak, askerî geçiş hakkı, bağımsızlık garantisi, savaş gerekçesi, savaş ve barış.
+- **Savaş gerekçesi:** Savaş ilan etmek için önce gerekçe hazırlanır (45 gün; farklı dinden komşuya 25 gün) ya da
+  odaklardan kazanılır. Yapay zekâ da rastgele savaş açmaz, önce gerekçe hazırlar.
+- **Koalisyonlar:** Saldırıya uğrayan ülkenin müttefikleri ve garantörleri savaşa girer. Teslim olan ülke yalnızca
+  işgal edilen topraklarını kaybeder.
 - **Zaman:** HOI4 gibi saatlik takvim, duraklatma ve 5 hız kademesi.
 - **Komuta zinciri:** Mareşal → en fazla 3 ordu komutanı → her komutanın ordusu. Ordu komutanının yıldızı ordusunun
   büyüklüğünü belirler: 1 yıldız 8B, 5 yıldız 15B asker. Komutanlar savaştıkça tecrübe kazanır ve terfi eder.
@@ -49,7 +57,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   çıkarma daha yavaş ve zayıftır. Aynı deniz bölgesine
   giren düşman filolar çarpışır; batan nakliye gemileriyle askerler de boğulur. Yapay zekâ da çıkarma planlar.
 - **Kuşatma:** Kaleli şehirler ve başkentler hemen düşmez.
-- **Savaş ve barış:** Savaş ilanı, savaş skoru, toprak devriyle barış veya beyaz barış, ateşkes ve teslimiyet.
+- **Savaş ve barış:** Savaş skoru, toprak devriyle barış veya beyaz barış, ateşkes ve teslimiyet.
 - **İnsan gücü:** Eyaletlerden aylık asker gelir. Yeni ordu toplama (8B asker, 60 gün, yeni komutanla) ve takviye.
 - **Yapay zekâ:** Savaş ilan eder, cephe kurar, kuşatır, barış yapar ve asker toplar.
 - **Olaylar:** Macbeth'in tahta çıkışı (1040), Petar Delyan ayaklanması (1040), Normanların Melfi'yi alışı (1041),
@@ -79,6 +87,9 @@ js/util.js            sabitler ve yardımcılar
 js/state.js           oyun durumu, ülkeler, ordular, savaş / barış
 js/sim.js             zaman, hareket, muharebe, kuşatma, insan gücü
 js/ai.js              yapay zekâ
+js/diplomacy.js       ilişkiler, elçiler, ittifak, garanti, geçiş hakkı, savaş gerekçesi
+js/focus_trees.js     büyük güçlerin ve ortak odak ağaçları
+js/ui_dip.js          diplomasi penceresi
 js/command.js         ordular, komutanlar, cepheler
 js/navy.js            gemiler, tersaneler, deniz savaşı, çıkarma
 js/names.js           komutan, kaptan ve gemi adları

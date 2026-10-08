@@ -28,6 +28,8 @@ G.initState = function (playerTag) {
     armies: [],
     nextArmyId: 1,
     battles: new Map(),     // "hedef|saldıran" -> savaş bilgisi
+    wars: [], nextWarId: 0,
+    rel: new Map(),         // "A|B" -> ilişki puanı
     firedEvents: new Set(),
     over: false,
   };
@@ -97,6 +99,10 @@ G.addNation = function (tag, def) {
     rebelFrom: null,        // bağımsızlık savaşı verdiği eski efendi
     atkMult: 1, defMult: 1, mpMult: 1,
     focus: { cur: null, prog: 0, done: new Set() },
+    // diplomasi
+    allies: new Set(), guarantees: new Set(), accessGranted: new Set(),
+    envoys: def.major ? 3 : 2, envoyTo: new Set(), claims: new Set(), justify: null,
+    siegeMult: 1, speedMult: 1, orgMult: 1, navalMult: 1, capBonus: 0,
     armyNo: 0,
     armyTarget: 3,
     alive: true,
@@ -125,7 +131,7 @@ G.realm = tag => {
 G.canEnter = (tag, p) => {
   if (p.kind === 'waste') return false;
   return p.ctrl === tag || p.owner === tag || G.atWar(tag, p.ctrl) || G.atWar(tag, p.owner) ||
-    G.sameRealm(tag, p.ctrl);
+    G.sameRealm(tag, p.ctrl) || (G.dip ? G.dip.hasAccess(tag, p.ctrl) : false);
 };
 
 G.armiesIn = pid => G.S.armies.filter(a => a.prov === pid);
@@ -139,7 +145,7 @@ G.createArmy = function (tag, pid, men = 8000) {
   n.armyNo++;
   const general = G.makeLeader(tag, false);
   general.xp = 0;
-  const maxMen = G.command.capFor(general.skill);
+  const maxMen = G.command.capFor(general.skill) + (n.capBonus || 0);
   const a = {
     id: S.nextArmyId++, tag, name: `${G.ordinal(n.armyNo)} Ordu`,
     general,
@@ -162,7 +168,7 @@ G.removeArmy = function (a) {
   if (a.fleet != null) G.navy.unloadDead(a);
 };
 
-G.armySpeed = a => (3.2 + 3.2 * a.cav) * (1 + G.command.bonus(a, 'speed'));   // km/saat
+G.armySpeed = a => (3.2 + 3.2 * a.cav) * (1 + G.command.bonus(a, 'speed')) * (G.S.nations[a.tag].speedMult || 1);   // km/saat
 
 // Ordunun asker dağılımı (gösterim için)
 G.composition = a => {
@@ -226,25 +232,47 @@ G.warScore = function (a, b) {
 };
 
 // a'nın b'ye karşı savaştaki tarafı: a ve a'nın diyarında b ile savaşta olanlar
-G.warSide = (a, b) => G.realm(a).filter(t => t === a || G.atWar(t, b) || G.realm(b).some(x => G.atWar(t, x)));
+// ------------------------------------------------------------ savaşlar (koalisyonlar)
+G.findWar = (a, b) => (G.S.wars || []).find(w => (w.att.has(a) && w.def.has(b)) || (w.def.has(a) && w.att.has(b)));
 
+// a'nın b'ye karşı savaştaki tarafı
+G.warSide = (a, b) => {
+  const w = G.findWar(a, b);
+  if (w) return [...(w.att.has(a) ? w.att : w.def)];
+  return G.realm(a).filter(t => t === a || G.atWar(t, b));
+};
+
+// Savaş: saldıranın diyarı ve istekli müttefikleri ile savunanın diyarı, müttefikleri ve garantörleri
 G.declareWar = function (a, b, silent) {
   const S = G.S, na = S.nations[a], nb = S.nations[b];
   if (!na || !nb || a === b || na.enemies.has(b)) return;
   if (G.sameRealm(a, b)) return;   // efendi ile vasal birbirine bu yolla savaş açamaz
-  const A = G.realm(a), B = G.realm(b);
+  const A = new Set(G.realm(a)), B = new Set(G.realm(b));
+  const dip = G.dip;
+  if (dip) {
+    for (const t of [...B]) for (const x of dip.defenders(t)) if (!A.has(x)) B.add(x);
+    for (const x of dip.allies(a)) if (!B.has(x) && dip.opinion(x, a) >= 80 && !dip.allies(x).some(y => B.has(y))) A.add(x);
+    for (const t of [...A]) for (const r of G.realm(t)) if (!B.has(r)) A.add(r);
+    for (const t of [...B]) for (const r of G.realm(t)) if (!A.has(r)) B.add(r);
+  }
+  for (const t of [...A]) if (B.has(t)) { A.delete(t); B.delete(t); }
+  A.add(a); B.add(b);
+  S.wars ||= [];
+  const war = { id: (S.nextWarId = (S.nextWarId || 0) + 1), a, b, att: A, def: B, start: S.hour };
+  S.wars.push(war);
   for (const x of A) for (const y of B) {
     const nx = S.nations[x], ny = S.nations[y];
-    if (nx.enemies.has(y)) continue;
+    if (!nx.alive || !ny.alive || nx.enemies.has(y)) continue;
     nx.enemies.add(y); ny.enemies.add(x);
     nx.warStart[y] = ny.warStart[x] = S.hour;
   }
+  if (dip) dip.onWar(a, b, A, B);
   if (!silent) {
-    const allies = [...A, ...B].filter(t => t !== a && t !== b).map(t => S.nations[t].name);
-    G.log(`${na.name}, ${nb.name}'a savaş ilan etti!` + (allies.length ? ` (${allies.join(', ')} da savaşa girdi)` : ''),
+    const joined = [...A, ...B].filter(t => t !== a && t !== b).map(t => S.nations[t].name);
+    G.log(`${na.name}, ${nb.name}'a savaş ilan etti!` + (joined.length ? ` (${joined.join(', ')} da savaşa girdi)` : ''),
       'war', [...A, ...B]);
   }
-  G.mapDirty = true;
+  G.mapDirty = true; G.labelsDirty = true;
 };
 
 // Vasal efendisine karşı bağımsızlık ilan eder
@@ -260,11 +288,13 @@ G.declareIndependence = function (tag) {
   G.log(`${n.name}, ${S.nations[lord].name} tacına karşı bağımsızlığını ilan etti!`, 'war', [tag, lord]);
 };
 
-// İki ülke arasında tekil barış
-function peacePair(a, b, transfer) {
+// İki ülke arasında tekil barış (başka bir savaşta hâlâ karşı karşıyalarsa düşmanlık sürer)
+function peacePair(a, b, transfer, skipWar) {
   const S = G.S, na = S.nations[a], nb = S.nations[b];
-  if (!na.enemies.has(b)) return 0;
-  na.enemies.delete(b); nb.enemies.delete(a);
+  if (!na || !nb || !na.enemies.has(b)) return 0;
+  const other = (S.wars || []).some(w => w !== skipWar &&
+    ((w.att.has(a) && w.def.has(b)) || (w.def.has(a) && w.att.has(b))));
+  if (!other) { na.enemies.delete(b); nb.enemies.delete(a); }
   const until = S.hour + TRUCE_DAYS * 24;
   na.truces[b] = nb.truces[a] = until;
   let moved = 0;
@@ -277,7 +307,7 @@ function peacePair(a, b, transfer) {
   return moved;
 }
 
-// Barış: transfer=true ise işgal edilen topraklar işgalciye geçer. Diyarlar birlikte barışır.
+// Barış: transfer=true ise işgal edilen topraklar işgalciye geçer. Bütün koalisyon birlikte barışır.
 G.makePeace = function (a, b, transfer) {
   const S = G.S, na = S.nations[a], nb = S.nations[b];
   if (!na.enemies.has(b)) return;
@@ -289,9 +319,11 @@ G.makePeace = function (a, b, transfer) {
       indep = { rebel, lord, won: score >= 0 || !transfer };
     }
   }
+  const war = G.findWar(a, b);
   const A = G.warSide(a, b), B = G.warSide(b, a);
   let moved = 0;
-  for (const x of A) for (const y of B) moved += peacePair(x, y, transfer);
+  for (const x of A) for (const y of B) moved += peacePair(x, y, transfer, war);
+  if (war) S.wars.splice(S.wars.indexOf(war), 1);
   if (indep) {
     const nr = S.nations[indep.rebel];
     nr.rebelFrom = null;
@@ -312,6 +344,21 @@ G.makePeace = function (a, b, transfer) {
     ? `${na.name} ile ${nb.name} barış imzaladı. ${moved} eyalet el değiştirdi.`
     : `${na.name} ile ${nb.name} beyaz barış yaptı.`, 'info', [a, b]);
   G.checkElimination();
+};
+
+// Ülke savaş koalisyonlarından çıkarılır (teslimiyet, yok olma)
+G.leaveWars = function (tag) {
+  const S = G.S;
+  for (const w of (S.wars || []).slice()) {
+    w.att.delete(tag); w.def.delete(tag);
+    if (!w.att.size || !w.def.size || !w.att.has(w.a) || !w.def.has(w.b)) {
+      // lider düştüyse savaş biter
+      if (!w.att.has(w.a) || !w.def.has(w.b)) {
+        for (const x of w.att) for (const y of w.def) peacePair(x, y, false, w);
+        S.wars.splice(S.wars.indexOf(w), 1);
+      }
+    }
+  }
 };
 
 // Artık girilemeyen topraklardaki orduları en yakın kendi toprağına çeker
@@ -350,38 +397,41 @@ G.relocateCapital = function (tag) {
   n.capital = best ? best.p.id : null;
 };
 
-// Teslim olma: ülke ortadan kalkar, toprakları işgalcilere / galip tarafa geçer
+// Teslim olma (HOI4 gibi): işgal altındaki topraklar işgalcilere geçer, ülke kalan topraklarıyla barış imzalar.
+// Hiç toprağı kalmazsa tarihten silinir.
 G.capitulate = function (tag) {
   const S = G.S, n = S.nations[tag];
   if (!n.alive) return;
   const enemies = [...n.enemies];
-  const occ = {};
-  for (const p of S.provinces) if (p.owner === tag && p.ctrl !== tag && n.enemies.has(p.ctrl)) occ[p.ctrl] = (occ[p.ctrl] || 0) + 1;
-  const winner = enemies.sort((x, y) => (occ[y] || 0) - (occ[x] || 0))[0];
+  let lost = 0;
   for (const p of S.provinces) {
-    if (p.owner === tag) {
-      p.owner = (p.ctrl !== tag && n.enemies.has(p.ctrl)) ? p.ctrl : winner;
-      p.ctrl = p.owner; p.siege = null;
-    } else if (p.ctrl === tag) {
-      p.ctrl = p.owner;
+    if (p.owner === tag && p.ctrl !== tag && n.enemies.has(p.ctrl)) { p.owner = p.ctrl; p.siege = null; lost++; }
+    else if (p.ctrl === tag && p.owner !== tag) { p.ctrl = p.owner; }
+    if (p.siege && (p.siege.by === tag || (p.owner === tag && n.enemies.has(p.siege.by)))) p.siege = null;
+  }
+  // teslim olan ülkenin bütün savaşları biter
+  for (const w of (S.wars || []).slice()) {
+    if (!w.att.has(tag) && !w.def.has(tag)) continue;
+    const mySide = w.att.has(tag) ? w.att : w.def, other = w.att.has(tag) ? w.def : w.att;
+    if (w.a === tag || w.b === tag) {
+      for (const x of mySide) for (const y of other) peacePair(x, y, false, w);
+      S.wars.splice(S.wars.indexOf(w), 1);
+    } else {
+      for (const y of other) peacePair(tag, y, false, w);
+      mySide.delete(tag);
     }
   }
-  for (const e of [...n.enemies]) {
-    S.nations[e].enemies.delete(tag);
+  for (const e of [...n.enemies]) { S.nations[e].enemies.delete(tag); n.enemies.delete(e); }
+  for (const t of [tag, ...enemies]) {
+    const nt = S.nations[t];
+    if (nt.alive && (nt.capital == null || S.provinces[nt.capital].owner !== t)) G.relocateCapital(t);
   }
-  n.enemies.clear();
-  for (const a of S.armies.slice()) if (a.tag === tag) G.removeArmy(a);
-  n.alive = false;
-  for (const v of G.vassalsOf(tag)) S.nations[v].overlord = null;
-  n.overlord = null;
-  for (const e of enemies) {
-    const ne = S.nations[e];
-    if (ne.capital == null || S.provinces[ne.capital].owner !== e) G.relocateCapital(e);
-  }
+  G.evacuateArmies();
   G.labelsDirty = true; G.mapDirty = true;
-  G.log(`${n.name} teslim oldu! Toprakları ${S.nations[winner].name} ve müttefiklerine geçti.`, 'war', [tag, ...enemies]);
-  if (tag === S.player) G.ui.gameOver(false);
-  else if (enemies.includes(S.player)) G.ui.notify(`Zafer! ${n.name} teslim oldu.`);
+  G.log(`${n.name} teslim oldu ve barış istedi: ${lost} eyaletini kaybetti.`, 'war', [tag, ...enemies]);
+  G.checkElimination();
+  if (tag === S.player && n.alive) G.ui.notify(`Ülkemiz teslim oldu. İşgal edilen ${lost} eyalet düşmana geçti, ama krallık yaşıyor.`);
+  else if (enemies.includes(S.player)) G.ui.notify(`Zafer! ${n.name} teslim oldu, işgal ettiğimiz topraklar artık bizim.`);
 };
 
 G.checkElimination = function () {
@@ -392,6 +442,7 @@ G.checkElimination = function () {
     if (n.alive && !owned[n.tag]) {
       n.alive = false;
       for (const v of G.vassalsOf(n.tag)) S.nations[v].overlord = null;
+      G.leaveWars(n.tag);
       for (const e of n.enemies) S.nations[e].enemies.delete(n.tag);
       n.enemies.clear();
       for (const a of S.armies.slice()) if (a.tag === n.tag) G.removeArmy(a);

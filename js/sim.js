@@ -227,7 +227,7 @@ G.stepSieges = function () {
     let need = SIEGE_NEED[p.kind] || 40;
     if (p.owner === tag) need /= 3;   // kendi toprağını kurtarmak kolaydır
     if (!p.siege || p.siege.by !== tag) p.siege = { by: tag, progress: 0, need };
-    const power = arr.reduce((s, a) => s + a.men / G.ARMY_MEN * (1 + G.command.bonus(a, 'siege')), 0);
+    const power = arr.reduce((s, a) => s + a.men / G.ARMY_MEN * (1 + G.command.bonus(a, 'siege')) * (S.nations[a.tag].siegeMult || 1), 0);
     p.siege.progress += power;
     if (p.siege.progress >= p.siege.need) {
       const old = p.ctrl;
@@ -273,7 +273,7 @@ G.daily = function () {
     if (a.fleet != null) { a.org = Math.max(30, a.org - 2); continue; }   // gemide yorulur
     if (!recent) {
       const home = G.sameRealm(P[a.prov].ctrl, a.tag);
-      a.org = Math.min(100, a.org + (home ? 14 : 7) * (1 + G.command.bonus(a, 'org')));
+      a.org = Math.min(100, a.org + (home ? 14 : 7) * (1 + G.command.bonus(a, 'org')) * (S.nations[a.tag].orgMult || 1));
       if (home && a.men < a.maxMen) {
         const n = S.nations[a.tag];
         const add = Math.min(a.maxMen - a.men, a.maxMen * 0.03, n.manpower);
@@ -298,6 +298,7 @@ G.daily = function () {
   // teslimiyet kontrolü
   for (const n of Object.values(S.nations)) if (n.alive && n.enemies.size) G.checkCapitulation(n.tag);
   G.focus.daily();
+  G.dip.daily();
   G.navy.daily();
   G.events.check();
 };
@@ -331,4 +332,5 @@ G.monthly = function () {
     if (n.manpower > cap) n.manpower = cap;
   }
   G.ai.monthly();
+  G.dip.monthly();
 };
