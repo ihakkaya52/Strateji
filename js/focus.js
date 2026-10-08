@@ -9,19 +9,19 @@ const FOCUS_DAYS = 42;
 G.FOCUS_TREES = {
   ENG: [
     {
-      id: 'eng_witan', x: 2, y: 0, name: 'Witenagemot\'u Topla',
+      id: 'eng_witan', icon: 'scroll', x: 2, y: 0, name: 'Witenagemot\'u Topla',
       desc: 'Krallığın bilgeler meclisi toplanıyor. Saksonların sesi yeniden duyulacak.',
       effectText: '+4.000 insan gücü',
       effect: n => { n.manpower += 4000; },
     },
     {
-      id: 'eng_godwin', x: 1, y: 1, req: ['eng_witan'], name: 'Kont Godwin ile Uzlaşma',
+      id: 'eng_godwin', icon: 'helm', x: 1, y: 1, req: ['eng_witan'], name: 'Kont Godwin ile Uzlaşma',
       desc: 'Wessex\'in güçlü kontu Godwin, Danimarka tacına sadakatini sorguluyor. Onu yanımıza çekelim.',
       effectText: 'Başkentte yeni bir ordu: Wessex Huscarlları',
       effect: n => { G.focus.spawnArmies(n, 1, 'Wessex Huscarlları'); },
     },
     {
-      id: 'eng_danegeld', x: 2, y: 1, req: ['eng_witan'], name: 'Danegeld\'i Reddet',
+      id: 'eng_danegeld', icon: 'coin', x: 2, y: 1, req: ['eng_witan'], name: 'Danegeld\'i Reddet',
       desc: 'Danimarkalılara ödenen haraç artık durdurulacak. Kopenhag bundan hoşlanmayacak.',
       effectText: 'Efendiye verilen haraç (%25 insan gücü) kalkar',
       effect: n => {
@@ -30,37 +30,37 @@ G.FOCUS_TREES = {
       },
     },
     {
-      id: 'eng_fyrd', x: 3, y: 1, req: ['eng_witan'], name: 'Fyrd\'i Yeniden Düzenle',
+      id: 'eng_fyrd', icon: 'spear', x: 3, y: 1, req: ['eng_witan'], name: 'Fyrd\'i Yeniden Düzenle',
       desc: 'Her beş hide topraktan bir asker: Sakson köylü ordusu yeniden kuruluyor.',
       effectText: 'İki yeni ordu, aylık insan gücü +%10',
       effect: n => { G.focus.spawnArmies(n, 2, 'Fyrd'); n.mpMult += 0.1; },
     },
     {
-      id: 'eng_edward', x: 1, y: 2, req: ['eng_godwin'], name: 'Edward\'ı Sürgünden Çağır',
+      id: 'eng_edward', icon: 'crown', x: 1, y: 2, req: ['eng_godwin'], name: 'Edward\'ı Sürgünden Çağır',
       desc: 'Æthelred\'in oğlu Edward, Normandiya\'daki sürgününden dönüyor. Eski Wessex hanedanı yeniden tahtta.',
       effectText: 'Hükümdar: Günah Çıkaran Edward · +6.000 insan gücü',
       effect: n => { n.ruler = 'Günah Çıkaran Edward'; n.manpower += 6000; },
     },
     {
-      id: 'eng_saxon', x: 2, y: 2, req: ['eng_danegeld'], name: 'Sakson Ruhunu Uyandır',
+      id: 'eng_saxon', icon: 'dragon', x: 2, y: 2, req: ['eng_danegeld'], name: 'Sakson Ruhunu Uyandır',
       desc: 'Alfred\'in mirası hatırlansın. Halk yabancı krala karşı birleşiyor.',
       effectText: 'Savunma +%10',
       effect: n => { n.defMult += 0.1; },
     },
     {
-      id: 'eng_huscarl', x: 3, y: 2, req: ['eng_fyrd'], name: 'Huscarl Muhafızları',
+      id: 'eng_huscarl', icon: 'axe', x: 3, y: 2, req: ['eng_fyrd'], name: 'Huscarl Muhafızları',
       desc: 'İki elli baltalarıyla ünlü seçkin muhafızlar ordunun belkemiği olacak.',
       effectText: 'Saldırı +%10',
       effect: n => { n.atkMult += 0.1; },
     },
     {
-      id: 'eng_burh', x: 4, y: 2, req: ['eng_fyrd'], name: 'Burh Kalelerini Onar',
+      id: 'eng_burh', icon: 'castle', x: 4, y: 2, req: ['eng_fyrd'], name: 'Burh Kalelerini Onar',
       desc: 'Alfred\'in kurduğu müstahkem kasabalar yeniden tahkim ediliyor.',
       effectText: 'Savunma +%15',
       effect: n => { n.defMult += 0.15; },
     },
     {
-      id: 'eng_indep', x: 2, y: 3, req: ['eng_edward', 'eng_saxon', 'eng_huscarl'], name: 'Bağımsızlık İlanı',
+      id: 'eng_indep', icon: 'banner', x: 2, y: 3, req: ['eng_edward', 'eng_saxon', 'eng_huscarl'], name: 'Bağımsızlık İlanı',
       desc: 'Artık hiçbir Danimarka kralı İngiltere\'ye hükmetmeyecek! Bu, Danimarka ile savaş demektir.',
       effectText: 'Danimarka\'ya karşı bağımsızlık savaşı başlar',
       avail: n => !!n.overlord,
@@ -68,34 +68,34 @@ G.FOCUS_TREES = {
       effect: n => { G.declareIndependence(n.tag); },
     },
     {
-      id: 'eng_crown', x: 2, y: 4, req: ['eng_indep'], name: 'Sakson Tacı',
+      id: 'eng_crown', icon: 'crown', x: 2, y: 4, req: ['eng_indep'], name: 'Sakson Tacı',
       desc: 'Bağımsız İngiltere\'nin tacı Westminster\'da yeniden parlıyor.',
       effectText: 'Aylık insan gücü +%15 · Danimarka ile savaşta olmamalı',
       avail: n => !n.overlord && !n.rebelFrom,
       effect: n => { n.mpMult += 0.15; },
     },
     {
-      id: 'eng_danelaw', x: 3, y: 4, req: ['eng_indep'], name: 'Danelaw\'ı Kucakla',
+      id: 'eng_danelaw', icon: 'shield', x: 3, y: 4, req: ['eng_indep'], name: 'Danelaw\'ı Kucakla',
       desc: 'Kuzeydeki Danimarka kökenli halk da artık İngiliz. Onların savaşçıları ordumuza katılsın.',
       effectText: 'Bir yeni ordu, +5.000 insan gücü',
       effect: n => { G.focus.spawnArmies(n, 1, 'Danelaw Ordusu'); n.manpower += 5000; },
     },
     {
-      id: 'eng_wales', x: 1, y: 5, req: ['eng_crown'], name: 'Galler Seferi',
+      id: 'eng_wales', icon: 'sword', x: 1, y: 5, req: ['eng_crown'], name: 'Galler Seferi',
       desc: 'Gruffydd ap Llywelyn sınırlarımızı yağmalıyor. Galler dağlarına yürüme zamanı.',
       effectText: 'Gwynedd\'e savaş ilan edilir',
       avail: n => G.focus.alive('GWY'),
       effect: n => { G.declareWar(n.tag, 'GWY'); },
     },
     {
-      id: 'eng_scot', x: 2, y: 5, req: ['eng_crown'], name: 'İskoç Sınırı',
+      id: 'eng_scot', icon: 'sword', x: 2, y: 5, req: ['eng_crown'], name: 'İskoç Sınırı',
       desc: 'Kuzeydeki İskoç kralı Northumbria\'ya göz dikti. Sınırı güvenceye alalım.',
       effectText: 'İskoçya\'ya savaş ilan edilir',
       avail: n => G.focus.alive('SCO'),
       effect: n => { G.declareWar(n.tag, 'SCO'); },
     },
     {
-      id: 'eng_north', x: 3, y: 5, req: ['eng_crown', 'eng_danelaw'], name: 'Kuzey Denizi\'nin Efendisi',
+      id: 'eng_north', icon: 'ship', x: 3, y: 5, req: ['eng_crown', 'eng_danelaw'], name: 'Kuzey Denizi\'nin Efendisi',
       desc: 'Rollar tersine döndü: artık İngiliz gemileri Danimarka kıyılarında.',
       effectText: 'Saldırı +%10, savunma +%5, +10.000 insan gücü',
       effect: n => { n.atkMult += 0.1; n.defMult += 0.05; n.manpower += 10000; },
@@ -111,9 +111,9 @@ G.focus.get = (tag, id) => (G.FOCUS_TREES[tag] || []).find(f => f.id === id);
 
 G.focus.spawnArmies = function (n, count, name) {
   const spawn = G.spawnPoint(n.tag);
-  if (spawn == null) { n.manpower += count * G.ARMY_MEN; return; }
+  if (spawn == null) { n.manpower += count * G.RECRUIT_COST; return; }
   for (let i = 0; i < count; i++) {
-    const a = G.createArmy(n.tag, spawn);
+    const a = G.createArmy(n.tag, spawn, 12000);
     if (name) a.name = count > 1 ? `${name} ${i + 1}` : name;
   }
 };

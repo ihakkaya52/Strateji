@@ -67,7 +67,7 @@ U.pickNation = function (tag) {
 // ------------------------------------------------------------ oyun arayüzü
 U.initGame = function () {
   $('menu').classList.add('hidden');
-  for (const id of ['topbar', 'log', 'mapmodes']) $(id).classList.remove('hidden');
+  for (const id of ['topbar', 'log', 'mapmodes', 'cmdbar']) $(id).classList.remove('hidden');
   const S = G.S, n = S.nations[S.player];
   $('tb-flag').style.background = n.color;
   $('tb-name').textContent = n.name;
@@ -116,7 +116,7 @@ U.refreshTop = function () {
   $('tb-date').textContent = G.fmtDate(S.time);
   $('tb-manpower').textContent = G.fmtNum(n.manpower);
   const st = G.nationStats(S.player);
-  $('tb-armies').textContent = `${G.command.of(S.player).length} ordu · ${st.armies} bölük · ${G.fmtK(st.men)}`;
+  $('tb-armies').textContent = `${G.command.of(S.player).length} mareşal · ${st.armies} ordu · ${G.fmtK(st.men)}`;
   $('tb-ships').textContent = `${G.navy.fleetsOf(S.player).reduce((t, f) => t + f.ships.length, 0)} gemi`;
   if (G.focus.tree(S.player)) {
     const f = n.focus.cur && G.focus.get(S.player, n.focus.cur);
@@ -163,7 +163,7 @@ U.showProvince = function (pid) {
       </table>
       ${siege}
       ${U.portSection(p)}
-      ${armies.length ? `<h3>Bölükler</h3>${armies.map(a => `<div>${U.flag(a.tag)} ${G.esc(a.name)} · ${G.esc(a.cmdr)} · ${G.fmtK(a.men)}</div>`).join('')}` : ''}`;
+      ${armies.length ? `<h3>Ordular</h3>${armies.map(a => `<div>${U.flag(a.tag)} ${G.esc(a.name)} · ${G.esc(a.general.name)} · ${G.fmtK(a.men)}</div>`).join('')}` : ''}`;
     U.bindPortSection(p);
   }
   el.querySelector('.close').onclick = U.closePanel;
@@ -207,7 +207,7 @@ U.showNation = function (tag) {
       <div>Eğitimdeki ordular: ${n.queue.length}</div>
       ${n.queue.map(q => `<div class="queue-item"><span>Yeni ordu</span><span>${Math.ceil((q.done - S.hour) / 24)} gün</span></div>`).join('')}
       <div class="row-btns"><button id="btn-recruit" ${n.manpower < G.RECRUIT_COST ? 'disabled' : ''}>
-        Yeni ordu topla (${G.fmtNum(G.RECRUIT_COST)} asker, ${G.RECRUIT_DAYS} gün)</button></div>` : '';
+        Yeni ordu topla (${G.fmtNum(G.RECRUIT_COST)} asker, ${G.RECRUIT_DAYS} gün, yeni komutanla)</button></div>` : '';
   const wars = [...n.enemies];
   el.innerHTML = `<button class="close">✕</button>
     <h2>${U.flag(tag)} ${G.esc(n.name)}</h2>
@@ -321,6 +321,22 @@ U.showWelcome = function () {
 };
 
 // ------------------------------------------------------------ odak ağacı
+// Odak simgeleri (64x64 SVG yolları)
+U.FOCUS_ICONS = {
+  crown: '<path d="M12 44 L16 22 L26 34 L32 16 L38 34 L48 22 L52 44 Z" /><rect x="12" y="46" width="40" height="6" rx="1"/><circle cx="16" cy="20" r="3"/><circle cx="32" cy="14" r="3"/><circle cx="48" cy="20" r="3"/>',
+  sword: '<path d="M32 6 L36 12 L35 40 L29 40 L28 12 Z"/><rect x="20" y="40" width="24" height="5" rx="2"/><rect x="29.5" y="45" width="5" height="9"/><circle cx="32" cy="57" r="3.5"/>',
+  shield: '<path d="M32 8 L52 14 L50 36 Q46 50 32 58 Q18 50 14 36 L12 14 Z"/><path d="M32 14 L32 52 M18 26 L46 26" stroke="rgba(0,0,0,.45)" stroke-width="3" fill="none"/>',
+  castle: '<path d="M10 54 L10 24 L16 24 L16 30 L22 30 L22 24 L28 24 L28 30 L36 30 L36 24 L42 24 L42 30 L48 30 L48 24 L54 24 L54 54 Z"/><path d="M27 54 L27 42 Q32 36 37 42 L37 54 Z" fill="rgba(0,0,0,.5)"/>',
+  ship: '<path d="M8 40 L56 40 L48 52 L16 52 Z"/><path d="M31 8 L31 40 L34 40 L34 8 Z"/><path d="M35 10 L52 36 L35 36 Z"/><path d="M30 14 L16 36 L30 36 Z"/>',
+  scroll: '<rect x="14" y="12" width="36" height="40" rx="3"/><circle cx="14" cy="16" r="5"/><circle cx="50" cy="48" r="5"/><path d="M20 22 H44 M20 30 H44 M20 38 H38" stroke="rgba(0,0,0,.45)" stroke-width="3"/>',
+  axe: '<rect x="30" y="10" width="5" height="46" rx="2"/><path d="M34 12 Q54 14 54 30 Q44 26 34 28 Z"/><path d="M31 12 Q12 16 12 30 Q22 26 31 28 Z"/>',
+  coin: '<circle cx="32" cy="32" r="20"/><circle cx="32" cy="32" r="14" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="3"/><path d="M32 22 L32 42 M26 28 Q32 22 38 28 M26 36 Q32 42 38 36" stroke="rgba(0,0,0,.5)" stroke-width="3" fill="none"/>',
+  spear: '<path d="M32 4 L37 18 L33.5 18 L33.5 60 L30.5 60 L30.5 18 L27 18 Z"/><path d="M24 24 L40 24" stroke-width="4" stroke="currentColor"/><path d="M14 58 L22 34 L26 36 Z M50 58 L42 34 L38 36 Z"/>',
+  helm: '<path d="M14 40 Q14 12 32 10 Q50 12 50 40 L50 50 L40 50 L40 38 L24 38 L24 50 L14 50 Z"/><rect x="30" y="20" width="4" height="26" fill="rgba(0,0,0,.45)"/>',
+  banner: '<rect x="14" y="6" width="4" height="52"/><path d="M18 8 L52 8 L44 20 L52 32 L18 32 Z"/><circle cx="16" cy="6" r="3.5"/>',
+  dragon: '<path d="M10 44 Q20 30 30 34 Q28 22 40 16 Q38 24 46 24 Q56 22 54 32 Q48 30 44 34 Q52 40 46 50 Q42 42 34 44 Q26 54 10 44 Z"/><circle cx="46" cy="21" r="2" fill="rgba(0,0,0,.6)"/>',
+};
+
 U.showFocus = function () {
   const S = G.S, tag = S.player, n = S.nations[tag], tree = G.focus.tree(tag);
   if (!tree) return;
@@ -330,30 +346,44 @@ U.showFocus = function () {
   $('focus-sub').textContent = cur
     ? `Sürüyor: ${cur.name} (${G.FOCUS_DAYS - n.focus.prog} gün kaldı)`
     : 'Bir odak seçin. Her odak ' + G.FOCUS_DAYS + ' gün sürer.';
-  const W = 190, H = 112, PX = 24, PY = 20;
+  const W = 180, H = 178, PX = 30, PY = 26, NW = 150;
   const pos = f => ({ x: PX + f.x * W, y: PY + f.y * H });
   const maxX = Math.max(...tree.map(f => f.x)), maxY = Math.max(...tree.map(f => f.y));
-  const width = PX * 2 + (maxX + 1) * W, height = PY * 2 + (maxY + 1) * H;
+  const width = PX * 2 + maxX * W + NW, height = PY * 2 + (maxY + 1) * H;
+  const cx = f => pos(f).x + NW / 2;
   let lines = '';
   for (const f of tree) {
     for (const r of f.req || []) {
-      const a = pos(G.focus.get(tag, r)), b = pos(f);
-      const done = n.focus.done.has(r);
-      lines += `<path d="M${a.x + 84},${a.y + 64} C${a.x + 84},${a.y + 88} ${b.x + 84},${b.y - 24} ${b.x + 84},${b.y}"
-        stroke="${done ? '#d6b36a' : '#5a4b30'}" stroke-width="2" fill="none"/>`;
+      const a = G.focus.get(tag, r), done = n.focus.done.has(r);
+      const x1 = cx(a), y1 = pos(a).y + 142, x2 = cx(f), y2 = pos(f).y + 4, my = y2 - 14;
+      const d = `M${x1},${y1} L${x1},${my} L${x2},${my} L${x2},${y2}`;
+      lines += `<path d="${d}" class="fl-under"/><path d="${d}" class="fl ${done ? 'done' : ''}"/>
+        <rect x="${x1 - 3.5}" y="${my - 3.5}" width="7" height="7" transform="rotate(45 ${x1} ${my})" class="fl-gem ${done ? 'done' : ''}"/>`;
     }
   }
   const nodes = tree.map(f => {
     const st = G.focus.state(n, f), p = pos(f);
-    const prog = st === 'current' ? `<div class="bar"><div style="width:${n.focus.prog / G.FOCUS_DAYS * 100}%"></div></div>` : '';
+    const prog = st === 'current' ? n.focus.prog / G.FOCUS_DAYS : st === 'done' ? 1 : 0;
+    const R = 31, C2 = 2 * Math.PI * R;
     return `<div class="fnode ${st}" data-f="${f.id}" style="left:${p.x}px;top:${p.y}px" title="${G.esc(f.desc)}">
-      <div class="fn-icon">${st === 'done' ? '✦' : '❖'}</div>
-      <div class="fn-name">${G.esc(f.name)}</div>
-      <div class="fn-eff">${G.esc(f.effectText)}</div>${prog}</div>`;
+      <svg class="medal" viewBox="0 0 84 84" width="84" height="84">
+        <defs>
+          <radialGradient id="mg-${f.id}" cx="50%" cy="40%" r="60%">
+            <stop offset="0" style="stop-color:var(--m-in1)"/><stop offset="1" style="stop-color:var(--m-in2)"/></radialGradient>
+        </defs>
+        <polygon points="42,2 70,14 82,42 70,70 42,82 14,70 2,42 14,14" class="m-frame"/>
+        <polygon points="42,8 66,18 76,42 66,66 42,76 18,66 8,42 18,18" fill="url(#mg-${f.id})" class="m-inner"/>
+        <circle cx="42" cy="42" r="${R}" class="m-ring"/>
+        ${prog > 0 && prog < 1 ? `<circle cx="42" cy="42" r="${R}" class="m-prog" stroke-dasharray="${C2 * prog} ${C2}" transform="rotate(-90 42 42)"/>` : ''}
+        <g transform="translate(18 18) scale(0.75)" class="m-icon">${U.FOCUS_ICONS[f.icon] || U.FOCUS_ICONS.banner}</g>
+      </svg>
+      <div class="ribbon"><span>${G.esc(f.name)}</span></div>
+      <div class="fn-eff">${G.esc(f.effectText)}</div>
+    </div>`;
   }).join('');
   const el = $('focus-tree');
-  el.innerHTML = `<div style="position:relative;width:${width}px;height:${height}px;margin:0 auto">
-    <svg width="${width}" height="${height}">${lines}</svg>${nodes}</div>`;
+  el.innerHTML = `<div class="ftree" style="width:${width}px;height:${height}px">
+    <svg class="flines" width="${width}" height="${height}">${lines}</svg>${nodes}</div>`;
   el.onclick = e => {
     const node = e.target.closest('.fnode.available');
     if (!node) return;

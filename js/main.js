@@ -15,7 +15,7 @@
     for (const a of G.selected) a.sel = false;
     G.selected.clear();
     G.selFleet = null;
-    U.refreshArmyPanel();
+    U.refreshArmyPanel(); U.refreshOrdular();
     G.mapDirty = true;
   };
   G.selectFleet = function (f) {
@@ -28,6 +28,7 @@
   G.selectArmies = function (arr, add) {
     if (!add || G.selFleet) G.clearSelection();
     for (const a of arr) { if (a.fleet != null) continue; a.sel = true; G.selected.add(a); }
+    U.refreshOrdular();
     U.refreshArmyPanel();
     G.mapDirty = true;
   };
@@ -102,7 +103,9 @@
     const c = G.S && M.counterAt(x, y);
     if (c) {
       const men = c.armies.reduce((s, a) => s + a.men, 0);
-      U.tooltip(x, y, `${U.flag(c.tag)} <b>${G.esc(G.S.nations[c.tag].name)}</b><br>${c.armies.length} ordu · ${G.fmtNum(men)} asker`);
+      const a0 = c.armies[0], mm = a0.marshal != null ? G.command.marshal(a0.marshal) : null;
+      U.tooltip(x, y, `${U.flag(c.tag)} <b>${G.esc(a0.name)}</b> · ${G.esc(G.S.nations[c.tag].name)}<br>Komutan: ${G.esc(a0.general.name)} ${'★'.repeat(a0.general.skill)}` +
+        (mm ? `<br>Mareşal: ${G.esc(mm.leader.name)}` : '') + `<br>${G.fmtNum(men)} / ${G.fmtNum(a0.maxMen)} asker`);
       return;
     }
     const pid = M.provinceAt(x, y);

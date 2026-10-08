@@ -129,7 +129,7 @@ G.stepBattles = function () {
     live.add(k);
     const tp = P[target];
     const power = (arr, att) => arr.reduce((s, a) => s + a.men / 1000 * (0.35 + 0.65 * a.org / 100) *
-      (att ? (1 + 0.55 * a.cav) * S.nations[a.tag].atkMult * (1 + G.command.bonus(a, 'atk')) * (a.fleet != null ? 0.55 : 1)
+      (att ? (1 + 0.55 * a.cav) * S.nations[a.tag].atkMult * (1 + G.command.bonus(a, 'atk')) * (a.fleet != null ? ((G.navy.fleet(a.fleet) || {}).harborWon ? 0.9 : 0.55) : 1)
         : (1 + 0.25 * (1 - a.cav)) * S.nations[a.tag].defMult * (1 + G.command.bonus(a, 'def'))), 0);
     const ap = power(atk, true);
     const dp = power(def, false) * G.fortMod(tp) * (tp.owner === def[0].tag ? 1.1 : 1);
@@ -139,7 +139,9 @@ G.stepBattles = function () {
       d.men -= d.men * 0.0022 * ratio * G.rand(0.6, 1.4);
       d.inCombat = S.hour;
     }
+    for (const d of def) G.command.gainXp(d, 0.08);
     for (const a of atk) {
+      G.command.gainXp(a, 0.08 * Math.min(2, ratio));
       a.org -= 2.6 / ratio * G.rand(0.7, 1.3);
       a.men -= a.men * 0.0022 / ratio * G.rand(0.6, 1.4);
       a.inCombat = S.hour;
@@ -156,11 +158,11 @@ G.stepBattles = function () {
     b.ratio = ratio; b.from = atk[0].fleet != null ? target : atk[0].prov;
     // sonuçlar
     for (const d of def) {
-      if (d.men < 200) { G.destroyArmy(d, `${d.name} (${S.nations[d.tag].name}) ${tp.name}'da yok edildi.`); continue; }
+      if (d.men < 500) { G.destroyArmy(d, `${d.name} (${S.nations[d.tag].name}) ${tp.name}'da yok edildi.`); continue; }
       if (d.org <= 0) G.retreat(d);
     }
     for (const a of atk) {
-      if (a.men < 200) { G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) saldırıda yok edildi.`); continue; }
+      if (a.men < 500) { G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) saldırıda yok edildi.`); continue; }
       if (a.org <= 3) { a.attacking = null; a.path = []; }
     }
     if (!G.hostileArmiesIn(target, tag).length) {
@@ -225,7 +227,7 @@ G.stepSieges = function () {
     let need = SIEGE_NEED[p.kind] || 40;
     if (p.owner === tag) need /= 3;   // kendi toprağını kurtarmak kolaydır
     if (!p.siege || p.siege.by !== tag) p.siege = { by: tag, progress: 0, need };
-    const power = arr.reduce((s, a) => s + a.men / ARMY_MEN_OR(a) * (1 + G.command.bonus(a, 'siege')), 0);
+    const power = arr.reduce((s, a) => s + a.men / G.ARMY_MEN * (1 + G.command.bonus(a, 'siege')), 0);
     p.siege.progress += power;
     if (p.siege.progress >= p.siege.need) {
       const old = p.ctrl;
@@ -240,7 +242,6 @@ G.stepSieges = function () {
     }
   }
 };
-function ARMY_MEN_OR(a) { return a.maxMen || G.ARMY_MEN; }
 
 G.checkCapitulation = function (tag) {
   const S = G.S, n = S.nations[tag];
@@ -287,8 +288,10 @@ G.daily = function () {
       n.queue.shift();
       const spawn = G.spawnPoint(n.tag);
       if (spawn == null) { n.manpower += G.RECRUIT_COST; continue; }
-      const a = G.createArmy(n.tag, spawn);
-      G.command.assignNew(a);
+      const a = G.createArmy(n.tag, spawn, G.RECRUIT_COST);
+      // boş yeri olan bir mareşale bağla
+      const m = G.command.of(n.tag).find(m => G.command.armies(m).length < G.command.MAX_ARMIES);
+      if (m) a.marshal = m.id;
       if (n.tag === S.player) G.log(`${a.name} eğitimini tamamladı (${P[spawn].name}).`, 'good', [n.tag]);
     }
   }

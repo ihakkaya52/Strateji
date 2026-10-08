@@ -13,7 +13,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | Sol tıkla sürükle, WASD, ok tuşları | Haritayı kaydır |
 | Shift + sürükle | Kutu içindeki orduları seç |
 | Sağ tık | Seçili bölükleri yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder |
-| O | Ordular (komutanlar, cepheler) paneli |
+| O | Alt ortadaki komuta çubuğunu küçült / büyüt |
 | N | Donanma arayüzü |
 | Fare tekerleği | Yakınlaştır / uzaklaştır |
 | Boşluk | Duraklat / devam |
@@ -28,24 +28,29 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Vasallık:** İngiltere, Danimarka tacının vasalı olarak başlar. Vasallar efendilerinin savaşlarına katılır,
   insan gücünün %25'ini haraç olarak öder ve kendi başına savaş ilan edemez. Aynı diyardaki ordular birbirinin
   topraklarından geçebilir.
-- **Odak ağacı:** İngiltere'ye özel 14 odaklı bağımsızlık ağacı (Witenagemot, Danegeld'i reddet, Edward'ı sürgünden
+- **Odak ağacı:** Madalyonlu, simgeli HOI4 tarzı görünüm. İngiltere'ye özel 14 odaklı bağımsızlık ağacı (Witenagemot, Danegeld'i reddet, Edward'ı sürgünden
   çağır, Bağımsızlık İlanı, Sakson Tacı...). Yapay zekâ İngiltere'si de bu ağacı izler.
 - **Zaman:** HOI4 gibi saatlik takvim, duraklatma ve 5 hız kademesi.
-- **Komuta yapısı:** Her ordunun bir komutanı (yetenek yıldızları ve özelliği) ve altında 3.000 kişilik bölükler var.
-  Her bölüğün kendi komutanı ve piyade / okçu / süvari dağılımı bulunur.
-- **Cephe ve taarruz (HOI4 tarzı):** Bir orduya bir ülkeye karşı cephe atanır, bölükler cephe boyunca kendiliğinden
-  dağılır. "Taarruz" emriyle aynı cepheyi tutan ordular birlikte saldırır, "taarruz oku" ile bir hedef gösterilebilir.
-  Bölükler elle de yönetilebilir.
+- **Komuta zinciri:** Mareşal → en fazla 3 ordu komutanı → her komutanın ordusu. Ordu komutanının yıldızı ordusunun
+  büyüklüğünü belirler: 1 yıldız 8B, 5 yıldız 15B asker. Komutanlar savaştıkça tecrübe kazanır ve terfi eder.
+  Ordular 1.000 kişilik bölüklerden oluşur; her bölüğün komutanı ve türü (piyade, okçu, süvari) vardır.
+- **Komuta çubuğu:** Ekranın alt ortasında HOI4 gibi mareşaller ve ordu komutanları portreleriyle görünür.
+  Ordular bölünebilir ve komutan kapasitesi kadar birleştirilebilir.
+- **Cephe ve taarruz (HOI4 tarzı):** Mareşale bir ülkeye karşı cephe atanır, orduları cephe boyunca kendiliğinden
+  dağılır. "Taarruz" emriyle aynı cepheyi tutan mareşaller birlikte saldırır, "taarruz oku" ile hedef gösterilir.
+  Ordular elle de yönetilebilir.
 - **Muharebe:** Örgütlenme ve mevcut, geri çekilme, kuşatılıp imha edilme. Kültüre göre süvari oranı
   (bozkır orduları hızlı ve saldırıda güçlü).
 - **Donanma:** 116 deniz bölgesi, limanlar ve tersaneler. On gemi türü: Çektiri, Nakliye Gemisi, Drakkar, Knarr, Koga,
   Kadırga, Dromon, Şînî, Sambuk, Cünk. Her türün sağlamlığı, saldırısı, hızı, taşıma kapasitesi, mürettebatı ve
   menzili (limandan uzaklaşabileceği deniz bölgesi sayısı) farklı. Filoların kendi kaptanı ve denizcileri var.
-- **Çıkarma ve deniz savaşı:** Limanda bölükler gemilere bindirilir, filo kıyıya çıkarma yapar. Aynı deniz bölgesine
+- **Çıkarma ve deniz savaşı:** Limanda ordular gemilere bindirilir. Düşman limanına gönderilen filo önce liman
+  muharebesi verir (surlar ve limandaki gemiler); liman düşünce ordu doğrudan karaya çıkar. Limansız kıyılara
+  çıkarma daha yavaş ve zayıftır. Aynı deniz bölgesine
   giren düşman filolar çarpışır; batan nakliye gemileriyle askerler de boğulur. Yapay zekâ da çıkarma planlar.
 - **Kuşatma:** Kaleli şehirler ve başkentler hemen düşmez.
 - **Savaş ve barış:** Savaş ilanı, savaş skoru, toprak devriyle barış veya beyaz barış, ateşkes ve teslimiyet.
-- **İnsan gücü:** Eyaletlerden aylık asker gelir. Yeni ordu toplama (60 gün eğitim) ve takviye.
+- **İnsan gücü:** Eyaletlerden aylık asker gelir. Yeni ordu toplama (8B asker, 60 gün, yeni komutanla) ve takviye.
 - **Yapay zekâ:** Savaş ilan eder, cephe kurar, kuşatır, barış yapar ve asker toplar.
 - **Olaylar:** Macbeth'in tahta çıkışı (1040), Petar Delyan ayaklanması (1040), Normanların Melfi'yi alışı (1041),
   Büyük Ayrılık (1054).

@@ -582,65 +582,58 @@ M.drawCounters = function () {
   const ctx = M.ctx, S = G.S, P = S.provinces, sc = M.cam.scale;
   M.counterRects = [];
   if (sc < 7) return;
-  const groups = new Map();
-  for (const a of S.armies) {
-    if (a.fleet != null) continue;
-    const k = a.prov + '|' + a.tag;
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(a);
-  }
-  ctx.font = `600 12px ${G.FONT_BODY}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const small = sc < 16;
-  for (const [, arr] of groups) {
-    const a0 = arr[0], p = P[a0.prov], n = S.nations[a0.tag];
+  const w = small ? 22 : 44, h = small ? 9 : 19;
+  const slot = new Map();   // aynı noktadaki orduları üst üste diz
+  for (const a of S.armies) {
+    if (a.fleet != null) continue;
+    const p = P[a.prov], n = S.nations[a.tag];
     // uzaktan bakarken yalnızca bizi ilgilendiren orduları göster
-    if (sc < 32 && a0.tag !== S.player && !G.atWar(S.player, a0.tag)) continue;
+    if (sc < 32 && a.tag !== S.player && !G.atWar(S.player, a.tag)) continue;
     let s = M.toScreen(p.x, p.y);
+    let key = a.prov;
     // hareket halindeki ordu ilerlemeye göre kaydırılır
-    if (a0.path.length && a0.prog > 0 && !a0.attacking) {
-      const nx = P[a0.path[0]], i = p.nb.indexOf(nx.id), d = i >= 0 ? p.nbDist[i] : 100;
-      const f = G.clamp(a0.prog / d, 0, 1);
+    if (a.path.length && a.prog > 0 && !a.attacking) {
+      const nx = P[a.path[0]], i = p.nb.indexOf(nx.id), d = i >= 0 ? p.nbDist[i] : 100;
+      const f = G.clamp(a.prog / d, 0, 1);
       const t = M.toScreen(nx.x, nx.y);
       s = { x: s.x + (t.x - s.x) * f, y: s.y + (t.y - s.y) * f };
+      key = a.prov + '>' + nx.id;
     }
-    if (s.x < -40 || s.x > M.w + 40 || s.y < -20 || s.y > M.h + 20) continue;
-    const men = arr.reduce((t, a) => t + a.men, 0);
-    const org = arr.reduce((t, a) => t + a.org, 0) / arr.length;
-    const w = small ? 22 : 40, h = small ? 10 : 17;
-    const x = s.x - w / 2, y = s.y - h - 3;
-    const sel = arr.some(a => a.sel);
-    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    const k = slot.get(key) || 0;
+    slot.set(key, k + 1);
+    const x = s.x - w / 2, y = s.y - h - 3 - k * (h + 3);
+    if (x < -60 || x > M.w + 60 || y < -40 || y > M.h + 20) continue;
+    ctx.fillStyle = 'rgba(0,0,0,0.82)';
     ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
     ctx.fillStyle = n.color;
     ctx.fillRect(x, y, w, h);
     if (!small) {
-      ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      ctx.fillRect(x, y + h - 3, w, 3);
+      // mareşal rengi şeridi
+      const m = a.marshal != null && a.tag === S.player ? G.command.marshal(a.marshal) : null;
+      if (m) { ctx.fillStyle = m.color; ctx.fillRect(x, y, 4, h); }
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(x, y + h - 5, w, 5);
       ctx.fillStyle = '#6fd05a';
-      ctx.fillRect(x, y + h - 3, w * org / 100, 3);
+      ctx.fillRect(x, y + h - 5, w * a.org / 100, 2);
+      ctx.fillStyle = '#e0a060';
+      ctx.fillRect(x, y + h - 2, w * Math.min(1, a.men / a.maxMen), 2);
+      ctx.font = `600 12px ${G.FONT_BODY}`;
       ctx.fillStyle = '#fff';
       ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.lineWidth = 2.5;
-      const label = G.fmtK(men);
-      ctx.strokeText(label, s.x, y + (h - 3) / 2 + 1);
-      ctx.fillText(label, s.x, y + (h - 3) / 2 + 1);
-      if (arr.length > 1) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(x + w - 1, y - 6, 12, 11);
-        ctx.fillStyle = '#ffd760';
-        ctx.font = `600 10px ${G.FONT_BODY}`;
-        ctx.fillText(String(arr.length), x + w + 5, y);
-        ctx.font = `600 12px ${G.FONT_BODY}`;
-      }
+      const label = G.fmtK(a.men);
+      ctx.strokeText(label, s.x + 2, y + (h - 5) / 2 + 1);
+      ctx.fillText(label, s.x + 2, y + (h - 5) / 2 + 1);
     }
-    if (sel) {
+    if (a.sel) {
       ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 2;
       ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
-    } else if (a0.tag === S.player) {
-      ctx.strokeStyle = 'rgba(255,233,168,0.5)'; ctx.lineWidth = 1;
+    } else if (a.tag === S.player) {
+      ctx.strokeStyle = 'rgba(255,233,168,0.45)'; ctx.lineWidth = 1;
       ctx.strokeRect(x - 1.5, y - 1.5, w + 3, h + 3);
     }
-    M.counterRects.push({ x: x - 2, y: y - 2, w: w + 4, h: h + 4, armies: arr, tag: a0.tag });
+    M.counterRects.push({ x: x - 2, y: y - 2, w: w + 4, h: h + 4, armies: [a], tag: a.tag });
   }
 };
 
@@ -668,8 +661,8 @@ M.drawBattles = function () {
 M.frontCache = new Map();
 M.drawFronts = function (sc) {
   const S = G.S, ctx = M.ctx;
-  if (!S.ordular) return;
-  for (const o of S.ordular) {
+  if (!S.marshals) return;
+  for (const o of S.marshals) {
     if (o.tag !== S.player || !o.front) continue;
     const key = o.id + '|' + o.front + '|' + S.hour;
     let edges = M.frontCache.get(o.id);
@@ -717,10 +710,10 @@ M.arrow = function (ctx, x0, y0, x1, y1, color, width) {
 
 M.drawArrows = function () {
   const S = G.S, ctx = M.ctx, P = S.provinces;
-  if (!S.ordular) return;
-  for (const o of S.ordular) {
+  if (!S.marshals) return;
+  for (const o of S.marshals) {
     if (o.tag !== S.player || o.target == null) continue;
-    const us = G.command.units(o).filter(a => a.prov != null);
+    const us = G.command.armies(o).filter(a => a.prov != null);
     if (!us.length) continue;
     const cx = us.reduce((s, a) => s + P[a.prov].x, 0) / us.length;
     const cy = us.reduce((s, a) => s + P[a.prov].y, 0) / us.length;
@@ -820,6 +813,16 @@ M.drawFleets = function () {
       const t = S.provinces[f.order.prov], ts = M.toScreen(t.x, t.y);
       M.arrow(ctx, s.x, s.y + 9, ts.x, ts.y, mine ? 'rgba(120,200,230,0.85)' : 'rgba(220,80,60,0.85)', 3);
     }
+  }
+  // liman muharebeleri
+  for (const f of S.fleets) {
+    if (!f.harbor || f.harbor.hp <= 0 || !f.order || f.order.kind !== 'land') continue;
+    const p = S.provinces[f.order.prov], s2 = M.toScreen(p.x, p.y);
+    ctx.beginPath(); ctx.arc(s2.x, s2.y - 30, 13, 0, Math.PI * 2);
+    ctx.fillStyle = '#7a3a2a'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = `14px ${G.FONT_BODY}`; ctx.fillText('⚓', s2.x, s2.y - 29);
+    ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(s2.x - 18, s2.y - 14, 36, 5);
+    ctx.fillStyle = '#e07a5a'; ctx.fillRect(s2.x - 17, s2.y - 13, 34 * f.harbor.hp / f.harbor.max, 3);
   }
   // deniz muharebeleri
   for (const b of S.navalBattles.values()) {

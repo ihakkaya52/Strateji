@@ -1,83 +1,124 @@
-// Ordular (komutanlar), bölükler, cepheler ve taarruz emirleri — HOI4 tarzı
+// Komuta zinciri: Mareşal → en fazla 3 ordu komutanı → her komutanın ordusu (8B–15B asker)
+// Cepheler ve taarruz emirleri mareşale verilir (HOI4 tarzı).
 'use strict';
 
 G.command = {};
 const C = G.command;
 
-C.MAX_UNITS = 12;
+C.MAX_ARMIES = 3;                 // bir mareşalin yönetebileceği ordu sayısı
+C.capFor = skill => 8000 + (G.clamp(skill, 1, 5) - 1) * 1750;   // 1 yıldız 8B ... 5 yıldız 15B
 C.COLORS = ['#e8c35a', '#7fc4e0', '#e07a6a', '#9ad07a', '#c49ae0', '#e0a85a', '#5ae0c0', '#e05aa8'];
 
-C.ordu = id => G.S.ordular.find(o => o.id === id);
-C.of = tag => G.S.ordular.filter(o => o.tag === tag);
-C.units = o => G.S.armies.filter(a => a.ordu === o.id);
+C.marshal = id => G.S.marshals.find(m => m.id === id);
+C.of = tag => G.S.marshals.filter(m => m.tag === tag);
+C.armies = m => G.S.armies.filter(a => a.marshal === m.id);
+C.freeArmies = tag => G.S.armies.filter(a => a.tag === tag && a.marshal == null);
 
-C.create = function (tag, units, name) {
+C.createMarshal = function (tag, armies) {
   const S = G.S;
-  const id = S.nextOrduId++;
   const mine = C.of(tag).length;
-  const first = units[0] && units[0].prov != null ? S.provinces[units[0].prov] : null;
-  const o = {
-    id, tag,
-    name: name || (first ? `${(first.home || first.name)} Ordusu` : `${mine + 1}. Ordu`),
-    general: G.makeLeader(tag, false),
-    front: null,          // karşısına konuşlanılan ülke
-    attack: false,        // taarruz emri
-    target: null,         // taarruz hedefi (eyalet)
+  const leader = G.makeLeader(tag, false);
+  leader.skill = Math.max(leader.skill, 2);
+  const m = {
+    id: S.nextMarshalId++, tag, leader,
+    front: null, attack: false, target: null,
     color: C.COLORS[mine % C.COLORS.length],
   };
-  S.ordular.push(o);
-  for (const a of units) a.ordu = id;
-  return o;
+  S.marshals.push(m);
+  for (const a of armies.slice(0, C.MAX_ARMIES)) a.marshal = m.id;
+  return m;
 };
 
-C.disband = function (o) {
-  for (const a of C.units(o)) a.ordu = null;
-  G.S.ordular.splice(G.S.ordular.indexOf(o), 1);
+C.removeMarshal = function (m) {
+  for (const a of C.armies(m)) a.marshal = null;
+  G.S.marshals.splice(G.S.marshals.indexOf(m), 1);
 };
 
-// Başlangıçta bölükleri yakınlığa göre ordulara böler
+C.attach = function (a, m) {
+  if (C.armies(m).length >= C.MAX_ARMIES && a.marshal !== m.id) return false;
+  a.marshal = m.id;
+  return true;
+};
+
+// Başlangıç: orduları yakınlığa göre üçerli mareşal gruplarına böler
 C.organize = function (tag) {
   const S = G.S;
-  const free = S.armies.filter(a => a.tag === tag && a.ordu == null && a.fleet == null);
-  const per = 8;
+  const free = C.freeArmies(tag).filter(a => a.fleet == null);
   while (free.length) {
     const seed = free.shift();
     const sp = S.provinces[seed.prov];
     free.sort((x, y) => G.distKm(S.provinces[x.prov], sp) - G.distKm(S.provinces[y.prov], sp));
-    const group = [seed, ...free.splice(0, per - 1)];
-    C.create(tag, group);
+    C.createMarshal(tag, [seed, ...free.splice(0, C.MAX_ARMIES - 1)]);
   }
 };
 
-// Yeni eğitilen bölüğü en yakın, dolmamış orduya katar
-C.assignNew = function (a) {
-  const S = G.S, p = S.provinces[a.prov];
-  let best = null;
-  for (const o of C.of(a.tag)) {
-    const us = C.units(o);
-    if (us.length >= C.MAX_UNITS) continue;
-    const d = us.length ? Math.min(...us.filter(u => u.prov != null).map(u => G.distKm(S.provinces[u.prov], p)), 99999) : 99999;
-    if (!best || d < best.d) best = { d, o };
-  }
-  if (best) a.ordu = best.o.id;
-  else C.create(a.tag, [a]);
-};
-
-// Komutan etkisi
+// Komutan etkisi: ordu komutanı + bağlı olduğu mareşal
 C.bonus = function (a, key) {
-  if (a.ordu == null || !G.S.ordular) return 0;
-  const o = C.ordu(a.ordu);
-  if (!o) return 0;
-  const g = o.general, t = g.trait ? G.TRAITS[g.trait] : null;
   let v = 0;
-  if (key === 'atk' || key === 'def') v += 0.035 * g.skill;
-  if (key === 'siege') v += 0.04 * g.skill;
-  if (t && t[key]) v += t[key];
+  const add = (g, w) => {
+    if (!g) return;
+    if (key === 'atk' || key === 'def') v += 0.03 * g.skill * w;
+    if (key === 'siege') v += 0.04 * g.skill * w;
+    const t = g.trait ? G.TRAITS[g.trait] : null;
+    if (t && t[key]) v += t[key] * w;
+  };
+  add(a.general, 1);
+  if (a.marshal != null && G.S.marshals) {
+    const m = C.marshal(a.marshal);
+    if (m) add(m.leader, 0.5);
+  }
   return v;
 };
 
+// Komutan tecrübesi: savaştıkça artar, yıldız yükselince ordunun kapasitesi büyür
+C.gainXp = function (a, amount) {
+  const g = a.general;
+  if (!g || g.skill >= 5) return;
+  g.xp = (g.xp || 0) + amount;
+  const need = 60 * g.skill;
+  if (g.xp >= need) {
+    g.xp -= need;
+    g.skill++;
+    a.maxMen = C.capFor(g.skill);
+    if (a.tag === G.S.player) G.log(`${g.name} terfi etti (${g.skill} yıldız). Ordusu artık ${G.fmtK(a.maxMen)} asker alabilir.`, 'good', [a.tag]);
+  }
+};
+
+// ------------------------------------------------------------ bölme / birleştirme
+C.split = function (a) {
+  const S = G.S;
+  if (a.men < 4000 || a.fleet != null || a.attacking != null) return null;
+  const half = Math.floor(a.men / 2);
+  const b = G.createArmy(a.tag, a.prov, half);
+  a.men -= half;
+  b.org = a.org; b.path = []; b.besieging = a.besieging;
+  if (a.marshal != null) {
+    const m = C.marshal(a.marshal);
+    if (m && C.armies(m).length < C.MAX_ARMIES) b.marshal = m.id;
+  }
+  return b;
+};
+
+// Aynı eyaletteki orduları birleştirir; kapasiteyi aşan asker yerinde kalır
+C.merge = function (armies) {
+  const list = armies.filter(a => a.fleet == null && a.attacking == null);
+  if (list.length < 2) return 'Birleştirmek için aynı eyalette en az iki ordu seçin.';
+  const prov = list[0].prov;
+  if (!list.every(a => a.prov === prov)) return 'Ordular aynı eyalette olmalı.';
+  list.sort((x, y) => y.maxMen - x.maxMen);
+  const main = list[0];
+  for (const o of list.slice(1)) {
+    const room = main.maxMen - main.men;
+    if (room <= 0) break;
+    const move = Math.min(room, o.men);
+    main.org = (main.org * main.men + o.org * move) / (main.men + move);
+    main.men += move; o.men -= move;
+    if (o.men < 500) { main.men += o.men; G.removeArmy(o); }
+  }
+  return null;
+};
+
 // ------------------------------------------------------------ cepheler
-// Cephe eyaletleri: diyarımızın elindeki, düşman diyarının eline komşu eyaletler
 C.frontProvinces = function (tag, enemy) {
   const P = G.S.provinces, out = [];
   for (const p of P) {
@@ -103,34 +144,67 @@ C.idle = a => a.fleet == null && !a.path.length && a.attacking == null &&
 
 C.update = function () {
   const S = G.S;
-  if (!S.ordular) return;
-  for (const o of S.ordular.slice()) {
-    const n = S.nations[o.tag];
-    if (!n || !n.alive) { S.ordular.splice(S.ordular.indexOf(o), 1); continue; }
-    if (!C.units(o).length && o.tag !== S.player) { S.ordular.splice(S.ordular.indexOf(o), 1); continue; }
-    if (o.tag !== S.player || !o.front) continue;   // yapay zekâ kendi mantığıyla yönetir
-    if (!S.nations[o.front] || !S.nations[o.front].alive) { o.front = null; o.attack = false; o.target = null; continue; }
-    C.runFront(o);
+  if (!S.marshals) return;
+  for (const m of S.marshals.slice()) {
+    const n = S.nations[m.tag];
+    if (!n || !n.alive) { S.marshals.splice(S.marshals.indexOf(m), 1); continue; }
+    if (m.tag !== S.player || !m.front) continue;   // yapay zekâ kendi mantığıyla yönetir
+    if (!S.nations[m.front] || !S.nations[m.front].alive) { m.front = null; m.attack = false; m.target = null; continue; }
+    C.deploy(m);
   }
-  // aynı düşmana taarruz eden ordular ortak saldırır
   const fronts = new Map();
-  for (const o of S.ordular) {
-    if (o.tag !== S.player || !o.front || !o.attack) continue;
-    if (!fronts.has(o.front)) fronts.set(o.front, []);
-    fronts.get(o.front).push(o);
+  for (const m of S.marshals) {
+    if (m.tag !== S.player || !m.front || !m.attack) continue;
+    if (!fronts.has(m.front)) fronts.set(m.front, []);
+    fronts.get(m.front).push(m);
   }
   for (const [enemy, list] of fronts) C.attackPhase(S.player, enemy, list);
 };
 
-// Cephe boyunca taarruz: aynı eyaletteki hazır bölükler birlikte en uygun komşu düşman eyaletine saldırır
+// Savunma: mareşalin orduları cephe boyunca dağılır
+C.deploy = function (m) {
+  const S = G.S, P = S.provinces, tag = m.tag;
+  const front = C.frontProvinces(tag, m.front);
+  if (!front.length) return;
+  const frontSet = new Set(front);
+  if (m.target != null && G.sameRealm(P[m.target].ctrl, tag)) {
+    G.log(`${m.leader.name} taarruz hedefine ulaştı: ${P[m.target].name}.`, 'good', [tag]);
+    m.target = null;
+  }
+  const armies = C.armies(m).filter(a => a.fleet == null);
+  const load = new Map(front.map(id => [id, 0]));
+  for (const a of S.armies) {
+    if (a.tag !== tag || a.fleet != null) continue;
+    const dest = a.path.length ? a.path[a.path.length - 1] : a.prov;
+    if (load.has(dest)) load.set(dest, load.get(dest) + 1);
+  }
+  const tp = m.target != null ? P[m.target] : null;
+  for (const a of armies) {
+    if (!C.idle(a) || frontSet.has(a.prov)) continue;
+    const { dist, prev } = G.distancesFrom(tag, a.prov, 3000);
+    let best = null;
+    for (const id of front) {
+      const d = dist.get(id);
+      if (d === undefined) continue;
+      let score = load.get(id) * 700 + d;
+      if (tp) score += G.distKm(P[id], tp) * 0.6;
+      if (!best || score < best.s) best = { s: score, id };
+    }
+    if (!best) continue;
+    const path = G.pathFromPrev(prev, a.prov, best.id);
+    if (path && path.length) { a.path = path; a.prog = 0; load.set(best.id, load.get(best.id) + 1); }
+  }
+};
+
+// Taarruz: aynı eyaletteki hazır ordular birlikte en uygun komşu düşman eyaletine saldırır
 C.attackPhase = function (tag, enemy, list) {
   const S = G.S, P = S.provinces;
   if (!(G.atWar(tag, enemy) || G.realm(enemy).some(t => G.atWar(tag, t)))) return;
   const frontSet = new Set(C.frontProvinces(tag, enemy));
-  const ids = new Set(list.map(o => o.id));
+  const ids = new Set(list.map(m => m.id));
   const groups = new Map();
   for (const a of S.armies) {
-    if (a.tag !== tag || !ids.has(a.ordu) || !C.idle(a) || a.org < 50 || !frontSet.has(a.prov)) continue;
+    if (a.tag !== tag || !ids.has(a.marshal) || !C.idle(a) || a.org < 50 || !frontSet.has(a.prov)) continue;
     if (!groups.has(a.prov)) groups.set(a.prov, []);
     groups.get(a.prov).push(a);
   }
@@ -138,10 +212,7 @@ C.attackPhase = function (tag, enemy, list) {
   for (const a of S.armies) if (a.prov != null && G.atWar(tag, a.tag)) foe.set(a.prov, (foe.get(a.prov) || 0) + a.men * a.org / 100);
   for (const [pid, grp] of groups) {
     const mine = grp.reduce((s, a) => s + a.men * a.org / 100, 0);
-    // grubun çoğunluğunun bağlı olduğu ordunun hedefi
-    const counts = new Map();
-    for (const a of grp) counts.set(a.ordu, (counts.get(a.ordu) || 0) + 1);
-    const lead = C.ordu([...counts].sort((x, y) => y[1] - x[1])[0][0]);
+    const lead = C.marshal(grp[0].marshal);
     const tp = lead && lead.target != null ? P[lead.target] : null;
     let best = null;
     for (const nid of P[pid].nb) {
@@ -154,48 +225,7 @@ C.attackPhase = function (tag, enemy, list) {
       if (!best || score > best.s) best = { s: score, nid };
     }
     if (!best) continue;
-    // cephe boş kalmasın: kalabalık eyalette bir bölük geride kalır
-    const go = grp.length > 2 ? grp.slice(0, grp.length - 1) : grp;
+    const go = grp.length > 1 && foe.get(best.nid) < mine * 0.5 ? grp.slice(0, grp.length - 1) : grp;
     for (const a of go) { a.path = [best.nid]; a.prog = 0; }
-  }
-};
-
-C.runFront = function (o) {
-  const S = G.S, P = S.provinces, tag = o.tag, enemy = o.front;
-  const front = C.frontProvinces(tag, enemy);
-  if (!front.length) return;
-  const frontSet = new Set(front);
-  const units = C.units(o).filter(a => a.fleet == null);
-  if (o.target != null && G.sameRealm(P[o.target].ctrl, tag)) {
-    G.log(`${o.name} taarruz hedefine ulaştı: ${P[o.target].name}.`, 'good', [tag]);
-    o.target = null;
-  }
-  // cephe eyaletlerindeki birlik sayısı
-  const load = new Map(front.map(id => [id, 0]));
-  for (const a of units) {
-    const dest = a.path.length ? a.path[a.path.length - 1] : a.prov;
-    if (load.has(dest)) load.set(dest, load.get(dest) + 1);
-  }
-  const tp = o.target != null ? P[o.target] : null;
-
-  for (const a of units) {
-    if (!C.idle(a)) continue;
-    if (frontSet.has(a.prov)) continue;
-    // savunma: cephe boyunca dağıl
-    const { dist, prev } = G.distancesFrom(tag, a.prov, 3000);
-    let best = null;
-    for (const id of front) {
-      const d = dist.get(id);
-      if (d === undefined) continue;
-      let score = load.get(id) * 600 + d;
-      if (tp) score += G.distKm(P[id], tp) * 0.5;
-      if (!best || score < best.s) best = { s: score, id };
-    }
-    if (!best) continue;
-    const path = G.pathFromPrev(prev, a.prov, best.id);
-    if (path && path.length) {
-      a.path = path; a.prog = 0;
-      load.set(best.id, load.get(best.id) + 1);
-    }
   }
 };

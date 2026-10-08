@@ -1,14 +1,16 @@
 // Oyun durumu: eyaletler, ülkeler, ordular ve temel sorgular
 'use strict';
 
-const ARMY_MEN = 3000;          // standart bölük mevcudu
-const RECRUIT_COST = 3000;      // yeni bölük için insan gücü
-const RECRUIT_DAYS = 45;        // eğitim süresi
+const ARMY_MEN = 3000;          // kuşatma ve hesaplarda temel birim (bir bölük grubu)
+const BOLUK = 1000;             // bir bölüğün tam mevcudu
+const RECRUIT_COST = 8000;      // yeni ordu (8B asker) için insan gücü
+const RECRUIT_DAYS = 60;        // eğitim süresi
 const TRUCE_DAYS = 5 * 365;     // barış sonrası ateşkes
 // Tarihî duruma göre ek başlangıç orduları
 const START_BONUS = { SEL: 5, BYZ: 4, FAT: 2, SNG: 4, LIA: 3, KIE: 2 };
 
 G.ARMY_MEN = ARMY_MEN;
+G.BOLUK = BOLUK;
 G.RECRUIT_COST = RECRUIT_COST;
 G.RECRUIT_DAYS = RECRUIT_DAYS;
 
@@ -48,25 +50,30 @@ G.initState = function (playerTag) {
     n.manpower = Math.round(G.monthlyManpower(n.tag) * 8 + 4000);
   }
 
-  // Başlangıç orduları
+  S.marshals = [];
+  S.nextMarshalId = 1;
+  // Başlangıç orduları: toplam asker, her biri bir komutanın yönettiği 8B-15B'lik ordulara bölünür
   for (const n of Object.values(S.nations)) {
     const provs = S.provinces.filter(p => p.owner === n.tag);
     const cities = provs.filter(p => p.kind !== 'rural');
     let count = Math.round(provs.length / 5) + (n.major ? 4 : 1);
     count = (G.clamp(count, 1, n.major ? 22 : 9) + (START_BONUS[n.tag] || 0)) * 2;
-    n.armyTarget = count;
-    for (let i = 0; i < count; i++) {
+    let total = count * 3000;
+    let i = 0;
+    while (total >= 4000 || i === 0) {
       const p = i === 0 ? S.provinces[n.capital] : G.pick(cities.length ? cities : provs);
-      G.createArmy(n.tag, p.id);
+      const a = G.createArmy(n.tag, p.id, 0);
+      a.men = Math.min(a.maxMen, Math.max(4000, total), Math.round(a.maxMen * G.rand(0.8, 1)));
+      total -= a.men;
+      i++;
     }
+    n.armyTarget = i;
   }
 
   // 1040: Dandanakan'ın ardından Selçuklu-Gazneli savaşı sürüyor; Gazneli ordusu dağınık
   G.declareWar('SEL', 'GAZ', true);
-  for (const a of S.armies) if (a.tag === 'GAZ') { a.org = 65; a.men = ARMY_MEN * 0.8; }
-  // bölükleri ordulara (komutanlara) böl, donanmaları kur
-  S.ordular = [];
-  S.nextOrduId = 1;
+  for (const a of S.armies) if (a.tag === 'GAZ') { a.org = 65; a.men *= 0.8; }
+  // orduları mareşallere bağla, donanmaları kur
   for (const n of Object.values(S.nations)) G.command.organize(n.tag);
   G.navy.init();
   return S;
@@ -126,16 +133,21 @@ G.hostileArmiesIn = (pid, tag) => G.S.armies.filter(a => a.prov === pid && G.atW
 
 G.ordinal = n => `${n}.`;
 
-G.createArmy = function (tag, pid, men = ARMY_MEN) {
+// Ordu: bir ordu komutanının yönettiği, haritada tek başına hareket eden birlik
+G.createArmy = function (tag, pid, men = 8000) {
   const S = G.S, n = S.nations[tag];
   n.armyNo++;
+  const general = G.makeLeader(tag, false);
+  general.xp = 0;
+  const maxMen = G.command.capFor(general.skill);
   const a = {
-    id: S.nextArmyId++, tag, name: `${G.ordinal(n.armyNo)} Bölük`,
-    cmdr: G.nameFor(tag),
-    prov: pid, men, maxMen: ARMY_MEN, org: 100,
+    id: S.nextArmyId++, tag, name: `${G.ordinal(n.armyNo)} Ordu`,
+    general,
+    bolukCmdrs: Array.from({ length: 15 }, () => G.nameFor(tag)),   // bölük komutanları
+    prov: pid, men: Math.min(men, maxMen), maxMen, org: 100,
     cav: n.cav, path: [], prog: 0, attacking: null, besieging: false,
     sel: false, aiTarget: null,
-    ordu: null,             // bağlı olduğu ordu (komutan)
+    marshal: null,          // bağlı olduğu mareşal
     fleet: null,            // gemideyse donanma kimliği
   };
   S.armies.push(a);
@@ -152,11 +164,24 @@ G.removeArmy = function (a) {
 
 G.armySpeed = a => (3.2 + 3.2 * a.cav) * (1 + G.command.bonus(a, 'speed'));   // km/saat
 
-// Bölüğün asker dağılımı (gösterim için)
+// Ordunun asker dağılımı (gösterim için)
 G.composition = a => {
   const cav = Math.round(a.men * a.cav), rest = a.men - cav;
   const arch = Math.round(rest * 0.3);
   return { piyade: rest - arch, okcu: arch, suvari: cav };
+};
+
+// Ordunun bölükleri: tam kadroda her bölük 1.000 kişi; kayıplar bölüklere eşit dağılır
+G.bolukler = a => {
+  const slots = Math.max(1, Math.round(a.maxMen / BOLUK));
+  const fill = a.men / (slots * BOLUK);
+  const nCav = Math.round(slots * a.cav), rest = slots - nCav, nArch = Math.round(rest * 0.3);
+  const out = [];
+  for (let i = 0; i < slots; i++) {
+    const type = i < rest - nArch ? 'Piyade' : i < rest ? 'Okçu' : 'Süvari';
+    out.push({ name: `${i + 1}. ${type} Bölüğü`, type, men: Math.round(BOLUK * fill), cmdr: a.bolukCmdrs[i % a.bolukCmdrs.length] });
+  }
+  return out;
 };
 
 G.monthlyManpower = function (tag) {
