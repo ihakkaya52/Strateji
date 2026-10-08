@@ -139,3 +139,23 @@
 .mc-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .mc-row select { font-family: inherit; font-size: 12px; background: #2a241a; color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 2px; }
 .mc-row button, .mc-box > button { padding: 2px 7px; font-size: 12px; }
+
+/* sade donanma çubuğu */
+#cmdbar.navy {
+  width: fit-content; max-width: calc(100% - 716px); margin: 0 auto; max-height: none; overflow: hidden;
+  padding: 4px 6px; background: linear-gradient(rgba(20,30,36,0.93), rgba(12,20,24,0.95));
+}
+#cmdbar.navy.collapsed .ob-row { display: none; }
+#cmdbar.navy.collapsed::after { content: '⚓ Donanma (O)'; font-size: 12px; color: var(--muted); padding: 2px 6px; }
+#cmdbar.navy .og-name { background: #131d22; }
+.og.selg { box-shadow: 0 0 6px rgba(168,224,240,0.35); }
+.oc.ship { flex: 0 1 24px; width: 24px; min-width: 12px; padding: 1px 1px 2px; }
+.oc.ship .oc-men { font-size: 12px; }
+.oc-bar.hp > div { background: #7fc4e0; }
+.oc.cargo { border-color: rgba(208,122,90,0.5); }
+.og-sep { width: 1px; background: #4a6a74; margin: 2px 2px; flex: none; }
+
+/* odak ağacı: kaydırma çubuğu yok, sağ tıkla sürüklenir, tekerlekle yakınlaşır */
+#focus-tree { overflow: hidden !important; cursor: default; }
+#focus-tree.dragging { cursor: grabbing; }
+#focus-tree .ftree { margin: 0; transform-origin: 0 0; position: absolute; left: 0; top: 0; will-change: transform; }

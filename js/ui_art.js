@@ -123,3 +123,63 @@
     };
   }
 })();
+
+// ------------------------------------------------------------ odak ağacı: yakınlaştırma ve sağ tıkla sürükleme
+(function () {
+  const U = G.ui;
+  const $ = id => document.getElementById(id);
+  U.focusView = null;   // {x, y, z}
+
+  const apply = () => {
+    const t = $('focus-tree').querySelector('.ftree');
+    if (!t || !U.focusView) return;
+    const v = U.focusView;
+    t.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.z})`;
+  };
+  const clamp = () => {
+    const box = $('focus-tree'), t = box.querySelector('.ftree'), v = U.focusView;
+    if (!t) return;
+    const w = t.offsetWidth * v.z, h = t.offsetHeight * v.z, W = box.clientWidth, H = box.clientHeight;
+    v.x = w < W ? (W - w) / 2 : G.clamp(v.x, W - w - 40, 40);
+    v.y = h < H ? Math.min(Math.max(v.y, 10), H - h - 10 > 10 ? H - h - 10 : 10) : G.clamp(v.y, H - h - 40, 40);
+  };
+
+  const baseShow = U.showFocus;
+  U.showFocus = function () {
+    const first = $('focuswin').classList.contains('hidden') || !U.focusView;
+    baseShow();
+    const box = $('focus-tree'), t = box.querySelector('.ftree');
+    if (!t) return;
+    if (first) {
+      // açılışta bütün ağacın genişliği sığsın
+      // açılışta yazılar okunacak büyüklükte, ağacın üst ortası görünür
+      const z = G.clamp(box.clientWidth / (t.offsetWidth + 20), 0.72, 1);
+      U.focusView = { x: (box.clientWidth - t.offsetWidth * z) / 2, y: 12, z };
+    }
+    clamp(); apply();
+    if (box.dataset.bound) return;
+    box.dataset.bound = '1';
+    box.addEventListener('wheel', e => {
+      e.preventDefault();
+      const v = U.focusView, r = box.getBoundingClientRect();
+      const mx = e.clientX - r.left, my = e.clientY - r.top;
+      const nz = G.clamp(v.z * Math.exp(-e.deltaY * 0.0015), 0.3, 1.6);
+      v.x = mx - (mx - v.x) * nz / v.z; v.y = my - (my - v.y) * nz / v.z; v.z = nz;
+      clamp(); apply();
+    }, { passive: false });
+    let drag = null;
+    box.addEventListener('mousedown', e => {
+      if (e.button !== 2) return;
+      drag = { x: e.clientX, y: e.clientY, vx: U.focusView.x, vy: U.focusView.y };
+      box.classList.add('dragging');
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e => {
+      if (!drag) return;
+      U.focusView.x = drag.vx + e.clientX - drag.x; U.focusView.y = drag.vy + e.clientY - drag.y;
+      clamp(); apply();
+    });
+    window.addEventListener('mouseup', () => { if (drag) { drag = null; box.classList.remove('dragging'); } });
+    box.addEventListener('contextmenu', e => e.preventDefault());
+  };
+})();

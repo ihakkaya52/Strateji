@@ -289,10 +289,12 @@
       ${U.shipSummary(f)}
       ${U.marinesHtml(f)}
       ${U.cargoHtml(f)}
-      <div class="muted" style="font-size:12px;margin-top:6px">Sağ tık: denize → git · dost limana → demirle ·
+      <div class="muted" style="font-size:12px;margin-top:6px">Gemileri ayırmak için alttaki çubukta gemi kartlarına tıklayın. Sağ tık: denize → git · dost limana → demirle ·
         düşman kıyısına → çıkarma (gemide ordu varsa ordu, yoksa geminin deniz piyadeleri çıkar). Açık renkli deniz bölgeleri menzil içinde.</div>
       <div class="row-btns" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px">
         ${f.docked != null && f.cargo.length ? '<button id="btn-unload">Askerleri limana indir</button>' : ''}
+        <button id="btn-fleet-home" title="En yakın dost limana dön">⚓ Limana dön</button>
+        ${[...U.shipSel].some(id => f.ships.some(sh => sh.id === id)) ? `<button id="btn-fleet-split" title="Komuta çubuğunda işaretlenen gemilerle yeni filo">✂ ${[...U.shipSel].filter(id => f.ships.some(sh => sh.id === id)).length} gemiyle yeni filo</button>` : ''}
         <button id="btn-fleet-navy">Donanma arayüzü</button>
         <button id="btn-fleet-desel">Seçimi bırak</button>
       </div>`;
@@ -300,6 +302,18 @@
     if (un) un.onclick = () => { N.disembark(f, f.docked); U.refreshFleetPanel(); G.mapDirty = true; };
     $('btn-fleet-navy').onclick = () => U.showNavy();
     $('btn-fleet-desel').onclick = () => G.clearSelection();
+    $('btn-fleet-home').onclick = () => {
+      const err = N.orderHome(f);
+      if (err) U.addLog(G.fmtDate(S.time, false), err, 'war');
+      U.refreshFleetPanel(); G.mapDirty = true;
+    };
+    const sp = $('btn-fleet-split');
+    if (sp) sp.onclick = () => {
+      const nf = N.splitFleet(f, f.ships.filter(sh => U.shipSel.has(sh.id)).map(sh => sh.id));
+      if (!nf) U.addLog(G.fmtDate(S.time, false), 'Filo ayrılamadı: filo durmalı ve en az bir gemi kalmalı.', 'war');
+      else { U.shipSel.clear(); G.selectFleet(nf); }
+      U.refreshOrdular(); G.mapDirty = true;
+    };
   };
 
   // ------------------------------------------------------------ donanma arayüzü

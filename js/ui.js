@@ -385,7 +385,7 @@ U.showFocus = function () {
   const cur = n.focus.cur && G.focus.get(tag, n.focus.cur);
   $('focus-sub').textContent = cur
     ? `Sürüyor: ${cur.name} (${G.FOCUS_DAYS - n.focus.prog} gün kaldı)`
-    : 'Bir odak seçin. Her odak ' + G.FOCUS_DAYS + ' gün sürer.';
+    : 'Bir odak seçin. Her odak ' + G.FOCUS_DAYS + ' gün sürer. · Tekerlek: yakınlaştır · sağ tıkla basılı tutup sürükle';
   const W = 180, H = 178, PX = 30, PY = 26, NW = 150;
   const pos = f => ({ x: PX + f.x * W, y: PY + f.y * H });
   const maxX = Math.max(...tree.map(f => f.x)), maxY = Math.max(...tree.map(f => f.y));
