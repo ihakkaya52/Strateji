@@ -13,6 +13,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | Sol tıkla sürükle, WASD, ok tuşları | Haritayı kaydır (Shift ile hızlı, ekran kenarı da kaydırır) |
 | Shift + sürükle | Kutu içindeki orduları seç |
 | Sağ tık | Seçili orduları yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder. Seçim yokken: ülkenin diplomasi sayfası |
+| Ctrl + sağ tık | Seçili ordular gemiyle gider: limana yürür, filoya biner, hedef kıyıya çıkarma yapar (karadan yol yoksa sağ tık yeterli) |
 | O | Alt ortadaki komuta çubuğunu küçült / büyüt |
 | N | Donanma arayüzü |
 | P | Üretim ve inşaat |
@@ -72,6 +73,13 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   ve tuz madenleri altın getirir. Çiftlikler insan gücünü artırır (tahıl bölgelerinde daha çok).
 - **Garnizon yönetimi:** Kale sekmesinden garnizonun büyüklüğü (%0–100) seçilir, ordudan garnizona asker aktarılır.
 - **Savaş ve barış:** Savaş skoru, toprak devriyle barış veya beyaz barış, ateşkes ve teslimiyet.
+- **Deniz çıkarması:** İki yol var.
+  1. Savaş gemilerinin kendi deniz piyadeleri vardır (Dromon 300, Şînî 280, Kadırga 250, Drakkar 150...).
+     Filoyu seçip düşman kıyısına sağ tıklayın: filo gider, gerekirse liman muharebesi yapar, deniz piyadeleri karaya çıkar.
+     Deniz piyadeleri dost limanda insan gücünden yeniden tamamlanır.
+  2. Orduyu seçip deniz aşırı bir düşman kıyısına sağ tıklayın (ya da Ctrl + sağ tık): ordu en uygun limana yürür,
+     boştaki bir filo oraya gelir, ordu biner ve filo çıkarma yapar. Ordu panelindeki "Gemiye bindir" yalnızca bindirir;
+     sonra filoyu seçip kıyıya sağ tıklarsınız.
 - **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
   yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
 - **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,

@@ -15,7 +15,7 @@ G.ai.update = function (dayStart) {
   if (dayStart) G.ai.peaceTalks();
 };
 
-G.ai.idle = a => a.fleet == null && !a.path.length && a.attacking == null &&
+G.ai.idle = a => a.fleet == null && a.transport == null && !a.path.length && a.attacking == null &&
   !(a.besieging && G.atWar(a.tag, G.S.provinces[a.prov].ctrl));
 
 G.ai.manageWar = function (n) {

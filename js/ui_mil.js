@@ -161,10 +161,12 @@
     const docked = samePlace && mine ? S.fleets.filter(f => f.tag === S.player && f.docked === prov) : [];
     const marshals = C.of(S.player).filter(m => C.armies(m).length < C.MAX_ARMIES || sel.some(a => a.marshal === m.id));
     el.innerHTML = `<h3>${sel.length} ordu · ${G.fmtNum(total)} asker</h3>
-      <div class="muted" style="font-size:12px;margin-bottom:6px">Sağ tıkla hedef seç.</div>
+      <div class="muted" style="font-size:12px;margin-bottom:6px">Sağ tıkla hedef seç. Deniz aşırı kıyıya sağ tık (ya da Ctrl + sağ tık): ordu gemiye binip oraya çıkarma yapar.</div>
       ${sel.map(a => {
         const g = a.general, m = a.marshal != null ? C.marshal(a.marshal) : null;
-        const status = a.attacking != null ? `Saldırıyor: ${G.esc(P[a.attacking].name)}`
+        const status = a.retreating ? 'Bozgun: geri çekiliyor' : a.encircled ? '<b style="color:#ff7a5a">Kuşatıldı!</b>'
+          : a.transport != null && N.fleet(a.transport) ? `Gemiye binmeyi bekliyor: ${G.esc(P[N.fleet(a.transport).plan ? N.fleet(a.transport).plan.port : a.prov].name)}`
+          : a.attacking != null ? `Saldırıyor: ${G.esc(P[a.attacking].name)}`
           : a.besieging && G.atWar(a.tag, P[a.prov].ctrl) ? `Kuşatıyor: ${G.esc(P[a.prov].name)}`
           : a.path.length ? `Yürüyor: ${G.esc(P[a.path[a.path.length - 1]].name)}`
           : `Bekliyor: ${G.esc(P[a.prov].name)}`;
@@ -194,6 +196,7 @@
           ${marshals.map(m => `<option value="${m.id}">${G.esc(m.leader.name)} (${C.armies(m).length}/3)</option>`).join('')}</select>` : ''}
         ${sel.some(a => a.marshal != null) ? '<button id="btn-army-free">Mareşalden ayır</button>' : ''}
         ${docked.map(f => `<button class="board" data-f="${f.id}" title="Boş yer: ${G.fmtNum(N.cap(f) - N.cargoMen(f))} asker">⛵ ${G.esc(f.name)} gemilerine bindir</button>`).join('')}
+        ${!docked.length ? '<button id="btn-army-board" title="Ordu en uygun limana yürür, boştaki bir filo oraya gelir ve ordu gemiye biner">⛵ Gemiye bindir</button>' : ''}
         <button id="btn-army-desel">Seçimi bırak</button>
       </div>` : ''}`;
     if (!mine) return;
@@ -231,6 +234,14 @@
         G.selectFleet(f);
       };
     }
+    const bd = $('btn-army-board');
+    if (bd) bd.onclick = () => {
+      for (const a of G.selected) a.transport = null;
+      const r = N.planTransport([...G.selected], null);
+      if (typeof r === 'string') U.addLog(G.fmtDate(S.time, false), r, 'war');
+      else U.addLog(G.fmtDate(S.time, false), `${r.n} ordu ${S.provinces[r.port].name} limanına yürüyor; ${r.fleet.name} orada onları gemilere bindirecek.`, 'good');
+      done();
+    };
     $('btn-army-desel').onclick = () => G.clearSelection();
   };
 
@@ -252,10 +263,11 @@
 
   U.fleetStatus = function (f) {
     const S = G.S;
+    if (f.plan) return `Nakliye: ${G.esc(S.provinces[f.plan.port].name)} limanında ordu bekliyor${f.plan.target != null ? ` → ${G.esc(S.provinces[f.plan.target].name)}` : ''}`;
     if (f.docked != null) return `Limanda: ${G.esc(S.provinces[f.docked].name)}`;
     if (S.navalBattles.has(f.zone)) return `Muharebede: ${G.esc(S.seas[f.zone].name)}`;
     if (f.retreating) return 'Geri çekiliyor';
-    if (f.order && f.order.kind === 'land') return `Çıkarma: ${G.esc(S.provinces[f.order.prov].name)}`;
+    if (f.order && f.order.kind === 'land') return `Çıkarma${f.order.marines ? ' (deniz piyadeleri)' : ''}: ${G.esc(S.provinces[f.order.prov].name)}`;
     if (f.order && f.order.kind === 'dock') return `Limana gidiyor: ${G.esc(S.provinces[f.order.prov].name)}`;
     if (f.path.length) return `Yolda: ${G.esc(S.seas[f.path[f.path.length - 1]].name)}`;
     return `Denizde: ${G.esc(S.seas[f.zone].name)}`;
@@ -269,6 +281,13 @@
       · ${G.fmtNum(N.cargoMen(f))} / ${G.fmtNum(N.cap(f))}</div>`;
   };
 
+  U.marinesHtml = function (f) {
+    const mx = N.maxMarines(f);
+    if (!mx) return '<div class="cargo muted">Bu filoda deniz piyadesi taşıyan savaş gemisi yok.</div>';
+    return `<div class="cargo">⚔ Deniz piyadesi: <b>${G.fmtNum(f.marines)}</b> / ${G.fmtNum(mx)}
+      <span class="muted">${f.marines < N.MIN_MARINES ? '· çıkarma için yetersiz, dost limanda tamamlanır' : '· düşman kıyısına sağ tıklayınca kendiliğinden çıkarma yaparlar'}</span></div>`;
+  };
+
   U.refreshFleetPanel = function () {
     const el = $('armypanel'), f = G.selFleet, S = G.S;
     if (!f || !S.fleets.includes(f)) { G.selFleet = null; el.classList.add('hidden'); return; }
@@ -280,9 +299,10 @@
       <div class="muted" style="font-size:13px">${U.fleetStatus(f)} · Mürettebat ${G.fmtNum(N.crew(f))} denizci ·
         Hız ${N.speed(f).toFixed(1)} km/s · Menzil ${N.range(f)} bölge</div>
       ${U.shipSummary(f)}
+      ${U.marinesHtml(f)}
       ${U.cargoHtml(f)}
-      <div class="muted" style="font-size:12px;margin-top:6px">Sağ tık: denize → git · dost limana → demirle · kıyıya → çıkarma yap.
-        Açık renkli deniz bölgeleri menzil içinde.</div>
+      <div class="muted" style="font-size:12px;margin-top:6px">Sağ tık: denize → git · dost limana → demirle ·
+        düşman kıyısına → çıkarma (gemide ordu varsa ordu, yoksa geminin deniz piyadeleri çıkar). Açık renkli deniz bölgeleri menzil içinde.</div>
       <div class="row-btns" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px">
         ${f.docked != null && f.cargo.length ? '<button id="btn-unload">Askerleri limana indir</button>' : ''}
         <button id="btn-fleet-navy">Donanma arayüzü</button>
@@ -315,6 +335,7 @@
           <span style="color:var(--gold)">${stars(f.admiral.skill)}</span> ${traitHtml(f.admiral.trait)}
           · ${G.fmtNum(N.crew(f))} denizci · menzil ${N.range(f)} · hız ${N.speed(f).toFixed(1)}</div>
         ${U.shipSummary(f)}
+        ${U.marinesHtml(f)}
         ${U.cargoHtml(f)}
         <div class="row" style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
           <button data-act="sel">Haritada seç</button>
@@ -364,7 +385,9 @@
       const card = e.target.closest('.fleet-card');
       if (!card || e.target.dataset.act !== 'merge' || !e.target.value) return;
       const f = N.fleet(+card.dataset.f), o = N.fleet(+e.target.value);
+      if (o.plan) N.endPlan(o, false);
       f.ships.push(...o.ships); f.cargo.push(...o.cargo);
+      f.marines = Math.min(N.maxMarines(f), (f.marines || 0) + (o.marines || 0));
       for (const id of o.cargo) { const a = S.armies.find(x => x.id === id); if (a) a.fleet = f.id; }
       S.fleets.splice(S.fleets.indexOf(o), 1);
       if (G.selFleet === o) G.selFleet = f;

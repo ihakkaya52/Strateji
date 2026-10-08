@@ -6,28 +6,29 @@ const N = G.navy;
 
 const ALL = '*';
 // hp: dayanıklılık, atk: saldırı, speed: km/saat, range: limandan uzaklaşabileceği deniz bölgesi sayısı,
-// cap: taşıyabileceği asker, crew: mürettebat (denizci), days: inşa süresi
+// cap: taşıyabileceği asker, crew: mürettebat (denizci), days: inşa süresi,
+// marines: geminin kendi savaşçıları (deniz piyadesi); filo düşman kıyısına saldırınca kendiliğinden çıkarma yapar
 G.SHIP_TYPES = {
-  sandal: { name: 'Çektiri', role: 'Hafif kürekli', hp: 30, atk: 3, speed: 9, range: 2, cap: 300, crew: 40, days: 25,
+  sandal: { name: 'Çektiri', role: 'Hafif kürekli', hp: 30, atk: 3, marines: 60, speed: 9, range: 2, cap: 300, crew: 40, days: 25,
     groups: ALL, desc: 'Ucuz, hızlı, kıyıdan uzaklaşamaz.' },
-  nakliye: { name: 'Nakliye Gemisi', role: 'Nakliye', hp: 40, atk: 0, speed: 6, range: 4, cap: 1200, crew: 30, days: 35,
+  nakliye: { name: 'Nakliye Gemisi', role: 'Nakliye', hp: 40, atk: 0, marines: 0, speed: 6, range: 4, cap: 1200, crew: 30, days: 35,
     groups: ALL, desc: 'Her ülkenin yapabildiği basit yük gemisi.' },
-  drakkar: { name: 'Drakkar', role: 'Akın gemisi', hp: 55, atk: 6, speed: 10, range: 5, cap: 500, crew: 60, days: 45,
+  drakkar: { name: 'Drakkar', role: 'Akın gemisi', hp: 55, atk: 6, marines: 150, speed: 10, range: 5, cap: 500, crew: 60, days: 45,
     groups: ['iskandinav', 'anglosakson', 'kelt'], desc: 'Vikinglerin uzun gemisi: hızlı, sığ sularda bile yol alır.' },
-  knarr: { name: 'Knarr', role: 'Okyanus nakliyesi', hp: 45, atk: 1, speed: 7, range: 7, cap: 1400, crew: 25, days: 40,
+  knarr: { name: 'Knarr', role: 'Okyanus nakliyesi', hp: 45, atk: 1, marines: 0, speed: 7, range: 7, cap: 1400, crew: 25, days: 40,
     groups: ['iskandinav', 'anglosakson', 'kelt'], desc: 'İzlanda\'ya kadar giden sağlam yük gemisi.' },
-  koga: { name: 'Koga', role: 'Ağır nakliye', hp: 75, atk: 2, speed: 6, range: 6, cap: 2200, crew: 30, days: 60,
+  koga: { name: 'Koga', role: 'Ağır nakliye', hp: 75, atk: 2, marines: 0, speed: 6, range: 6, cap: 2200, crew: 30, days: 60,
     groups: ['latin', 'slav', 'iskandinav', 'anglosakson'], desc: 'Yüksek bordalı, geniş ambarlı kuzey gemisi.' },
-  kadirga: { name: 'Kadırga', role: 'Savaş gemisi', hp: 85, atk: 8, speed: 8, range: 3, cap: 500, crew: 150, days: 70,
+  kadirga: { name: 'Kadırga', role: 'Savaş gemisi', hp: 85, atk: 8, marines: 250, speed: 8, range: 3, cap: 500, crew: 150, days: 70,
     groups: ['latin', 'arap', 'berberi', 'bizans', 'kafkas', 'turk_yerlesik', 'iran', 'turk_bozkir'],
     desc: 'Akdeniz\'in kürekli savaş gemisi.' },
-  dromon: { name: 'Dromon', role: 'Ağır savaş gemisi', hp: 120, atk: 12, speed: 7.5, range: 3, cap: 400, crew: 200, days: 90,
+  dromon: { name: 'Dromon', role: 'Ağır savaş gemisi', hp: 120, atk: 12, marines: 300, speed: 7.5, range: 3, cap: 400, crew: 200, days: 90,
     groups: ['bizans'], desc: 'Bizans\'ın Rum ateşi püskürten savaş kadırgası.' },
-  sini: { name: 'Şînî', role: 'Ağır savaş gemisi', hp: 100, atk: 10, speed: 7.5, range: 4, cap: 400, crew: 180, days: 80,
+  sini: { name: 'Şînî', role: 'Ağır savaş gemisi', hp: 100, atk: 10, marines: 280, speed: 7.5, range: 4, cap: 400, crew: 180, days: 80,
     groups: ['arap', 'berberi'], desc: 'Fâtımî ve Mağrib donanmalarının büyük kadırgası.' },
-  sambuk: { name: 'Sambuk', role: 'Uzun yol yelkenlisi', hp: 50, atk: 2, speed: 8, range: 9, cap: 1100, crew: 30, days: 45,
+  sambuk: { name: 'Sambuk', role: 'Uzun yol yelkenlisi', hp: 50, atk: 2, marines: 0, speed: 8, range: 9, cap: 1100, crew: 30, days: 45,
     groups: ['arap', 'iran', 'hint', 'gdasya', 'afrika', 'berberi'], desc: 'Muson rüzgârlarıyla okyanus aşan Arap yelkenlisi.' },
-  cunk: { name: 'Cünk', role: 'Okyanus devi', hp: 160, atk: 6, speed: 6.5, range: 10, cap: 3000, crew: 120, days: 120,
+  cunk: { name: 'Cünk', role: 'Okyanus devi', hp: 160, atk: 6, marines: 300, speed: 6.5, range: 10, cap: 3000, crew: 120, days: 120,
     groups: ['cin', 'dogu_asya', 'gdasya'], desc: 'Bölmeli gövdesiyle en uzağa gidebilen dev Çin gemisi.' },
 };
 
@@ -50,9 +51,10 @@ N.types = function (tag) {
 N.bestWar = tag => N.types(tag).filter(k => G.SHIP_TYPES[k].atk >= 3).sort((a, b) => G.SHIP_TYPES[b].atk - G.SHIP_TYPES[a].atk)[0];
 N.bestTransport = tag => N.types(tag).sort((a, b) => G.SHIP_TYPES[b].cap - G.SHIP_TYPES[a].cap)[0];
 
-N.addShip = function (f, type) {
+N.addShip = function (f, type, withMarines = true) {
   const S = G.S, t = G.SHIP_TYPES[type];
   f.ships.push({ id: S.nextShipId++, type, name: G.nameFor(f.tag, 'ship'), hp: t.hp });
+  if (withMarines) f.marines = (f.marines || 0) + (t.marines || 0);
 };
 
 N.createFleet = function (tag, prov, name) {
@@ -64,6 +66,8 @@ N.createFleet = function (tag, prov, name) {
     ships: [], zone: p.sea[0], docked: prov,
     path: [], prog: 0, order: null, cargo: [], landing: null, landTimer: 0,
     retreating: false, battleHp: null,
+    marines: 0,             // gemilerin kendi deniz piyadeleri
+    plan: null,             // nakliye planı: ordular limanda bindirilip hedefe çıkarılır
   };
   S.fleets.push(f);
   return f;
@@ -102,6 +106,8 @@ N.speed = f => f.ships.length ? Math.min(...f.ships.map(sh => G.SHIP_TYPES[sh.ty
 N.hp = f => f.ships.reduce((s, sh) => s + sh.hp, 0);
 N.maxHp = f => f.ships.reduce((s, sh) => s + G.SHIP_TYPES[sh.type].hp, 0);
 N.crew = f => f.ships.reduce((s, sh) => s + G.SHIP_TYPES[sh.type].crew, 0);
+N.maxMarines = f => f.ships.reduce((s, sh) => s + (G.SHIP_TYPES[sh.type].marines || 0), 0);
+N.MIN_MARINES = 300;   // bundan az deniz piyadesiyle çıkarma yapılmaz
 N.power = f => f.ships.reduce((s, sh) => s + G.SHIP_TYPES[sh.type].atk * (sh.type === 'dromon' ? 1.3 : 1), 0) *
   (1 + 0.05 * f.admiral.skill + (f.admiral.trait === 'denizci' ? 0.15 : 0)) * (G.S.nations[f.tag].navalMult || 1);
 
@@ -132,8 +138,8 @@ N.reachable = (f, z) => {
   return d !== undefined && d <= N.range(f);
 };
 
-N.findPath = function (f, to) {
-  const S = G.S, from = f.zone;
+N.findPath = function (f, to, fromZone) {
+  const S = G.S, from = fromZone ?? f.zone;
   if (from === to) return [];
   if (!N.reachable(f, to)) return null;
   const dist = new Map([[from, 0]]), prev = new Map(), h = new G.Heap();
@@ -157,11 +163,11 @@ N.findPath = function (f, to) {
 };
 
 // Bir eyalete ulaşmak için en iyi deniz bölgesi
-N.bestZoneFor = function (f, prov) {
+N.bestZoneFor = function (f, prov, fromZone) {
   const p = G.S.provinces[prov];
   let best = null;
   for (const z of p.sea || []) {
-    const path = N.findPath(f, z);
+    const path = N.findPath(f, z, fromZone);
     if (!path) continue;
     if (!best || path.length < best.path.length) best = { z, path };
   }
@@ -190,16 +196,38 @@ N.orderDock = function (f, prov) {
   return null;
 };
 
+// Çıkarma emri: gemideki ordular ya da (ordu yoksa) geminin kendi deniz piyadeleri karaya çıkar
 N.orderLand = function (f, prov) {
   const S = G.S, p = S.provinces[prov];
-  if (!f.cargo.length) return 'Filoda asker yok. Önce bir limanda asker bindirin.';
   if (!p.sea || !p.sea.length) return 'Bu eyaletin kıyısı yok.';
-  if (!G.canEnter(f.tag, p)) return `${S.nations[p.owner].name} ile savaşta değilsiniz.`;
+  if (!G.canEnter(f.tag, p)) return p.owner ? `${S.nations[p.owner].name} ile savaşta değilsiniz.` : 'Buraya çıkarma yapılamaz.';
+  const marines = !f.cargo.length;
+  if (marines && f.marines < N.MIN_MARINES) {
+    return N.maxMarines(f) ? `Gemilerdeki deniz piyadesi yetersiz (${G.fmtNum(f.marines)} / ${N.MIN_MARINES}). Dost bir limanda tamamlanır ya da gemiye ordu bindirin.`
+      : 'Bu filoda ne asker ne deniz piyadesi var. Savaş gemisi ekleyin ya da gemiye ordu bindirin.';
+  }
   const b = N.bestZoneFor(f, prov);
   if (!b) return 'Bu kıyı filonun menzili dışında.';
   N.leavePort(f);
-  f.path = b.path; f.prog = 0; f.order = { kind: 'land', prov }; f.landing = null;
+  f.path = b.path; f.prog = 0; f.order = { kind: 'land', prov, marines }; f.landing = null; f.retreating = false;
   return null;
+};
+
+// Deniz piyadelerinden karaya çıkacak bir ordu kurar ve gemiye koyar
+N.formMarines = function (f) {
+  const S = G.S, n = S.nations[f.tag];
+  const men = Math.floor(f.marines);
+  if (men < N.MIN_MARINES) return null;
+  const a = G.createArmy(f.tag, null, men);
+  n.armyNo--;   // ordu numarası harcanmasın
+  a.name = `${f.name} Deniz Piyadeleri`;
+  a.marine = true;
+  a.men = men; a.maxMen = Math.max(men, a.maxMen);
+  a.gear = G.econ.need(a);       // gemide silahlanmış olarak gelirler
+  a.fleet = f.id;
+  f.cargo.push(a.id);
+  f.marines -= men;
+  return a;
 };
 
 N.embark = function (f, units) {
@@ -227,6 +255,19 @@ N.disembark = function (f, prov) {
   f.cargo = [];
 };
 
+// Gemideki deniz piyadesi orduları limana dönünce yeniden gemilere dağıtılır
+N.absorbMarines = function (f) {
+  const S = G.S;
+  for (const id of f.cargo.slice()) {
+    const a = S.armies.find(x => x.id === id);
+    if (!a || !a.marine) continue;
+    f.marines = Math.min(N.maxMarines(f), f.marines + a.men);
+    f.cargo = f.cargo.filter(x => x !== id);
+    a.fleet = null;
+    G.removeArmy(a);
+  }
+};
+
 N.unloadDead = function (a) {
   const f = N.fleet(a.fleet);
   if (f) f.cargo = f.cargo.filter(id => id !== a.id);
@@ -251,6 +292,115 @@ N.buildDockyard = function (tag, prov) {
   return true;
 };
 
+// ------------------------------------------------------------ nakliye planı
+// Ordular en uygun limana yürür, filo oraya gelir, ordular biner; hedef verilmişse filo çıkarma yapar.
+N.planTransport = function (armies, target) {
+  const S = G.S, P = S.provinces;
+  armies = armies.filter(a => a.fleet == null && !a.retreating && a.attacking == null);
+  if (!armies.length) return 'Gemiye bindirilecek uygun ordu yok (muharebedeki ya da bozgundaki ordular binemez).';
+  const tag = armies[0].tag;
+  if (target != null) {
+    const p = P[target];
+    if (!p.sea || !p.sea.length) return `${p.name} kıyıda değil; denizden çıkarma yapılamaz.`;
+    if (!G.canEnter(tag, p)) return p.owner ? `${S.nations[p.owner].name} ile savaşta değilsiniz.` : 'Buraya çıkarma yapılamaz.';
+  }
+  const smallest = Math.min(...armies.map(a => a.men));
+  const fleets = N.fleetsOf(tag).filter(f => !f.plan && !f.retreating && !f.cargo.length &&
+    !(f.order && f.order.kind === 'land') && N.cap(f) >= smallest);
+  if (!fleets.length) {
+    const all = N.fleetsOf(tag);
+    if (!all.length) return 'Hiç filonuz yok. Donanma arayüzünden (N) tersanede gemi yaptırın.';
+    const idle = all.filter(f => !f.plan && !f.retreating && !f.cargo.length && !(f.order && f.order.kind === 'land'));
+    if (!idle.length) return 'Bütün filolarınız meşgul (çıkarma, nakliye ya da geri çekilme).';
+    const big = Math.max(...idle.map(N.cap));
+    return `Gemilerinizin kapasitesi yetmiyor: en büyük boştaki filo ${G.fmtNum(big)} asker taşıyabilir, ordunuz ${G.fmtNum(smallest)} kişi. ` +
+      'Orduyu bölün (Böl) ya da nakliye gemisi yaptırın.';
+  }
+  const men = armies.reduce((t, a) => t + a.men, 0);
+  const { dist } = G.distancesFrom(tag, armies[0].prov, 4000);
+  let best = null;
+  for (const [pid, d] of dist) {
+    const p = P[pid];
+    if (!N.friendlyPort(tag, p)) continue;
+    for (const f of fleets) {
+      const toPort = f.docked === pid ? { path: [] } : N.bestZoneFor(f, pid);
+      if (!toPort) continue;
+      let sea = 0;
+      if (target != null) {
+        let ok = null;
+        for (const z of p.sea) {
+          const b = N.bestZoneFor(f, target, z);
+          if (b && (!ok || b.path.length < ok.path.length)) ok = b;
+        }
+        if (!ok) continue;
+        sea = ok.path.length;
+      }
+      const score = d / 120 + toPort.path.length * 2 + sea * 3 + (N.cap(f) >= men ? 0 : 25);
+      if (!best || score < best.s) best = { s: score, f, port: pid };
+    }
+  }
+  if (!best) return target != null ? 'Hedefe deniz yolu yok ya da filolarınızın menzili yetmiyor.' : 'Ordunun ulaşabileceği bir liman ve filo yok.';
+  const f = best.f;
+  let free = N.cap(f);
+  const go = [];
+  for (const a of armies.slice().sort((x, y) => y.men - x.men)) if (a.men <= free) { go.push(a); free -= a.men; }
+  f.plan = { armies: go.map(a => a.id), port: best.port, target, since: S.hour };
+  for (const a of go) {
+    a.transport = f.id;
+    if (a.prov !== best.port) G.orderMove(a, best.port); else { a.path = []; a.besieging = false; }
+  }
+  if (f.docked !== best.port) N.orderDock(f, best.port);
+  return { fleet: f, port: best.port, n: go.length, left: armies.length - go.length };
+};
+
+N.endPlan = function (f, unload) {
+  const S = G.S, pl = f.plan;
+  if (!pl) return;
+  for (const id of pl.armies) { const a = S.armies.find(x => x.id === id); if (a && a.transport === f.id) a.transport = null; }
+  if (unload && f.cargo.length && f.docked != null) N.disembark(f, f.docked);
+  f.plan = null;
+};
+
+N.stepPlan = function (f) {
+  const S = G.S, pl = f.plan, P = S.provinces;
+  const mine = f.tag === S.player;
+  const days = (S.hour - pl.since) / 24;
+  if (!N.friendlyPort(f.tag, P[pl.port]) || days > 90 || f.retreating) {
+    if (mine) G.log(`${f.name}: nakliye planı iptal edildi.`, 'war', [f.tag]);
+    N.endPlan(f, true); return;
+  }
+  // planı bırakan ya da ölen ordular çıkarılır
+  const wait = [];
+  for (const id of pl.armies) {
+    const a = S.armies.find(x => x.id === id);
+    if (!a || a.fleet === f.id) continue;
+    if (a.transport !== f.id || a.fleet != null) continue;
+    wait.push(a);
+  }
+  if (f.docked !== pl.port) {
+    if (!f.path.length && !(f.order && f.order.kind === 'dock')) N.orderDock(f, pl.port);
+    return;
+  }
+  for (const a of wait) {
+    if (a.retreating || a.attacking != null) continue;
+    if (a.prov === pl.port && !a.path.length) N.embark(f, [a]);
+    else if (!a.path.length) G.orderMove(a, pl.port);
+  }
+  const still = wait.filter(a => a.fleet == null);
+  if (still.length && days < 45) return;
+  if (!f.cargo.length) { N.endPlan(f, false); return; }
+  const target = pl.target;
+  N.endPlan(f, false);
+  for (const id of f.cargo) { const a = S.armies.find(x => x.id === id); if (a) a.transport = null; }
+  if (target == null) {
+    if (mine) G.log(`Ordularımız ${P[f.docked].name} limanında ${f.name} gemilerine bindi. Filoyu seçip düşman kıyısına sağ tıklayın.`, 'good', [f.tag]);
+    return;
+  }
+  const err = N.orderLand(f, target);
+  if (err) { if (mine) G.log(`${f.name}: ${err}`, 'war', [f.tag]); return; }
+  if (mine) G.log(`${f.name} ordularımızla ${P[target].name} kıyısına çıkarma için yola çıktı.`, 'good', [f.tag]);
+};
+
 // ------------------------------------------------------------ simülasyon
 N.zonePos = (f) => G.S.seas[f.zone];
 
@@ -260,6 +410,7 @@ N.step = function () {
   // savaştaki bölgeler
   const hostileIn = (f) => S.fleets.some(o => o !== f && o.zone === f.zone && o.docked == null && f.docked == null &&
     G.atWar(f.tag, o.tag));
+  for (const f of S.fleets.slice()) if (f.plan) N.stepPlan(f);
   for (const f of S.fleets) {
     if (f.docked != null) continue;
     if (f.path.length) {
@@ -276,6 +427,7 @@ N.step = function () {
       const p = S.provinces[f.order.prov];
       if (N.friendlyPort(f.tag, p) && p.sea.includes(f.zone)) {
         f.docked = p.id; f.retreating = false;
+        N.absorbMarines(f);
         if (f.tag === S.player) G.log(`${f.name} ${p.name} limanına demirledi.`, 'info', [f.tag]);
       }
       f.order = null;
@@ -292,6 +444,7 @@ N.isHostilePort = (tag, p) => N.isPort(p) && G.atWar(tag, p.ctrl);
 
 N.stepLanding = function (f) {
   const S = G.S, prov = f.order.prov, p = S.provinces[prov];
+  if (f.order.marines && !f.cargo.length && f.landing !== prov) N.formMarines(f);
   const units = f.cargo.map(id => S.armies.find(a => a.id === id)).filter(Boolean);
   if (!units.length) { f.order = null; return; }
   if (!G.canEnter(f.tag, p)) { f.order = null; for (const a of units) a.attacking = null; return; }
@@ -322,8 +475,11 @@ N.stepLanding = function (f) {
       if (dmg > 0) f.harbor.hp -= dmg;
       // savunmanın karşılığı
       let back = (f.harbor.atk + docked.reduce((t, o) => t + N.power(o), 0) * 0.12) * G.rand(0.6, 1.4);
+      // surlar önce kendilerine saldıran savaş gemilerini döver; nakliye gemileri geride bekler
+      const warships = f.ships.filter(sh => G.SHIP_TYPES[sh.type].atk >= 3);
       while (back > 0 && f.ships.length) {
-        const sh = f.ships[Math.floor(G.rng() * f.ships.length)];
+        const pool = warships.length && G.rng() < 0.85 ? warships : f.ships;
+        const sh = pool[Math.floor(G.rng() * pool.length)];
         const hit = Math.min(back, 5 + G.rand(0, 6));
         sh.hp -= hit; back -= hit;
       }
@@ -408,6 +564,8 @@ N.applyLosses = function (f) {
   const sunk = f.ships.filter(sh => sh.hp <= 0);
   if (sunk.length) {
     f.ships = f.ships.filter(sh => sh.hp > 0);
+    const mx = N.maxMarines(f);
+    if (f.marines > mx) { G.war.record(f.tag, f.marines - mx, null); f.marines = mx; }
     const lostFrac = capBefore ? (capBefore - N.cap(f)) / capBefore : 1;
     if (f.cargo.length && lostFrac > 0) {
       for (const id of f.cargo.slice()) {
@@ -455,6 +613,12 @@ N.daily = function () {
         continue;
       }
       for (const sh of f.ships) sh.hp = Math.min(G.SHIP_TYPES[sh.type].hp, sh.hp + G.SHIP_TYPES[sh.type].hp * 0.05);
+      // deniz piyadeleri limanda insan gücünden tamamlanır
+      const n = S.nations[f.tag], mx = N.maxMarines(f);
+      if (f.marines < mx) {
+        const add = Math.min(mx - f.marines, Math.max(30, mx * 0.08), n.manpower);
+        f.marines += add; n.manpower -= add;
+      }
     }
   }
   // tersaneler
@@ -466,7 +630,7 @@ N.daily = function () {
       const item = d.queue.shift();
       let f = S.fleets.find(x => x.tag === d.tag && x.docked === d.prov && !x.cargo.length);
       if (!f) f = N.createFleet(d.tag, d.prov);
-      N.addShip(f, item.type);
+      N.addShip(f, item.type, false);   // deniz piyadeleri limanda insan gücünden tamamlanır
       if (d.tag === S.player) G.log(`${p.name} tersanesinde yeni bir ${G.SHIP_TYPES[item.type].name} denize indirildi.`, 'good', [d.tag]);
     }
   }

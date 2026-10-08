@@ -186,18 +186,41 @@
     if (!G.S || !G.selected.size) return;
     const pid = M.provinceAt(e.clientX, e.clientY);
     if (pid == null) return;
+    const S = G.S, p = S.provinces[pid];
+    const sel = [...G.selected].filter(a => a.tag === S.player);
+    // Ctrl + sağ tık ya da karadan ulaşılamayan kıyı: gemiyle çıkarma
+    const bySea = e.ctrlKey || (p.sea && p.sea.length && G.canEnter(S.player, p) && sel.every(a => !G.findPath(a.tag, a.prov, pid)));
+    if (bySea && sel.length) {
+      seaOrder(sel, pid);
+      U.refreshArmyPanel(); G.mapDirty = true;
+      return;
+    }
     let ok = 0, fail = 0;
-    for (const a of G.selected) { if (G.orderMove(a, pid)) ok++; else fail++; }
+    for (const a of sel) {
+      const old = a.transport;
+      a.transport = null;
+      if (G.orderMove(a, pid)) ok++; else { fail++; a.transport = old; }
+    }
     if (fail && !ok) {
-      const p = G.S.provinces[pid];
       const why = p.kind === 'waste' ? 'Issız topraklardan geçilemez.'
-        : !G.canEnter(G.S.player, p) ? `${G.S.nations[p.owner].name} topraklarına girmek için savaşta olmalısınız.`
+        : !G.canEnter(S.player, p) ? `${S.nations[p.owner].name} topraklarına girmek için savaşta olmalısınız.`
         : 'Oraya ulaşan bir yol yok.';
-      U.addLog(G.fmtDate(G.S.time, false), why, 'war');
+      U.addLog(G.fmtDate(S.time, false), why, 'war');
     }
     U.refreshArmyPanel();
     G.mapDirty = true;
   });
+
+  // Ordulara deniz yoluyla çıkarma emri: limana yürü, gemiye bin, hedefe çık
+  function seaOrder(sel, pid) {
+    const S = G.S, P = S.provinces;
+    for (const a of sel) a.transport = null;
+    const r = G.navy.planTransport(sel, pid);
+    if (typeof r === 'string') { U.addLog(G.fmtDate(S.time, false), r, 'war'); return; }
+    U.addLog(G.fmtDate(S.time, false), `${r.n} ordu ${P[r.port].name} limanında ${r.fleet.name} gemilerine binecek, ardından ${P[pid].name} kıyısına çıkarma yapılacak.` +
+      (r.left ? ` (${r.left} ordu gemilere sığmadı.)` : ''), 'good');
+  }
+  G.seaOrder = seaOrder;
 
   function fleetOrder(x, y) {
     const S = G.S, N = G.navy, f = G.selFleet;
@@ -205,12 +228,14 @@
     let err = null;
     if (pid != null) {
       const p = S.provinces[pid];
+      if (f.plan) N.endPlan(f, false);
       if (N.friendlyPort(f.tag, p) && (!f.cargo.length || G.sameRealm(p.ctrl, f.tag))) err = N.orderDock(f, pid);
       else if (p.sea && p.sea.length) err = N.orderLand(f, pid);
       else err = 'Gemiler yalnızca kıyı eyaletlerine gidebilir.';
     } else {
       const z = M.seaAt(x, y);
       if (z == null) return;
+      if (f.plan) N.endPlan(f, false);
       err = N.orderZone(f, z);
     }
     if (err) U.addLog(G.fmtDate(S.time, false), err, 'war');
