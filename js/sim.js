@@ -87,7 +87,8 @@ G.tick = function () {
 
 G.stepArmies = function () {
   const S = G.S, P = S.provinces;
-  for (const a of S.armies) {
+  for (const a of S.armies.slice()) {
+    if (!S.armies.includes(a)) continue;
     if (!a.path.length || a.fleet != null) { a.retreating = false; continue; }
     const next = a.path[0], np = P[next];
     if (!G.canEnter(a.tag, np)) { a.path = []; a.prog = 0; a.retreating = false; continue; }
@@ -142,7 +143,10 @@ G.stepBattles = function () {
     groups.get(k).push(a);
   }
   const live = new Set();
-  for (const [k, atk] of groups) {
+  for (const [k, grp] of groups) {
+    // aynı saatte başka bir muharebede bozguna uğrayan ya da yok olan ordular saldırıdan düşer
+    const atk = grp.filter(a => S.armies.includes(a) && a.attacking != null && !a.retreating);
+    if (!atk.length) continue;
     const target = atk[0].attacking, tag = atk[0].tag;
     const def = G.hostileArmiesIn(target, tag).filter(d => !d.retreating);
     if (!def.length) { for (const a of atk) a.attacking = null; continue; }

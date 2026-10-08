@@ -289,10 +289,17 @@ U.addLog = function (date, text, cls) {
   while (el.children.length > 80) el.lastChild.remove();
 };
 
+// Olay pencereleri sıraya girer: biri açıkken gelen diğeri kaybolmaz, ilki kapanınca açılır
+U.eventQueue = [];
 U.showEvent = function (title, text, options, onDone) {
   const S = G.S;
-  const wasPaused = S ? S.paused : true;
+  if (!$('modal').classList.contains('hidden') && U.eventOpen) {
+    U.eventQueue.push([title, text, options, onDone]);
+    return;
+  }
+  const wasPaused = U.eventQueue.wasPaused ?? (S ? S.paused : true);
   if (S) U.togglePause(true);
+  U.eventOpen = true;
   const box = $('modal').querySelector('.modal-box');
   box.innerHTML = `<h2>${G.esc(title)}</h2>
     <div class="ev-date">${S ? G.fmtDate(S.time, false) : ''}</div>
@@ -303,11 +310,19 @@ U.showEvent = function (title, text, options, onDone) {
     const b = e.target.closest('button');
     if (!b) return;
     $('modal').classList.add('hidden');
+    U.eventOpen = false;
     const o = options[+b.dataset.i];
     if (o.action) o.action();
     if (onDone) onDone();
-    if (S && !S.over) U.togglePause(wasPaused);
     U.refreshPanel(); U.refreshTop(); G.mapDirty = true;
+    if (U.eventQueue.length) {
+      U.eventQueue.wasPaused = wasPaused;   // kuyruktaki olay da bitince ilk duruma dönülür
+      U.showEvent(...U.eventQueue.shift());
+      if (!U.eventQueue.length) delete U.eventQueue.wasPaused;
+      return;
+    }
+    delete U.eventQueue.wasPaused;
+    if (S && !S.over) U.togglePause(wasPaused);
   };
 };
 

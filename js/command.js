@@ -139,7 +139,7 @@ C.frontEdges = function (tag, enemy) {
   return out;
 };
 
-C.idle = a => a.fleet == null && a.transport == null && !a.path.length && a.attacking == null &&
+C.idle = a => a.fleet == null && (a.transport == null || !G.navy.fleet(a.transport)) && !a.path.length && a.attacking == null &&
   !(a.besieging && G.atWar(a.tag, G.S.provinces[a.prov].ctrl));
 
 C.update = function () {

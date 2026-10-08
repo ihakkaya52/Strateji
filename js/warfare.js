@@ -170,7 +170,7 @@ WF.offerSurrender = function (tag) {
     `${tot} eyaletinin ${occ} tanesi işgalimiz altında. Kabul edersek işgal ettiğimiz topraklar bizim olur ve savaş biter. ` +
     `Reddedersek savaş sürer; bütün topraklarını işgal ettiğimizde ${n.name} tamamen bizim olur.`,
     [
-      { text: 'Teslimiyeti kabul et', sub: `İşgal edilen ${occ} eyalet bize geçer`, action: () => { if (n.alive && n.enemies.size) G.capitulate(tag); } },
+      { text: 'Teslimiyeti kabul et', sub: `İşgal edilen ${occ} eyalet bize geçer`, action: () => { if (n.alive && n.enemies.has(S.player)) G.capitulate(tag); } },
       { text: 'Reddet: hepsini alacağız', sub: 'Savaş, bütün toprakları işgal edilene kadar sürer', action: () => {
         n.surrenderRefused = true;
         G.log(`${n.name}'ın teslimiyet teklifini reddettik. Savaş bütün toprakları alınana kadar sürecek.`, 'war', [tag, S.player]);

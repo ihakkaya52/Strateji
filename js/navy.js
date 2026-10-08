@@ -176,11 +176,17 @@ N.bestZoneFor = function (f, prov, fromZone) {
 
 // ------------------------------------------------------------ emirler
 N.leavePort = f => { if (f.docked != null) f.docked = null; };
+// Filo çıkarmadan vazgeçince gemideki ordular da kıyıdaki muharebeden çekilir
+N.abortLanding = function (f) {
+  for (const id of f.cargo) { const a = G.S.armies.find(x => x.id === id); if (a) a.attacking = null; }
+  f.landing = null; f.harbor = null; f.harborWon = false; f.landTimer = 0;
+};
 
 N.orderZone = function (f, z) {
   const path = N.findPath(f, z);
   if (!path) return 'Bu deniz bölgesi filonun menzili dışında.';
   N.leavePort(f);
+  N.abortLanding(f);
   f.path = path; f.prog = 0; f.order = { kind: 'move' }; f.landing = null; f.retreating = false;
   return null;
 };
@@ -192,6 +198,7 @@ N.orderDock = function (f, prov) {
   const b = N.bestZoneFor(f, prov);
   if (!b) return 'Liman filonun menzili dışında.';
   N.leavePort(f);
+  N.abortLanding(f);
   f.path = b.path; f.prog = 0; f.order = { kind: 'dock', prov }; f.landing = null;
   return null;
 };
@@ -250,6 +257,7 @@ N.disembark = function (f, prov) {
     const a = S.armies.find(x => x.id === id);
     if (!a) continue;
     a.fleet = null; a.prov = prov; a.attacking = null; a.path = []; a.prog = 0;
+    a.marine = false;   // karaya çıkan deniz piyadeleri artık sıradan bir ordudur
     a.besieging = G.atWar(a.tag, S.provinces[prov].ctrl);
   }
   f.cargo = [];
@@ -261,7 +269,9 @@ N.absorbMarines = function (f) {
   for (const id of f.cargo.slice()) {
     const a = S.armies.find(x => x.id === id);
     if (!a || !a.marine) continue;
-    f.marines = Math.min(N.maxMarines(f), f.marines + a.men);
+    const room = Math.max(0, N.maxMarines(f) - f.marines);
+    if (a.men > room + 50) continue;   // gemilere sığmayan deniz piyadeleri ordu olarak kalır
+    f.marines += Math.min(room, a.men);
     f.cargo = f.cargo.filter(x => x !== id);
     a.fleet = null;
     G.removeArmy(a);
@@ -357,7 +367,7 @@ N.endPlan = function (f, unload) {
   const S = G.S, pl = f.plan;
   if (!pl) return;
   for (const id of pl.armies) { const a = S.armies.find(x => x.id === id); if (a && a.transport === f.id) a.transport = null; }
-  if (unload && f.cargo.length && f.docked != null) N.disembark(f, f.docked);
+  if (unload && f.cargo.length && f.docked != null && N.friendlyPort(f.tag, S.provinces[f.docked])) N.disembark(f, f.docked);
   f.plan = null;
 };
 
@@ -411,8 +421,8 @@ N.step = function () {
   const hostileIn = (f) => S.fleets.some(o => o !== f && o.zone === f.zone && o.docked == null && f.docked == null &&
     G.atWar(f.tag, o.tag));
   for (const f of S.fleets.slice()) if (f.plan) N.stepPlan(f);
-  for (const f of S.fleets) {
-    if (f.docked != null) continue;
+  for (const f of S.fleets.slice()) {
+    if (!S.fleets.includes(f) || f.docked != null) continue;
     if (f.path.length) {
       if (hostileIn(f) && !f.retreating) continue;   // muharebe sürüyor
       const cur = S.seas[f.zone], next = f.path[0];
@@ -444,10 +454,10 @@ N.isHostilePort = (tag, p) => N.isPort(p) && G.atWar(tag, p.ctrl);
 
 N.stepLanding = function (f) {
   const S = G.S, prov = f.order.prov, p = S.provinces[prov];
+  if (!G.canEnter(f.tag, p)) { N.abortLanding(f); f.order = null; return; }
   if (f.order.marines && !f.cargo.length && f.landing !== prov) N.formMarines(f);
   const units = f.cargo.map(id => S.armies.find(a => a.id === id)).filter(Boolean);
   if (!units.length) { f.order = null; return; }
-  if (!G.canEnter(f.tag, p)) { f.order = null; for (const a of units) a.attacking = null; return; }
   if (hostileFleetHere(f)) return;
   const enemyPort = N.isHostilePort(f.tag, p);
   if (f.landing !== prov) {
@@ -579,6 +589,7 @@ N.applyLosses = function (f) {
   }
   if (!f.ships.length) {
     for (const id of f.cargo.slice()) { const a = S.armies.find(x => x.id === id); if (a) G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) denizde boğuldu.`, null); }
+    if (f.plan) N.endPlan(f, false);
     S.fleets.splice(S.fleets.indexOf(f), 1);
     if (G.selFleet === f) G.selFleet = null;
     G.log(`${f.name} (${S.nations[f.tag].name}) tamamen batırıldı!`, 'war', [f.tag]);
@@ -590,6 +601,7 @@ N.applyLosses = function (f) {
 N.retreat = function (f) {
   const S = G.S;
   f.retreating = true; f.battleHp = null;
+  N.abortLanding(f);
   let best = null;
   for (const p of S.provinces) {
     if (!N.friendlyPort(f.tag, p)) continue;
@@ -604,7 +616,12 @@ N.daily = function () {
   const S = G.S;
   if (!S.fleets) return;
   for (const f of S.fleets.slice()) {
-    if (!S.nations[f.tag] || !S.nations[f.tag].alive) { S.fleets.splice(S.fleets.indexOf(f), 1); continue; }
+    if (!S.nations[f.tag] || !S.nations[f.tag].alive) {
+      if (f.plan) N.endPlan(f, false);
+      for (const id of f.cargo) { const a = S.armies.find(x => x.id === id); if (a) G.removeArmy(a); }
+      S.fleets.splice(S.fleets.indexOf(f), 1);
+      continue;
+    }
     if (f.docked != null) {
       const p = S.provinces[f.docked];
       if (!N.friendlyPort(f.tag, p)) {
