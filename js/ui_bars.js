@@ -5,7 +5,10 @@
   const U = G.ui, N = G.navy, EC = G.econ;
   const $ = id => document.getElementById(id);
   const initials = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-  const portrait = (g, color, big) => `<div class="portrait ${big ? 'big' : ''}" style="--pc:${color}">
+  // Komutan portresi: yordamsal minyatür (portraits.js), yoksa baş harfler
+  const portrait = (g, color, big, tag, kind) => G.portrait
+    ? `<div class="portrait pimg ${big ? 'big' : ''}" style="--pc:${color}">${G.portrait.leader(g, tag || G.S.player, kind || 'general')}<i class="pstars">${'★'.repeat(g.skill)}</i></div>`
+    : `<div class="portrait ${big ? 'big' : ''}" style="--pc:${color}">
       <span>${G.esc(initials(g.name))}</span><i class="pstars">${'★'.repeat(g.skill)}</i></div>`;
   const FLEET_COLORS = ['#4f8ad0', '#3aa0a0', '#7a6ad0', '#5aa06a', '#c0904a', '#a05a8a', '#6a8aa0'];
 
@@ -57,7 +60,7 @@
       </div>`;
     };
     const armyCard = a => `<div class="gcard cargo" data-a="${a.id}" title="${G.esc(a.name)} · ${G.esc(a.general.name)}">
-        ${portrait(a.general, S.nations[a.tag].color, false)}
+        ${portrait(a.general, S.nations[a.tag].color, false, a.tag)}
         <div class="gname">${G.esc(a.general.name)}</div>
         <div class="gmen">${G.fmtK(a.men)}</div>
         <div class="gstat">${a.marine ? 'Deniz piyadesi' : 'Gemide'}</div></div>`;
@@ -69,7 +72,7 @@
         return `<div class="mgroup fleet ${G.selFleet === f ? 'selg' : ''}" data-f="${f.id}" style="--mc:${col}">
           <div class="mhead">
             <div class="mcard" data-act="self" title="Amiral ${G.esc(ad.name)}${ad.trait ? ' · ' + G.TRAITS[ad.trait].name : ''}">
-              ${portrait(ad, col, true)}
+              ${portrait(ad, col, true, f.tag, 'admiral')}
               <div><div class="mname">Amiral ${G.esc(ad.name)}</div>
                 <div class="gmen">${G.esc(f.name)}</div>
                 <div class="gmen">${f.ships.length} gemi · ${G.fmtK(N.cap(f))} yer</div></div>

@@ -233,6 +233,8 @@ U.showNation = function (tag) {
   el.innerHTML = `<button class="close">✕</button>
     <h2>${U.flag(tag)} ${G.esc(n.name)}</h2>
     <div class="muted">${n.major ? 'Büyük güç' : 'Küçük ülke'}${isMe ? ' · Sizin ülkeniz' : ''}</div>
+    ${G.portrait ? `<div class="dip-ruler"><div class="dip-portrait">${G.portrait.ruler(tag)}</div>
+      <div><div class="rn">${G.esc(n.ruler)}</div><div class="rt">${G.RELIGIONS[n.religion].name} · ${G.esc(G.GROUP_NAMES[n.group] || '')}</div></div></div>` : ''}
     <table>
       <tr><td>Hükümdar</td><td>${G.esc(n.ruler)}</td></tr>
       ${n.overlord ? `<tr><td>Efendisi</td><td>${U.nlink(n.overlord)}</td></tr>

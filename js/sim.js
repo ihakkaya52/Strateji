@@ -117,7 +117,7 @@ G.stepArmies = function () {
       continue;
     }
     a.attacking = null;
-    a.prog += G.armySpeed(a) * (0.6 + 0.4 * a.org / 100);
+    a.prog += G.armySpeed(a) * (0.6 + 0.4 * a.org / 100) * G.terrainOf(np).move;
     const i = G.nbIndex(cur, next);
     const d = i >= 0 ? cur.nbDist[i] : 200;
     if (a.prog >= d) {
@@ -205,10 +205,11 @@ G.stepBattles = function () {
     const menA = atk.reduce((t, a) => t + a.men, 0), menD = def.reduce((t, a) => t + a.men, 0);
     const fA = Math.min(1, B.WIDTH / Math.max(1, menA)), fD = Math.min(1, B.WIDTH / Math.max(1, menD));
     const skA = G.bestSkill(atk), skD = G.bestSkill(def);
-    const fort = G.fortMod(tp, def[0].tag) * (tp.owner === def[0].tag ? 1.1 : 1);
+    const terr = G.terrainOf(tp);
+    const fort = G.fortMod(tp, def[0].tag) * (tp.owner === def[0].tag ? 1.1 : 1) * terr.def;
     // nehir / dağ yok; bunun yerine saldıranın süvari üstünlüğü hücum evresinde kanat sarar
     const cavA = atk.reduce((t, a) => t + a.men * a.cav, 0), cavD = def.reduce((t, a) => t + a.men * a.cav, 0);
-    const flank = ph.key === 'hucum' && cavA > cavD * 1.5 ? 1.2 : ph.key === 'hucum' && cavD > cavA * 1.5 ? 0.85 : 1;
+    const flank = terr.noFlank ? 1 : ph.key === 'hucum' && cavA > cavD * 1.5 ? 1.2 : ph.key === 'hucum' && cavD > cavA * 1.5 ? 0.85 : 1;
     const ap = atk.reduce((t, a) => t + G.armyPower(a, true, ph, fA), 0) * (0.7 + b.diceA * 0.06 + skA * 0.04) * flank;
     const dp = def.reduce((t, a) => t + G.armyPower(a, false, ph, fD), 0) * (0.7 + b.diceD * 0.06 + skD * 0.04) * fort;
     const ratio = G.clamp(ap / Math.max(0.01, dp), 0.2, 5);

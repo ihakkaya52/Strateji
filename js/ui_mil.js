@@ -9,7 +9,10 @@
 
   // ------------------------------------------------------------ komutan çubuğu (ekranın alt ortası, HOI4 tarzı)
   const initials = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-  const portrait = (g, color, big) => `<div class="portrait ${big ? 'big' : ''}" style="--pc:${color}">
+  // Komutan portresi: yordamsal minyatür (portraits.js), yoksa baş harfler
+  const portrait = (g, color, big, tag, kind) => G.portrait
+    ? `<div class="portrait pimg ${big ? 'big' : ''}" style="--pc:${color}">${G.portrait.leader(g, tag || G.S.player, kind || 'general')}<i class="pstars">${'★'.repeat(g.skill)}</i></div>`
+    : `<div class="portrait ${big ? 'big' : ''}" style="--pc:${color}">
       <span>${G.esc(initials(g.name))}</span><i class="pstars">${'★'.repeat(g.skill)}</i></div>`;
 
   U.toggleOrdular = function () {

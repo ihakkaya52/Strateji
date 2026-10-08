@@ -115,7 +115,8 @@
     const pos = (op + 200) / 400 * 100;
     win.querySelector('.dip-body').innerHTML = `
       <div class="dip-head">
-        <div class="dip-shield" style="--nc:${n.color}"><span>${G.esc(n.name.split(' ')[0].slice(0, 2).toUpperCase())}</span></div>
+        ${G.portrait ? `<div class="dip-portrait" title="${G.esc(n.ruler)}">${G.portrait.ruler(tag)}</div>`
+          : `<div class="dip-shield" style="--nc:${n.color}"><span>${G.esc(n.name.split(' ')[0].slice(0, 2).toUpperCase())}</span></div>`}
         <div class="dip-title">
           <h2>${G.esc(n.name)}</h2>
           <div class="muted">${n.major ? 'Büyük güç' : 'Küçük ülke'} · ${G.esc(n.ruler)} · ${G.RELIGIONS[n.religion].name} · ${G.GROUP_NAMES[n.group] || ''}</div>

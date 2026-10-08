@@ -6,6 +6,7 @@
 <title>Strateji 1040</title>
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/ornate.css">
 </head>
 <body>
 <canvas id="map"></canvas>
@@ -39,6 +40,15 @@
     <span class="ico">☠</span><span id="tb-wars">Barış</span>
   </div>
   <div class="tb-spacer"></div>
+  <div id="tb-music" class="tb-block clickable" title="Müzik">
+    <span class="ico" id="mus-ico">♫</span>
+    <div id="mus-pop" class="hidden">
+      <div class="mus-title" id="mus-now">—</div>
+      <label>Müzik <input type="range" id="mus-vol" min="0" max="100" value="50"></label>
+      <label>Ses efektleri <input type="range" id="mus-sfx" min="0" max="100" value="60"></label>
+      <button id="mus-mute">Sessiz</button>
+    </div>
+  </div>
   <div id="tb-time" class="tb-block">
     <button id="btn-pause" title="Duraklat / devam (Boşluk)">⏸</button>
     <span id="tb-date"></span>
@@ -78,6 +88,7 @@
   <div class="mm-group">
     <button data-mode="political" class="active" title="Siyasi harita">Siyasi</button>
     <button data-mode="religion" title="Din haritası">Din</button>
+    <button data-mode="geo" title="Coğrafi harita: dağlar, ormanlar, çöller, nehirler">Coğrafi</button>
   </div>
 </div>
 
@@ -163,6 +174,7 @@
 <script src="js/focus_trees.js"></script>
 <script src="js/events.js"></script>
 <script src="js/map.js"></script>
+<script src="js/geo.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/ui_mil.js"></script>
 <script src="js/ui_dip.js"></script>
@@ -170,6 +182,9 @@
 <script src="js/ui_war.js"></script>
 <script src="js/ui_battle.js"></script>
 <script src="js/ui_bars.js"></script>
+<script src="js/portraits.js"></script>
+<script src="js/music.js"></script>
+<script src="js/ui_art.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

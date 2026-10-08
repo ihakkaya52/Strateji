@@ -54,6 +54,7 @@ M.init = function (canvas) {
     M.unkPath.closePath();
   }
   M.fogY = Math.max(...M.seaBbox.map(b => b[3]), -Infinity);
+  M.geoInit();
   M.edgeMap = new Map();
   for (const [a, b, segs] of W.edges) M.edgeMap.set(a < b ? a + '|' + b : b + '|' + a, segs);
   M.patterns = new Map();
@@ -407,9 +408,11 @@ M.draw = function () {
   ctx.lineWidth = 3.5 / sc;
   for (const i of vis) ctx.stroke(M.paths[i]);
 
-  // dolgular
+  // dolgular (coğrafi kipte boyalı arazi zemini)
+  const geo = M.mode === 'geo';
   const selNation = M.selNation;
-  for (const i of vis) {
+  if (geo) M.drawGeoLand(vis, sc);
+  else for (const i of vis) {
     const p = P[i];
     ctx.fillStyle = M.provColor(p);
     ctx.fill(M.paths[i]);
@@ -420,6 +423,7 @@ M.draw = function () {
   }
   ctx.fillStyle = 'rgba(0,0,0,0)';
   // işgal taraması
+  M.drawRivers(sc, geo);
   if (S && M.mode === 'political') {
     for (const i of vis) {
       const p = P[i];
@@ -445,18 +449,27 @@ M.draw = function () {
   }
 
   // sınırlar: yumuşak, iki katmanlı (geniş gölge + ince mürekkep)
-  if (sc > 9) {
+  if (sc > 9 && !geo) {
     ctx.strokeStyle = `rgba(40,28,14,${G.clamp((sc - 9) / 60, 0, 0.16)})`;
     ctx.lineWidth = 0.6 / sc;
     ctx.stroke(M.innerBorders);
   }
   const bw = Math.min(1.6, 0.5 + sc / 40);
+  if (geo) {
+    // coğrafi kipte sınırlar ince, kesik kırmızı mürekkep
+    ctx.setLineDash([4 / sc, 3 / sc]);
+    ctx.strokeStyle = 'rgba(120,30,20,0.5)';
+    ctx.lineWidth = bw * 0.9 / sc;
+    ctx.stroke(M.outerBorders);
+    ctx.setLineDash([]);
+  } else {
   ctx.strokeStyle = 'rgba(30,20,10,0.16)';
   ctx.lineWidth = bw * 3.2 / sc;
   ctx.stroke(M.outerBorders);
   ctx.strokeStyle = 'rgba(35,24,12,0.55)';
   ctx.lineWidth = bw / sc;
   ctx.stroke(M.outerBorders);
+  }
   // efendi-vasal sınırı: kesik çizgi
   ctx.setLineDash([3 / sc, 3 / sc]);
   ctx.strokeStyle = 'rgba(35,24,12,0.45)';
@@ -477,7 +490,9 @@ M.draw = function () {
   ctx.globalCompositeOperation = 'source-over';
   M.drawUnexploredNames();
   if (S && M.garrisonView) M.drawGarrisons(vis, P, true);
+  if (geo) { M.drawGeoNames(); ctx.globalAlpha = 0.5; }
   M.drawLabels(vis, P);
+  ctx.globalAlpha = 1;
   if (S) {
     M.drawSeaNames();
     M.drawPorts(vis, P);

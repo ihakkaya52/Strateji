@@ -371,6 +371,7 @@ def main():
         unexplored=unk, unexploredLabels=unk_labels,
         nations=nations, provinces=provinces, edges=edges, vassals=VASSALS,
         seas=build_seas(full_land, keep, newid, geoms, provinces),
+        geo=build_geo(full_land, provinces, seeds, keep, newid, geoms),
     )
     out = os.path.join(ROOT, "js", "data", "world.js")
     os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -475,6 +476,153 @@ def build_seas(full_land, keep, newid, geoms, provinces):
                         nb=sorted(znb[n]), poly=rings))
     print("deniz bölgesi:", len(out), "kıyı eyaleti:", len(coast))
     return out
+
+
+# ------------------------------------------------------------ coğrafya: dağlar, çöller, nehirler, arazi türleri
+GEO_NAMES = {
+    "ALPS": "Alpler", "CAUCASUS MTS.": "Kafkas Dağları", "Lesser Caucasus": "Küçük Kafkaslar", "URAL MOUNTAINS": "Ural Dağları",
+    "TIAN SHAN": "Tanrı Dağları", "HIMALAYAS": "Himalaya", "ZAGROS MOUNTAINS": "Zagros Dağları", "ALTAY MOUNTAINS": "Altay Dağları",
+    "PAMIRS": "Pamir", "HINDU KUSH": "Hindukuş", "KARAKORAM RA.": "Karakurum", "KUNLUN MOUNTAINS": "Kunlun Dağları",
+    "ATLAS MOUNTAINS": "Atlas Dağları", "HAUT ATLAS": "Yüksek Atlas", "ATLAS SAHARIEN": "Sahra Atlası", "CARPATHIAN MOUNTAINS": "Karpatlar",
+    "APPENNINI": "Apeninler", "PYRENEES": "Pireneler", "Balkan Mts.": "Balkan Dağları", "Dinaric Alps": "Dinar Alpleri",
+    "ELBURZ MTS.": "Elburz Dağları", "PONTIC MOUNTAINS": "Karadeniz Dağları", "KJØLEN MOUNTAINS": "İskandinav Dağları",
+    "ETHIOPIAN HIGHLANDS": "Habeş Yaylası", "HEJAZ MTS.": "Hicaz Dağları", "ASIR MTS.": "Asir Dağları", "Hadhramaut": "Hadramut",
+    "Qinling Mountains": "Qinling Dağları", "Taihang Mts.": "Taihang Dağları", "Yin Mts.": "Yin Dağları",
+    "GREATER KHINGAN RANGE": "Büyük Hingan", "Hangayn Mts.": "Hangay Dağları", "Cord. Cantábrica": "Kantabria Dağları",
+    "Sierra Morena": "Sierra Morena", "KUH RUD MOUNTAINS": "Kuhrud Dağları", "TIBESTI MTS.": "Tibesti", "AHAGGAR MTS.": "Hoggar",
+    "SAHARA": "Büyük Sahra", "GOBI DESERT": "Gobi Çölü", "RUB’ AL KHALI": "Rub'ülhâli", "TAKLIMAKAN DESERT": "Taklamakan Çölü",
+    "GARAGUM DESERT": "Karakum Çölü", "QIZILQUM DESERT": "Kızılkum Çölü", "LUT DESERT": "Lut Çölü", "SYRIAN DESERT": "Suriye Çölü",
+    "NUBIAN DESERT": "Nubya Çölü", "LIBYAN DESERT": "Libya Çölü", "WESTERN DESERT": "Batı Çölü", "THAR DESERT": "Thar Çölü",
+    "PLATEAU OF TIBET": "Tibet Yaylası", "DECCAN PLATEAU": "Dekken Yaylası", "MONGOLIAN PLATEAU": "Moğol Yaylası",
+    "PENÍNSULA IBÉRICA": "Meseta", "KAZAKH UPLAND": "Kazak Yaylası", "Ustyurt Plateau": "Üstyurt", "Loess Plateau": "Lös Yaylası",
+    "CENTRAL RUSSIAN UPLAND": "Orta Rus Yaylası", "BETPAQDALA DESERT": "Betpakdala", "Mu Us Desert": "Ordos",
+    "TOROS": "Toros Dağları",
+}
+EXTRA_MOUNTAINS = [("TOROS", [(29.5, 36.9), (33, 36.4), (36.5, 36.9), (38, 37.8), (36.5, 38.2), (33, 37.6), (30, 37.6)]),
+                   ("", [(38.5, 38.4), (41, 38.2), (44, 38.6), (44.5, 40.2), (41.5, 40.6), (39, 39.8)])]
+RIVER_NAMES = {
+    "Danube": "Tuna", "Volga": "İdil", "Nile": "Nil", "Euphrates": "Fırat", "Tigris": "Dicle", "Dnieper": "Özü", "Don": "Ten",
+    "Amu Darya": "Ceyhun", "Syr Darya": "Seyhun", "Indus": "Sind", "Ganges": "Ganj", "Huang": "Sarı Irmak", "Yangtze": "Yangzi",
+    "Rhine": "Ren", "Rhône": "Ron", "Loire": "Loire", "Seine": "Sen", "Elbe": "Elbe", "Vistula": "Vistül", "Oder": "Oder",
+    "Dniester": "Turla", "Ural": "Yayık", "Kura": "Kür", "Ob": "Ob", "Irtysh": "İrtiş", "Kama": "Kama", "Po": "Po",
+    "Ebro": "Ebro", "Tagus": "Tejo", "Kızılırmak": "Kızılırmak", "Sakarya": "Sakarya", "Western Dvina": "Düna", "Neva": "Neva",
+    "Amur": "Amur", "Brahmaputra": "Brahmaputra", "Mekong": "Mekong", "Ili": "İli", "Tarim": "Tarım", "Helmand": "Hilmend",
+}
+
+
+def build_geo(full_land, provinces, seeds, keep, newid, geoms):
+    """Dağlar, çöller, yaylalar ve nehirler; eyaletlere arazi türü."""
+    import random
+    print("coğrafya...")
+    clip = box(LON0, LAT0, LON1, LAT1)
+    cls_map = {"Range/mtn": "dag", "Desert": "col", "Plateau": "yayla", "Wetlands": "bataklik", "Delta": "bataklik", "Tundra": "tundra"}
+    regions = []
+    with open(os.path.join(CACHE, "ne_50m_geography_regions_polys.geojson")) as fh:
+        for f in json.load(fh)["features"]:
+            pr = f["properties"]
+            c = cls_map.get(pr.get("FEATURECLA"))
+            if not c:
+                continue
+            g = shape(f["geometry"])
+            if not g.intersects(clip):
+                continue
+            regions.append((c, pr.get("NAME"), g.intersection(clip)))
+    for name, pts in EXTRA_MOUNTAINS:
+        regions.append(("dag", name, Polygon(pts).buffer(0.25)))
+    out_regions = []
+    proj_regions = []
+    for c, name, g in regions:
+        pg = proj_geom(g).intersection(full_land)
+        if pg.is_empty:
+            continue
+        proj_regions.append((c, pg))
+        rings = []
+        for part in getattr(pg, "geoms", [pg]):
+            if not isinstance(part, Polygon) or part.area < 0.05:
+                continue
+            part = part.simplify(0.06, preserve_topology=True)
+            rings.append([round(v, 2) for xy in list(part.exterior.coords)[:-1] for v in xy])
+        if not rings:
+            continue
+        lp = pg.representative_point() if not isinstance(pg, Polygon) else pg.representative_point()
+        big = max(getattr(pg, "geoms", [pg]), key=lambda p: p.area)
+        lp = big.representative_point()
+        tr = GEO_NAMES.get(name)
+        out_regions.append(dict(c=c, name=tr or "", x=round(lp.x, 2), y=round(lp.y, 2), poly=rings,
+                                area=round(big.area, 1)))
+    # nehirler
+    rivers = []
+    river_proj = []
+    with open(os.path.join(CACHE, "ne_50m_rivers_lake_centerlines.geojson")) as fh:
+        for f in json.load(fh)["features"]:
+            pr = f["properties"]
+            if pr.get("featurecla") != "River" or (pr.get("scalerank") or 9) > 7:
+                continue
+            g = shape(f["geometry"])
+            if not g.intersects(clip):
+                continue
+            g = proj_geom(g.intersection(clip))
+            river_proj.append(g)
+            lines = []
+            for ln in getattr(g, "geoms", [g]):
+                if not isinstance(ln, LineString) or ln.length < 0.3:
+                    continue
+                ln = ln.simplify(0.04)
+                lines.append([round(v, 2) for xy in ln.coords for v in xy])
+            if not lines:
+                continue
+            nm = pr.get("name_en") or pr.get("name") or ""
+            rivers.append(dict(name=RIVER_NAMES.get(nm, ""), w=int(pr.get("scalerank") or 6), lines=lines))
+    # eyalet arazi türü
+    from shapely.strtree import STRtree
+    rgeoms = [g for _, g in proj_regions]
+    rtree = STRtree(rgeoms)
+    rivers_u = unary_union(river_proj) if river_proj else None
+    rnd = random.Random(1040)
+    counts = {}
+    for p in provinces:
+        g = geoms[keep[p["id"]]]
+        lon = p["x"]
+        lat = unproj_lat(p["y"])
+        share = {}
+        for k in rtree.query(g):
+            c = proj_regions[k][0]
+            a = rgeoms[k].intersection(g).area
+            if a > 0:
+                share[c] = share.get(c, 0) + a / g.area
+        near_river = rivers_u is not None and rivers_u.distance(Point(p["x"], p["y"])) < 0.45
+        if share.get("dag", 0) > 0.35:
+            t = "dag"
+        elif share.get("col", 0) > 0.45 and not near_river:
+            t = "col"
+        elif share.get("bataklik", 0) > 0.3:
+            t = "bataklik"
+        elif lat > 64 or share.get("tundra", 0) > 0.3:
+            t = "tundra"
+        elif share.get("dag", 0) > 0.12 or share.get("yayla", 0) > 0.4:
+            t = "tepe"
+        elif lat > 56 and lon > 22:
+            t = "tayga"
+        elif lat < 24 and lon > 72:
+            t = "orman" if rnd.random() < 0.6 else "ova"
+        elif 44 <= lat < 50.5 and 27 < lon < 60:
+            t = "bozkir"
+        elif 44 <= lat <= 57 and lon < 42:
+            t = "orman" if rnd.random() < 0.5 else "ova"
+        elif 38 <= lat <= 53 and 30 <= lon <= 125:
+            t = "bozkir"
+        elif lat < 31 and (lon < 60 or share.get("col", 0) > 0.2) and not near_river:
+            t = "col"
+        else:
+            t = "ova"
+        if p["kind"] == "waste":
+            nm = p["name"]
+            t = "tundra" if any(k in nm for k in ("Sibirya", "Tundra", "Laponya")) else "orman" if "Orman" in nm or "Ezo" in nm \
+                else "dag" if "Yayla" in nm or "Çangtang" in nm else "tayga" if lat > 56 else "col"
+        p["terrain"] = t
+        counts[t] = counts.get(t, 0) + 1
+    print("arazi:", counts, "bölge:", len(out_regions), "nehir:", len(rivers))
+    return dict(regions=out_regions, rivers=rivers)
 
 
 if __name__ == "__main__":

@@ -179,6 +179,7 @@
         <tr><td>Sahibi</td><td>${U.nlink(p.owner)}</td></tr>
         ${p.ctrl !== p.owner ? `<tr><td>İşgalci</td><td>${U.nlink(p.ctrl)}</td></tr>` : ''}
         <tr><td>Kaynak</td><td>${res ? `${res.icon} ${G.esc(res.name)}` : '—'}</td></tr>
+        <tr><td>Arazi</td><td>${G.esc(G.terrainOf(p).name)} <span class="muted">· savunma ${G.terrainOf(p).def >= 1 ? '+' : ''}%${Math.round((G.terrainOf(p).def - 1) * 100)} · hareket %${Math.round(G.terrainOf(p).move * 100)}</span></td></tr>
         <tr><td>Alan</td><td>${G.fmtNum(p.area)} km²</td></tr>
         <tr><td>Aylık insan gücü</td><td>${G.fmtNum((p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140) * (1 + p.farm * 0.25 * (p.res === 'tahil' ? 1.5 : 1)))}</td></tr>
         <tr><td>Binalar</td><td>⚒ ${p.civ} · ⚔ ${p.mil} · ♜ ${p.fort} · ⛏ ${p.mine} · 🌾 ${p.farm}</td></tr>
