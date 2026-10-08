@@ -31,9 +31,67 @@ M.init = function (canvas) {
     M.paths.push(path);
     M.bbox.push([x0, y0, x1, y1]);
   }
+  // deniz bölgeleri
+  M.seaPaths = []; M.seaBbox = [];
+  for (const z of W.seas || []) {
+    const path = new Path2D();
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const r of z.poly) {
+      path.moveTo(r[0], r[1]);
+      for (let i = 2; i < r.length; i += 2) {
+        path.lineTo(r[i], r[i + 1]);
+        x0 = Math.min(x0, r[i]); x1 = Math.max(x1, r[i]); y0 = Math.min(y0, r[i + 1]); y1 = Math.max(y1, r[i + 1]);
+      }
+      path.closePath();
+    }
+    M.seaPaths.push(path); M.seaBbox.push([x0, y0, x1, y1]);
+  }
+  M.edgeMap = new Map();
+  for (const [a, b, segs] of W.edges) M.edgeMap.set(a < b ? a + '|' + b : b + '|' + a, segs);
   M.patterns = new Map();
   M.resize();
+  M.buildGrid();
   window.addEventListener('resize', M.resize);
+};
+
+// Eyalet kimliklerinin kaba bir ızgarası: ülke adlarını sınır içine sığdırmak için
+M.GRID_RES = 8;
+M.buildGrid = function () {
+  const W = window.WORLD, [x0, y0, x1, y1] = W.bounds, R = M.GRID_RES;
+  const w = Math.ceil((x1 - x0) * R), h = Math.ceil((y1 - y0) * R);
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
+  x.setTransform(R, 0, 0, R, -x0 * R, -y0 * R);
+  for (let i = 0; i < M.paths.length; i++) {
+    const v = i + 1;
+    x.fillStyle = `rgb(${v >> 8},${v & 255},255)`;
+    x.fill(M.paths[i]);
+  }
+  const d = x.getImageData(0, 0, w, h).data;
+  const g = new Int16Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    g[i] = d[i * 4 + 2] === 255 ? ((d[i * 4] << 8) | d[i * 4 + 1]) - 1 : -1;
+  }
+  M.grid = { g, w, h, x0, y0 };
+};
+M.gridAt = function (wx, wy) {
+  const G2 = M.grid, R = M.GRID_RES;
+  const i = Math.floor((wx - G2.x0) * R), j = Math.floor((wy - G2.y0) * R);
+  if (i < 0 || j < 0 || i >= G2.w || j >= G2.h) return -1;
+  return G2.g[j * G2.w + i];
+};
+
+M.seaAt = function (sx, sy) {
+  const w = M.toWorld(sx, sy), ctx = M.ctx;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let i = 0; i < M.seaPaths.length; i++) {
+    const b = M.seaBbox[i];
+    if (w.x < b[0] || w.x > b[2] || w.y < b[1] || w.y > b[3]) continue;
+    if (ctx.isPointInPath(M.seaPaths[i], w.x, w.y)) return i;
+  }
+  return null;
 };
 
 M.resize = function () {
@@ -236,8 +294,55 @@ M.rebuildLabels = function () {
     ang = G.clamp(ang, -0.5, 0.5);
     const spread = Math.sqrt(Math.max(cxx, cyy) / sw);
     const name = (S ? S.nations[tag] : window.WORLD.nations[tag]).name;
-    M.labels.push({ tag, x: mx, y: my, ang, size: Math.sqrt(area), spread, name });
+    const fit = M.fitLabel(tag, name, comp, mx, my, ang, spread, P);
+    if (fit) M.labels.push({ tag, name, ...fit });
   }
+};
+
+// Adın yalnızca kendi topraklarının üzerinde kalacağı en büyük boyutu ve yeri bulur
+M.fitLabel = function (tag, name, comp, mx, my, ang, spread, P) {
+  const ctx = M.ctx;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.font = `600 100px ${G.FONT_TITLE}`;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '20px';
+  const w100 = ctx.measureText(name).width;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  ctx.restore();
+  const test = (cx, cy, a, h) => {
+    const W = w100 * h / 100, ca = Math.cos(a), sa = Math.sin(a);
+    let bad = 0, sea = 0, tot = 0;
+    for (let i = 0; i <= 14; i++) {
+      const u = -W / 2 + W * i / 14;
+      for (const v of [-0.33 * h, 0, 0.33 * h]) {
+        tot++;
+        const id = M.gridAt(cx + u * ca - v * sa, cy + u * sa + v * ca);
+        if (id < 0) { sea++; continue; }
+        const q = P[id];
+        if (q.owner === tag) continue;
+        if (q.kind === 'waste') sea++; else if (++bad > 0) return false;
+      }
+    }
+    return sea <= tot * 0.25;
+  };
+  const best = (cx, cy, a) => {
+    let lo = 0, hi = Math.max(0.3, spread * 0.6);
+    if (test(cx, cy, a, hi)) return hi;
+    for (let k = 0; k < 9; k++) {
+      const mid = (lo + hi) / 2;
+      if (test(cx, cy, a, mid)) lo = mid; else hi = mid;
+    }
+    return lo;
+  };
+  const cands = [[mx, my, ang], [mx, my, 0]];
+  const near = comp.slice().sort((a, b) => Math.hypot(a.x - mx, a.y - my) - Math.hypot(b.x - mx, b.y - my)).slice(0, 8);
+  for (const c of near) { cands.push([c.x, c.y, ang]); cands.push([c.x, c.y, 0]); }
+  let res = null;
+  for (const [cx, cy, a] of cands) {
+    const h = best(cx, cy, a);
+    if (!res || h > res.h * 1.08) res = { x: cx, y: cy, ang: a, h };
+  }
+  return res && res.h > 0 ? res : null;
 };
 
 M.areaOf = id => {
@@ -265,6 +370,22 @@ M.draw = function () {
     const b = M.bbox[i];
     if (b[2] < v.x || b[0] > v2.x || b[3] < v.y || b[1] > v2.y) continue;
     vis.push(i);
+  }
+
+  // deniz bölgeleri: seçili filonun menzili ve bölge sınırları
+  if (S && S.seas && sc > 5) {
+    const f = G.selFleet;
+    if (f) {
+      for (let i = 0; i < M.seaPaths.length; i++) {
+        ctx.fillStyle = G.navy.reachable(f, i) ? 'rgba(150,215,230,0.2)' : 'rgba(0,0,0,0.3)';
+        ctx.fill(M.seaPaths[i]);
+      }
+    }
+    ctx.setLineDash([4 / sc, 4 / sc]);
+    ctx.strokeStyle = 'rgba(190,215,205,0.16)';
+    ctx.lineWidth = 0.9 / sc;
+    for (let i = 0; i < M.seaPaths.length; i++) ctx.stroke(M.seaPaths[i]);
+    ctx.setLineDash([]);
   }
 
   // kıyı: eski haritalardaki gibi yumuşak, katmanlı su çizgisi
@@ -332,6 +453,7 @@ M.draw = function () {
   ctx.lineWidth = bw * 0.8 / sc;
   ctx.stroke(M.realmBorders);
   ctx.setLineDash([]);
+  if (S) M.drawFronts(sc);
 
   // ekran koordinatlarına geç ve parşömen dokusunu bindir
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -345,9 +467,13 @@ M.draw = function () {
   ctx.globalCompositeOperation = 'source-over';
   M.drawLabels(vis, P);
   if (S) {
+    M.drawSeaNames();
+    M.drawPorts(vis, P);
     M.drawSieges(vis, P);
+    M.drawArrows();
     M.drawPaths();
     M.drawCounters();
+    M.drawFleets();
     M.drawBattles();
   }
   if (M.dragBox) {
@@ -365,7 +491,7 @@ M.drawLabels = function (vis, P) {
   ctx.textBaseline = 'middle';
   // ülke adları: silik, ince, harfleri aralıklı
   for (const L of M.labels) {
-    const fs = G.clamp(L.spread * sc * 0.3, 0, 30);
+    const fs = Math.min(L.h * sc, 30);
     if (fs < 9) continue;
     if (sc > 70 && fs > 22) continue;
     const s = M.toScreen(L.x, L.y);
@@ -436,7 +562,7 @@ M.drawPaths = function () {
   const ctx = M.ctx, S = G.S, P = S.provinces;
   ctx.lineWidth = 2;
   for (const a of S.armies) {
-    if (!a.path.length) continue;
+    if (!a.path.length || a.fleet != null) continue;
     const mine = a.tag === S.player;
     if (!mine && !a.sel) continue;
     ctx.strokeStyle = a.sel ? 'rgba(255,230,140,0.95)' : 'rgba(255,230,140,0.45)';
@@ -458,6 +584,7 @@ M.drawCounters = function () {
   if (sc < 7) return;
   const groups = new Map();
   for (const a of S.armies) {
+    if (a.fleet != null) continue;
     const k = a.prov + '|' + a.tag;
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(a);
@@ -468,7 +595,7 @@ M.drawCounters = function () {
   for (const [, arr] of groups) {
     const a0 = arr[0], p = P[a0.prov], n = S.nations[a0.tag];
     // uzaktan bakarken yalnızca bizi ilgilendiren orduları göster
-    if (sc < 14 && a0.tag !== S.player && !G.atWar(S.player, a0.tag)) continue;
+    if (sc < 32 && a0.tag !== S.player && !G.atWar(S.player, a0.tag)) continue;
     let s = M.toScreen(p.x, p.y);
     // hareket halindeki ordu ilerlemeye göre kaydırılır
     if (a0.path.length && a0.prog > 0 && !a0.attacking) {
@@ -535,4 +662,181 @@ M.drawBattles = function () {
     ctx.fillStyle = '#fff'; ctx.font = `13px ${G.FONT_BODY}`;
     ctx.fillText('⚔', x, y + 1);
   }
+};
+
+// ------------------------------------------------------------ cepheler ve taarruz okları
+M.frontCache = new Map();
+M.drawFronts = function (sc) {
+  const S = G.S, ctx = M.ctx;
+  if (!S.ordular) return;
+  for (const o of S.ordular) {
+    if (o.tag !== S.player || !o.front) continue;
+    const key = o.id + '|' + o.front + '|' + S.hour;
+    let edges = M.frontCache.get(o.id);
+    if (!edges || edges.key !== key) {
+      edges = { key, list: G.command.frontEdges(o.tag, o.front) };
+      M.frontCache.set(o.id, edges);
+    }
+    const path = new Path2D();
+    for (const [a, b] of edges.list) {
+      const segs = M.edgeMap.get(a < b ? a + '|' + b : b + '|' + a);
+      if (!segs) continue;
+      for (const sg of segs) {
+        path.moveTo(sg[0], sg[1]);
+        for (let i = 2; i < sg.length; i += 2) path.lineTo(sg[i], sg[i + 1]);
+      }
+    }
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(20,12,4,0.55)';
+    ctx.lineWidth = 6 / sc;
+    ctx.stroke(path);
+    ctx.strokeStyle = o.color;
+    ctx.lineWidth = 3.4 / sc;
+    if (o.attack) ctx.setLineDash([9 / sc, 5 / sc]);
+    ctx.stroke(path);
+    ctx.setLineDash([]);
+  }
+};
+
+M.arrow = function (ctx, x0, y0, x1, y1, color, width) {
+  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+  const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1;
+  const cx = mx - dy / len * len * 0.18, cy = my + dx / len * len * 0.18;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo(cx, cy, x1, y1);
+  ctx.strokeStyle = 'rgba(20,10,5,0.6)'; ctx.lineWidth = width + 3; ctx.stroke();
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+  const a = Math.atan2(y1 - cy, x1 - cx), hl = 9 + width * 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 - hl * Math.cos(a - 0.45), y1 - hl * Math.sin(a - 0.45));
+  ctx.lineTo(x1 - hl * Math.cos(a + 0.45), y1 - hl * Math.sin(a + 0.45));
+  ctx.closePath();
+  ctx.fillStyle = color; ctx.fill();
+  ctx.strokeStyle = 'rgba(20,10,5,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+};
+
+M.drawArrows = function () {
+  const S = G.S, ctx = M.ctx, P = S.provinces;
+  if (!S.ordular) return;
+  for (const o of S.ordular) {
+    if (o.tag !== S.player || o.target == null) continue;
+    const us = G.command.units(o).filter(a => a.prov != null);
+    if (!us.length) continue;
+    const cx = us.reduce((s, a) => s + P[a.prov].x, 0) / us.length;
+    const cy = us.reduce((s, a) => s + P[a.prov].y, 0) / us.length;
+    const a = M.toScreen(cx, cy), b = M.toScreen(P[o.target].x, P[o.target].y);
+    M.arrow(ctx, a.x, a.y, b.x, b.y, 'rgba(200,60,45,0.85)', 5);
+  }
+};
+
+// ------------------------------------------------------------ deniz
+M.drawSeaNames = function () {
+  const S = G.S, ctx = M.ctx, sc = M.cam.scale;
+  if (sc < 11 || sc > 90) return;
+  ctx.font = `italic ${sc > 40 ? 14 : 12}px ${G.FONT_BODY}`;
+  ctx.fillStyle = 'rgba(205,228,222,0.38)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '1px';
+  for (const z of S.seas) {
+    const s = M.toScreen(z.x, z.y);
+    if (s.x < -100 || s.x > M.w + 100 || s.y < -20 || s.y > M.h + 20) continue;
+    ctx.fillText(z.name, s.x, s.y + 22);
+  }
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+};
+
+M.drawPorts = function (vis, P) {
+  const S = G.S, ctx = M.ctx, sc = M.cam.scale;
+  if (sc < 30 || !S.dockyards) return;
+  const docks = new Set(S.dockyards.map(d => d.prov));
+  ctx.font = `13px ${G.FONT_BODY}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const i of vis) {
+    const p = P[i];
+    if (!G.navy.isPort(p)) continue;
+    const s = M.toScreen(p.x, p.y);
+    const dock = docks.has(p.id);
+    ctx.fillStyle = 'rgba(15,10,5,0.7)';
+    ctx.beginPath(); ctx.arc(s.x + 13, s.y - 3, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = dock ? '#e8c869' : 'rgba(200,220,220,0.85)';
+    ctx.fillText('⚓', s.x + 13, s.y - 2);
+  }
+};
+
+M.fleetPos = function (f) {
+  const S = G.S, z = S.seas[f.zone];
+  if (f.docked != null) {
+    const p = S.provinces[f.docked];
+    return { x: p.x + (z.x - p.x) * 0.35, y: p.y + (z.y - p.y) * 0.35 };
+  }
+  if (f.path.length && f.prog > 0) {
+    const n = S.seas[f.path[0]], i = z.nb.indexOf(n.id), d = i >= 0 ? z.nbDist[i] : 300;
+    const t = G.clamp(f.prog / d, 0, 1);
+    return { x: z.x + (n.x - z.x) * t, y: z.y + (n.y - z.y) * t };
+  }
+  return { x: z.x, y: z.y };
+};
+
+M.drawFleets = function () {
+  const S = G.S, ctx = M.ctx, sc = M.cam.scale;
+  M.fleetRects = [];
+  if (!S.fleets) return;
+  const slot = new Map();
+  // seçili filonun rotası
+  const sf = G.selFleet;
+  if (sf && sf.path.length) {
+    ctx.strokeStyle = 'rgba(160,220,240,0.9)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    let s = M.toScreen(M.fleetPos(sf).x, M.fleetPos(sf).y);
+    ctx.moveTo(s.x, s.y);
+    for (const z of sf.path) { s = M.toScreen(S.seas[z].x, S.seas[z].y); ctx.lineTo(s.x, s.y); }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const f of S.fleets) {
+    const mine = f.tag === S.player, enemy = G.atWar(S.player, f.tag);
+    if (sc < 32 && !mine && !enemy) continue;
+    if (sc < 5) continue;
+    const w = M.fleetPos(f);
+    const k = Math.round(w.x * 4) + '|' + Math.round(w.y * 4);
+    const n = slot.get(k) || 0; slot.set(k, n + 1);
+    const s = M.toScreen(w.x, w.y);
+    const x = s.x - 24, y = s.y - 9 + n * 20;
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - 1, y - 1, 50, 19, 8) : ctx.rect(x - 1, y - 1, 50, 19); ctx.fill();
+    ctx.fillStyle = M.mute(S.nations[f.tag].color);
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, 48, 17, 7) : ctx.rect(x, y, 48, 17); ctx.fill();
+    const hp = N_hpFrac(f);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(x + 4, y + 14, 40, 2);
+    ctx.fillStyle = '#7fc4e0'; ctx.fillRect(x + 4, y + 14, 40 * hp, 2);
+    ctx.font = `600 12px ${G.FONT_BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.lineWidth = 2.5; ctx.fillStyle = '#fff';
+    const label = `⛵ ${f.ships.length}` + (f.cargo.length ? ' ⚔' : '');
+    ctx.strokeText(label, s.x, y + 7.5); ctx.fillText(label, s.x, y + 7.5);
+    if (f === G.selFleet) { ctx.strokeStyle = '#a8e0f0'; ctx.lineWidth = 2; ctx.strokeRect(x - 3, y - 3, 54, 23); }
+    else if (mine) { ctx.strokeStyle = 'rgba(168,224,240,0.5)'; ctx.lineWidth = 1; ctx.strokeRect(x - 2, y - 2, 52, 21); }
+    M.fleetRects.push({ x: x - 3, y: y - 3, w: 54, h: 23, fleet: f });
+    // çıkarma oku
+    if (f.order && f.order.kind === 'land' && (mine || enemy)) {
+      const t = S.provinces[f.order.prov], ts = M.toScreen(t.x, t.y);
+      M.arrow(ctx, s.x, s.y + 9, ts.x, ts.y, mine ? 'rgba(120,200,230,0.85)' : 'rgba(220,80,60,0.85)', 3);
+    }
+  }
+  // deniz muharebeleri
+  for (const b of S.navalBattles.values()) {
+    const z = S.seas[b.zone], s = M.toScreen(z.x, z.y);
+    ctx.beginPath(); ctx.arc(s.x, s.y - 26, 12, 0, Math.PI * 2);
+    ctx.fillStyle = '#2a5a70'; ctx.fill();
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = `14px ${G.FONT_BODY}`;
+    ctx.fillText('⚔', s.x, s.y - 25);
+  }
+};
+function N_hpFrac(f) { const m = G.navy.maxHp(f); return m ? G.navy.hp(f) / m : 0; }
+
+M.fleetAt = function (sx, sy) {
+  for (let i = (M.fleetRects || []).length - 1; i >= 0; i--) {
+    const r = M.fleetRects[i];
+    if (sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h) return r.fleet;
+  }
+  return null;
 };

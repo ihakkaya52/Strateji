@@ -12,7 +12,9 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | Sol tık | Eyalet seç (aynı eyalete ikinci tık ülke panelini açar) / orduya tıkla |
 | Sol tıkla sürükle, WASD, ok tuşları | Haritayı kaydır |
 | Shift + sürükle | Kutu içindeki orduları seç |
-| Sağ tık | Seçili orduları yürüt / saldır |
+| Sağ tık | Seçili bölükleri yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder |
+| O | Ordular (komutanlar, cepheler) paneli |
+| N | Donanma arayüzü |
 | Fare tekerleği | Yakınlaştır / uzaklaştır |
 | Boşluk | Duraklat / devam |
 | 1–5, + / - | Oyun hızı |
@@ -29,8 +31,18 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Odak ağacı:** İngiltere'ye özel 14 odaklı bağımsızlık ağacı (Witenagemot, Danegeld'i reddet, Edward'ı sürgünden
   çağır, Bağımsızlık İlanı, Sakson Tacı...). Yapay zekâ İngiltere'si de bu ağacı izler.
 - **Zaman:** HOI4 gibi saatlik takvim, duraklatma ve 5 hız kademesi.
-- **Ordular:** Hareket, muharebe (örgütlenme ve mevcut), geri çekilme, kuşatılıp imha edilme. Kültüre göre süvari oranı
+- **Komuta yapısı:** Her ordunun bir komutanı (yetenek yıldızları ve özelliği) ve altında 3.000 kişilik bölükler var.
+  Her bölüğün kendi komutanı ve piyade / okçu / süvari dağılımı bulunur.
+- **Cephe ve taarruz (HOI4 tarzı):** Bir orduya bir ülkeye karşı cephe atanır, bölükler cephe boyunca kendiliğinden
+  dağılır. "Taarruz" emriyle aynı cepheyi tutan ordular birlikte saldırır, "taarruz oku" ile bir hedef gösterilebilir.
+  Bölükler elle de yönetilebilir.
+- **Muharebe:** Örgütlenme ve mevcut, geri çekilme, kuşatılıp imha edilme. Kültüre göre süvari oranı
   (bozkır orduları hızlı ve saldırıda güçlü).
+- **Donanma:** 116 deniz bölgesi, limanlar ve tersaneler. On gemi türü: Çektiri, Nakliye Gemisi, Drakkar, Knarr, Koga,
+  Kadırga, Dromon, Şînî, Sambuk, Cünk. Her türün sağlamlığı, saldırısı, hızı, taşıma kapasitesi, mürettebatı ve
+  menzili (limandan uzaklaşabileceği deniz bölgesi sayısı) farklı. Filoların kendi kaptanı ve denizcileri var.
+- **Çıkarma ve deniz savaşı:** Limanda bölükler gemilere bindirilir, filo kıyıya çıkarma yapar. Aynı deniz bölgesine
+  giren düşman filolar çarpışır; batan nakliye gemileriyle askerler de boğulur. Yapay zekâ da çıkarma planlar.
 - **Kuşatma:** Kaleli şehirler ve başkentler hemen düşmez.
 - **Savaş ve barış:** Savaş ilanı, savaş skoru, toprak devriyle barış veya beyaz barış, ateşkes ve teslimiyet.
 - **İnsan gücü:** Eyaletlerden aylık asker gelir. Yeni ordu toplama (60 gün eğitim) ve takviye.
@@ -39,6 +51,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   Büyük Ayrılık (1054).
 - **Harita modları:** Siyasi ve din.
 - **Görünüm:** Parşömen dokulu eski harita görünümü, doğal kıvrımlı sınırlar, Cinzel ve EB Garamond fontları.
+  Ülke adları yalnızca kendi topraklarına sığacak boyutta yazılır.
 
 ## Yol haritası
 
@@ -61,6 +74,10 @@ js/util.js            sabitler ve yardımcılar
 js/state.js           oyun durumu, ülkeler, ordular, savaş / barış
 js/sim.js             zaman, hareket, muharebe, kuşatma, insan gücü
 js/ai.js              yapay zekâ
+js/command.js         ordular, komutanlar, cepheler
+js/navy.js            gemiler, tersaneler, deniz savaşı, çıkarma
+js/names.js           komutan, kaptan ve gemi adları
+js/ui_mil.js          ordu ve donanma arayüzleri
 js/focus.js           odak ağaçları
 js/events.js          olaylar
 js/map.js             harita çizimi

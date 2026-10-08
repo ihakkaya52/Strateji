@@ -15,19 +15,20 @@ G.ai.update = function (dayStart) {
   if (dayStart) G.ai.peaceTalks();
 };
 
-G.ai.idle = a => !a.path.length && a.attacking == null &&
+G.ai.idle = a => a.fleet == null && !a.path.length && a.attacking == null &&
   !(a.besieging && G.atWar(a.tag, G.S.provinces[a.prov].ctrl));
 
 G.ai.manageWar = function (n) {
   const S = G.S, P = S.provinces, tag = n.tag;
-  const idle = S.armies.filter(a => a.tag === tag && G.ai.idle(a) && a.org >= 45);
+  const port = n.aiNaval && n.aiNaval.stage === 'gather' ? n.aiNaval.port : null;
+  const idle = S.armies.filter(a => a.tag === tag && G.ai.idle(a) && a.org >= 45 && a.prov !== port);
   if (!idle.length) return;
 
   // hedefler
   const targets = new Map();  // pid -> öncelik
   const enemyMen = new Map();
   for (const a of S.armies) {
-    if (G.atWar(tag, a.tag)) enemyMen.set(a.prov, (enemyMen.get(a.prov) || 0) + a.men);
+    if (a.prov != null && G.atWar(tag, a.tag)) enemyMen.set(a.prov, (enemyMen.get(a.prov) || 0) + a.men);
   }
   for (const p of P) {
     if (p.kind === 'waste') continue;
@@ -49,7 +50,7 @@ G.ai.manageWar = function (n) {
 
   const assigned = new Map();
   for (const a of S.armies) {
-    if (a.tag === tag && a.path.length) {
+    if (a.tag === tag && a.path.length && a.fleet == null) {
       const t = a.path[a.path.length - 1];
       assigned.set(t, (assigned.get(t) || 0) + 1);
     }

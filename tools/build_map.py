@@ -24,7 +24,7 @@ from shapely.prepared import prep
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
-from scenario_1040 import NATIONS, CITIES, WASTELAND_BOXES, STRAITS, VASSALS  # noqa: E402
+from scenario_1040 import NATIONS, CITIES, WASTELAND_BOXES, STRAITS, VASSALS, SEA_ZONES  # noqa: E402
 
 CACHE = os.path.join(HERE, ".cache")
 NE_BASE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/"
@@ -92,6 +92,7 @@ def load_land():
             if g.intersects(clip):
                 lands.append(g.intersection(clip))
     land = unary_union(lands)
+    full = proj_geom(land)   # deniz bölgeleri için kesilmemiş kara
     # Arabistan'ı koru: Afrika kesimi yalnızca Kızıldeniz'in batısında
     land = land.difference(box(-26, -60, 43.0, AFRICA_MIN_LAT))
     land = land.difference(box(43.0, -60, 52, 1.0))  # Afrika Boynuzu güneyi
@@ -107,7 +108,7 @@ def load_land():
         land = land.difference(unary_union(lakes))
     # çok küçük adacıkları at
     parts = [p for p in getattr(land, "geoms", [land]) if p.area > 0.02]
-    return proj_geom(MultiPolygon(parts))
+    return proj_geom(MultiPolygon(parts)), full
 
 
 def waste_box(lon, lat):
@@ -125,7 +126,7 @@ def direction_name(dx, dy):
 def main():
     fetch()
     print("kara verisi yükleniyor...")
-    land = load_land()
+    land, full_land = load_land()
     land_p = prep(land)
     minx, miny, maxx, maxy = land.bounds
 
@@ -331,6 +332,7 @@ def main():
     world = dict(
         bounds=[round(minx, 2), round(miny, 2), round(maxx, 2), round(maxy, 2)],
         nations=nations, provinces=provinces, edges=edges, vassals=VASSALS,
+        seas=build_seas(full_land, keep, newid, geoms, provinces),
     )
     out = os.path.join(ROOT, "js", "data", "world.js")
     os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -344,6 +346,97 @@ def main():
     for p in provinces:
         counts[p["kind"]] = counts.get(p["kind"], 0) + 1
     print(counts)
+
+
+def build_seas(full_land, keep, newid, geoms, provinces):
+    """Deniz bölgelerini üretir; kıyı eyaletlerine komşu deniz bölgelerini yazar."""
+    from shapely.strtree import STRtree
+    print("deniz bölgeleri...")
+    x0, y0 = proj(LON0, LAT1)
+    x1, y1 = proj(LON1, LAT0)
+    sea = box(x0, y0, x1, y1).difference(full_land)
+    seeds = [proj(lon, lat) for (_, lon, lat) in SEA_ZONES]
+    pts = np.array(seeds)
+    pad = 60
+    frame = []
+    for t in np.linspace(x0 - pad, x1 + pad, 30):
+        frame += [[t, y0 - pad], [t, y1 + pad]]
+    for t in np.linspace(y0 - pad, y1 + pad, 30):
+        frame += [[x0 - pad, t], [x1 + pad, t]]
+    vor = Voronoi(np.vstack([pts, np.array(frame)]))
+    zones = []
+    orphans = []
+    for i, (name, lon, lat) in enumerate(SEA_ZONES):
+        reg = vor.regions[vor.point_region[i]]
+        cell = Polygon(vor.vertices[reg]).buffer(0)
+        g = cell.intersection(sea)
+        parts = [p for p in getattr(g, "geoms", [g]) if isinstance(p, Polygon) and p.area > 0.01]
+        if not parts:
+            zones.append(None)
+            print("  uyarı: deniz bölgesi boş:", name)
+            continue
+        sp = Point(seeds[i])
+        main = min(parts, key=lambda p: p.distance(sp) - p.area * 1e-6)
+        zones.append(main)
+        orphans += [p for p in parts if p is not main]
+    # ana parçasından kopuk parçaları sınır paylaştığı bölgeye kat
+    for _ in range(6):
+        left = []
+        for o in orphans:
+            best, bl = None, 0.0
+            for k, z in enumerate(zones):
+                if z is None or not z.intersects(o):
+                    continue
+                l = z.intersection(o).length
+                if l > bl:
+                    best, bl = k, l
+            if best is None or bl < 1e-3:
+                left.append(o)
+            else:
+                zones[best] = unary_union([zones[best], o])
+        if len(left) == len(orphans):
+            break
+        orphans = left
+    # komşuluk
+    zid = [k for k, z in enumerate(zones) if z is not None]
+    znew = {old: n for n, old in enumerate(zid)}
+    zgeoms = [zones[k] for k in zid]
+    zcent = []
+    for k, z in zip(zid, zgeoms):
+        sp = Point(seeds[k])
+        c = sp if z.contains(sp) else z.representative_point()
+        zcent.append((c.x, c.y))
+    znb = {n: set() for n in range(len(zid))}
+    for a in range(len(zgeoms)):
+        for b in range(a + 1, len(zgeoms)):
+            if zgeoms[a].distance(zgeoms[b]) < 1e-6:
+                inter = zgeoms[a].intersection(zgeoms[b])
+                if inter.length > 0.05:
+                    znb[a].add(b); znb[b].add(a)
+    # kıyı eyaletleri
+    tree = STRtree(zgeoms)
+    coast = {}
+    for i in keep:
+        g = geoms[i]
+        gb = g.buffer(0.03)
+        for zi in tree.query(gb):
+            if zgeoms[zi].intersects(gb) and zgeoms[zi].intersection(gb).area > 1e-4:
+                coast.setdefault(newid[i], []).append(int(zi))
+    for p in provinces:
+        if p["id"] in coast:
+            p["sea"] = sorted(coast[p["id"]])
+    out = []
+    for n, (k, z) in enumerate(zip(zid, zgeoms)):
+        rings = []
+        z = z.simplify(0.03, preserve_topology=True)
+        for part in getattr(z, "geoms", [z]):
+            rings.append([round(v, 2) for xy in list(part.exterior.coords)[:-1] for v in xy])
+            for h in part.interiors:
+                rings.append([round(v, 2) for xy in list(h.coords)[:-1] for v in xy])
+        out.append(dict(id=n, name=SEA_ZONES[k][0], x=round(zcent[n][0], 2), y=round(zcent[n][1], 2),
+                        nb=sorted(znb[n]), poly=rings))
+    print("deniz bölgesi:", len(out), "kıyı eyaleti:", len(coast))
+    return out
 
 
 if __name__ == "__main__":

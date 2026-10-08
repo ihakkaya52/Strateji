@@ -1,9 +1,9 @@
 // Oyun durumu: eyaletler, ülkeler, ordular ve temel sorgular
 'use strict';
 
-const ARMY_MEN = 6000;          // standart ordu mevcudu
-const RECRUIT_COST = 6000;      // yeni ordu için insan gücü
-const RECRUIT_DAYS = 60;        // eğitim süresi
+const ARMY_MEN = 3000;          // standart bölük mevcudu
+const RECRUIT_COST = 3000;      // yeni bölük için insan gücü
+const RECRUIT_DAYS = 45;        // eğitim süresi
 const TRUCE_DAYS = 5 * 365;     // barış sonrası ateşkes
 // Tarihî duruma göre ek başlangıç orduları
 const START_BONUS = { SEL: 5, BYZ: 4, FAT: 2, SNG: 4, LIA: 3, KIE: 2 };
@@ -14,6 +14,7 @@ G.RECRUIT_DAYS = RECRUIT_DAYS;
 
 G.initState = function (playerTag) {
   const W = window.WORLD;
+  G.usedNames = {};
   const S = G.S = {
     time: { y: 1040, m: 0, d: 1, h: 0 },
     hour: 0,                // başlangıçtan beri geçen saat
@@ -52,7 +53,7 @@ G.initState = function (playerTag) {
     const provs = S.provinces.filter(p => p.owner === n.tag);
     const cities = provs.filter(p => p.kind !== 'rural');
     let count = Math.round(provs.length / 5) + (n.major ? 4 : 1);
-    count = G.clamp(count, 1, n.major ? 22 : 9) + (START_BONUS[n.tag] || 0);
+    count = (G.clamp(count, 1, n.major ? 22 : 9) + (START_BONUS[n.tag] || 0)) * 2;
     n.armyTarget = count;
     for (let i = 0; i < count; i++) {
       const p = i === 0 ? S.provinces[n.capital] : G.pick(cities.length ? cities : provs);
@@ -63,6 +64,11 @@ G.initState = function (playerTag) {
   // 1040: Dandanakan'ın ardından Selçuklu-Gazneli savaşı sürüyor; Gazneli ordusu dağınık
   G.declareWar('SEL', 'GAZ', true);
   for (const a of S.armies) if (a.tag === 'GAZ') { a.org = 65; a.men = ARMY_MEN * 0.8; }
+  // bölükleri ordulara (komutanlara) böl, donanmaları kur
+  S.ordular = [];
+  S.nextOrduId = 1;
+  for (const n of Object.values(S.nations)) G.command.organize(n.tag);
+  G.navy.init();
   return S;
 };
 
@@ -124,10 +130,13 @@ G.createArmy = function (tag, pid, men = ARMY_MEN) {
   const S = G.S, n = S.nations[tag];
   n.armyNo++;
   const a = {
-    id: S.nextArmyId++, tag, name: `${G.ordinal(n.armyNo)} Ordu`,
+    id: S.nextArmyId++, tag, name: `${G.ordinal(n.armyNo)} Bölük`,
+    cmdr: G.nameFor(tag),
     prov: pid, men, maxMen: ARMY_MEN, org: 100,
     cav: n.cav, path: [], prog: 0, attacking: null, besieging: false,
     sel: false, aiTarget: null,
+    ordu: null,             // bağlı olduğu ordu (komutan)
+    fleet: null,            // gemideyse donanma kimliği
   };
   S.armies.push(a);
   return a;
@@ -138,9 +147,17 @@ G.removeArmy = function (a) {
   const i = S.armies.indexOf(a);
   if (i >= 0) S.armies.splice(i, 1);
   if (G.selected) G.selected.delete(a);
+  if (a.fleet != null) G.navy.unloadDead(a);
 };
 
-G.armySpeed = a => 3.2 + 3.2 * a.cav;   // km/saat
+G.armySpeed = a => (3.2 + 3.2 * a.cav) * (1 + G.command.bonus(a, 'speed'));   // km/saat
+
+// Bölüğün asker dağılımı (gösterim için)
+G.composition = a => {
+  const cav = Math.round(a.men * a.cav), rest = a.men - cav;
+  const arch = Math.round(rest * 0.3);
+  return { piyade: rest - arch, okcu: arch, suvari: cav };
+};
 
 G.monthlyManpower = function (tag) {
   let m = 0;
@@ -276,6 +293,7 @@ G.makePeace = function (a, b, transfer) {
 G.evacuateArmies = function () {
   const S = G.S;
   for (const a of S.armies.slice()) {
+    if (a.fleet != null) continue;
     const p = S.provinces[a.prov];
     if (G.canEnter(a.tag, p)) continue;
     const dest = G.nearestOwn(a.tag, a.prov);

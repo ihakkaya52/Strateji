@@ -78,6 +78,9 @@ U.initGame = function () {
     $('tb-focus').onclick = () => U.showFocus();
   }
   $('focus-close').onclick = () => $('focuswin').classList.add('hidden');
+  $('tb-ordular').onclick = () => U.toggleOrdular();
+  $('tb-navy').onclick = () => U.showNavy();
+  $('navy-close').onclick = () => $('navywin').classList.add('hidden');
   const sp = $('tb-speed');
   sp.innerHTML = [1, 2, 3, 4, 5].map(i => `<span data-s="${i}"></span>`).join('');
   sp.onclick = e => { const s = e.target.dataset.s; if (s) U.setSpeed(+s); };
@@ -113,7 +116,8 @@ U.refreshTop = function () {
   $('tb-date').textContent = G.fmtDate(S.time);
   $('tb-manpower').textContent = G.fmtNum(n.manpower);
   const st = G.nationStats(S.player);
-  $('tb-armies').textContent = `${st.armies} / ${G.fmtK(st.men)}`;
+  $('tb-armies').textContent = `${G.command.of(S.player).length} ordu · ${st.armies} bölük · ${G.fmtK(st.men)}`;
+  $('tb-ships').textContent = `${G.navy.fleetsOf(S.player).reduce((t, f) => t + f.ships.length, 0)} gemi`;
   if (G.focus.tree(S.player)) {
     const f = n.focus.cur && G.focus.get(S.player, n.focus.cur);
     $('tb-focus-name').textContent = f ? f.name : 'Odak seç';
@@ -158,7 +162,9 @@ U.showProvince = function (pid) {
         <tr><td>Aylık insan gücü</td><td>${p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140}</td></tr>
       </table>
       ${siege}
-      ${armies.length ? `<h3>Ordular</h3>${armies.map(a => `<div>${U.flag(a.tag)} ${G.esc(a.name)} · ${G.fmtK(a.men)}</div>`).join('')}` : ''}`;
+      ${U.portSection(p)}
+      ${armies.length ? `<h3>Bölükler</h3>${armies.map(a => `<div>${U.flag(a.tag)} ${G.esc(a.name)} · ${G.esc(a.cmdr)} · ${G.fmtK(a.men)}</div>`).join('')}` : ''}`;
+    U.bindPortSection(p);
   }
   el.querySelector('.close').onclick = U.closePanel;
 };
@@ -249,40 +255,8 @@ U.refreshPanel = function () {
   if (U.panelKind === 'prov') U.showProvince(U.panelId);
   else if (U.panelKind === 'nation') U.showNation(U.panelId);
   if (!$('focuswin').classList.contains('hidden')) U.showFocus();
-};
-
-// ------------------------------------------------------------ ordu paneli
-U.refreshArmyPanel = function () {
-  const el = $('armypanel');
-  const sel = [...G.selected];
-  if (!sel.length) { el.classList.add('hidden'); return; }
-  el.classList.remove('hidden');
-  const S = G.S, P = S.provinces;
-  const total = sel.reduce((s, a) => s + a.men, 0);
-  el.innerHTML = `<h3>${sel.length} ordu · ${G.fmtNum(total)} asker</h3>
-    <div class="muted" style="font-size:12px;margin-bottom:6px">Sağ tıkla hedef seç.</div>
-    ${sel.map(a => {
-      const status = a.attacking != null ? `Saldırıyor: ${G.esc(P[a.attacking].name)}`
-        : a.besieging && G.atWar(a.tag, P[a.prov].ctrl) ? `Kuşatıyor: ${G.esc(P[a.prov].name)}`
-        : a.path.length ? `Yürüyor: ${G.esc(P[a.path[a.path.length - 1]].name)}`
-        : `Bekliyor: ${G.esc(P[a.prov].name)}`;
-      return `<div class="army-row">
-        <span class="nm">${G.esc(a.name)}</span><span>${G.fmtNum(a.men)}</span>
-        <span class="muted" style="grid-column:1/3">${status}</span>
-        <div class="bars">
-          <div title="Örgütlenme"><div class="bar org"><div style="width:${a.org}%"></div></div></div>
-          <div title="Mevcut"><div class="bar str"><div style="width:${a.men / a.maxMen * 100}%"></div></div></div>
-        </div></div>`;
-    }).join('')}
-    <div class="row-btns" style="margin-top:8px">
-      <button id="btn-army-stop">Dur</button>
-      <button id="btn-army-desel">Seçimi bırak</button>
-    </div>`;
-  $('btn-army-stop').onclick = () => {
-    for (const a of G.selected) { a.path = []; a.attacking = null; a.besieging = false; }
-    U.refreshArmyPanel(); G.mapDirty = true;
-  };
-  $('btn-army-desel').onclick = () => G.clearSelection();
+  U.refreshOrdular && U.refreshOrdular();
+  U.refreshNavy && U.refreshNavy();
 };
 
 // ------------------------------------------------------------ günlük, olaylar

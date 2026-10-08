@@ -10,15 +10,24 @@
   G.mapDirty = true;
   G.labelsDirty = true;
 
+  G.selFleet = null;
   G.clearSelection = function () {
     for (const a of G.selected) a.sel = false;
     G.selected.clear();
+    G.selFleet = null;
     U.refreshArmyPanel();
     G.mapDirty = true;
   };
+  G.selectFleet = function (f) {
+    for (const a of G.selected) a.sel = false;
+    G.selected.clear();
+    G.selFleet = f;
+    U.refreshArmyPanel(); U.refreshNavy();
+    G.mapDirty = true;
+  };
   G.selectArmies = function (arr, add) {
-    if (!add) G.clearSelection();
-    for (const a of arr) { a.sel = true; G.selected.add(a); }
+    if (!add || G.selFleet) G.clearSelection();
+    for (const a of arr) { if (a.fleet != null) continue; a.sel = true; G.selected.add(a); }
     U.refreshArmyPanel();
     G.mapDirty = true;
   };
@@ -27,7 +36,7 @@
   // fontlar yüklenince haritayı yeniden çiz
   if (document.fonts) {
     Promise.all([document.fonts.load(`600 20px ${G.FONT_TITLE}`), document.fonts.load(`14px ${G.FONT_BODY}`),
-      document.fonts.load(`italic 14px ${G.FONT_BODY}`)]).then(() => { G.mapDirty = true; }).catch(() => {});
+      document.fonts.load(`italic 14px ${G.FONT_BODY}`)]).then(() => { G.labelsDirty = true; G.mapDirty = true; }).catch(() => {});
   }
   // menü arka planı: Akdeniz
   M.cam = { x: 28, y: -46, scale: Math.max(9, window.innerWidth / 70) };
@@ -83,6 +92,13 @@
     const now = performance.now();
     if (now - lastHover < 40) return;
     lastHover = now;
+    const fl = G.S && M.fleetAt(x, y);
+    if (fl) {
+      const N = G.navy;
+      U.tooltip(x, y, `${U.flag(fl.tag)} <b>${G.esc(fl.name)}</b><br>${fl.ships.length} gemi · ${G.fmtNum(N.crew(fl))} denizci` +
+        (fl.cargo.length ? `<br>Gemide ${G.fmtNum(N.cargoMen(fl))} asker` : '') + `<br>Kaptan: ${G.esc(fl.admiral.name)}`);
+      return;
+    }
     const c = G.S && M.counterAt(x, y);
     if (c) {
       const men = c.armies.reduce((s, a) => s + a.men, 0);
@@ -131,6 +147,16 @@
       return;
     }
     if (!G.S) return;
+    if (U.targetOrdu) {
+      const pid = M.provinceAt(x, y);
+      if (pid != null) U.setTarget(pid); else U.endTargetMode();
+      return;
+    }
+    const fl = M.fleetAt(x, y);
+    if (fl) {
+      if (fl.tag === G.S.player) G.selectFleet(fl); else U.showNation(fl.tag);
+      return;
+    }
     const c = M.counterAt(x, y);
     if (c) {
       if (c.tag === G.S.player) { G.selectArmies(c.armies, shift); return; }
@@ -148,6 +174,7 @@
 
   canvas.addEventListener('contextmenu', e => {
     e.preventDefault();
+    if (G.S && G.selFleet) { fleetOrder(e.clientX, e.clientY); return; }
     if (!G.S || !G.selected.size) return;
     const pid = M.provinceAt(e.clientX, e.clientY);
     if (pid == null) return;
@@ -163,6 +190,25 @@
     U.refreshArmyPanel();
     G.mapDirty = true;
   });
+
+  function fleetOrder(x, y) {
+    const S = G.S, N = G.navy, f = G.selFleet;
+    const pid = M.provinceAt(x, y);
+    let err = null;
+    if (pid != null) {
+      const p = S.provinces[pid];
+      if (N.friendlyPort(f.tag, p) && (!f.cargo.length || G.sameRealm(p.ctrl, f.tag))) err = N.orderDock(f, pid);
+      else if (p.sea && p.sea.length) err = N.orderLand(f, pid);
+      else err = 'Gemiler yalnızca kıyı eyaletlerine gidebilir.';
+    } else {
+      const z = M.seaAt(x, y);
+      if (z == null) return;
+      err = N.orderZone(f, z);
+    }
+    if (err) U.addLog(G.fmtDate(S.time, false), err, 'war');
+    U.refreshArmyPanel();
+    G.mapDirty = true;
+  }
 
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
@@ -204,7 +250,8 @@
     if (touch && !touch.moved && !touch.pinch) {
       // dokunmatikte: ordu seçiliyse dokunulan yere yürüt
       const long = performance.now() - touch.t0 > 450;
-      if (G.S && G.selected.size && !M.counterAt(touch.x, touch.y)) {
+      if (G.S && G.selFleet && !long && !M.fleetAt(touch.x, touch.y)) fleetOrder(touch.x, touch.y);
+      else if (G.S && G.selected.size && !M.counterAt(touch.x, touch.y)) {
         const pid = M.provinceAt(touch.x, touch.y);
         if (pid != null && !long) {
           for (const a of G.selected) G.orderMove(a, pid);
@@ -224,7 +271,16 @@
     else if (e.key >= '1' && e.key <= '5') U.setSpeed(+e.key);
     else if (e.key === '+' || e.code === 'NumpadAdd') U.setSpeed(G.S.speed + 1);
     else if (e.key === '-' || e.code === 'NumpadSubtract') U.setSpeed(G.S.speed - 1);
-    else if (e.key === 'Escape') { G.clearSelection(); U.closePanel(); }
+    else if (e.key === 'Escape') {
+      if (U.targetOrdu) U.endTargetMode();
+      else if (!document.getElementById('navywin').classList.contains('hidden')) document.getElementById('navywin').classList.add('hidden');
+      else { G.clearSelection(); U.closePanel(); }
+    }
+    else if (e.key === 'o' || e.key === 'O') U.toggleOrdular();
+    else if (e.key === 'n' || e.key === 'N') {
+      const w = document.getElementById('navywin');
+      if (w.classList.contains('hidden')) U.showNavy(); else w.classList.add('hidden');
+    }
     keys.add(e.code);
   });
   window.addEventListener('keyup', e => keys.delete(e.code));
@@ -254,7 +310,12 @@
         G.mapDirty = true;
         U.refreshTop();
         for (const a of [...G.selected]) if (!S.armies.includes(a)) G.selected.delete(a);
-        if (now - lastUi > 400) { lastUi = now; U.refreshArmyPanel(); if (U.panelKind === 'prov') U.refreshPanel(); }
+        if (G.selFleet && !S.fleets.includes(G.selFleet)) G.selFleet = null;
+        if (now - lastUi > 400) {
+          lastUi = now; U.refreshArmyPanel(); U.refreshOrdular();
+          if (U.panelKind === 'prov') U.showProvince(U.panelId);
+          if (now - (U.lastNavy || 0) > 1000) { U.lastNavy = now; U.refreshNavy(); }
+        }
       }
     } else acc = 0;
     if (G.mapDirty) { G.mapDirty = false; M.draw(); }

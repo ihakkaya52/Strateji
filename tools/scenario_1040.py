@@ -959,3 +959,52 @@ STRAITS = [
 VASSALS = {
     "ENG": "DEN",   # Hardeknud'un İngiltere'si Danimarka tacına bağlı
 }
+
+# Deniz bölgeleri: (ad, boylam, enlem). Her nokta bir deniz bölgesinin merkezidir.
+SEA_ZONES = [
+    # Kuzey Atlantik ve Kuzey Denizi
+    ("Kuzey Denizi (güney)", 3.5, 53.6), ("Kuzey Denizi (orta)", 3.0, 56.5), ("Kuzey Denizi (kuzey)", 1.5, 59.8),
+    ("Skagerrak", 8.5, 57.9), ("Kattegat", 11.5, 56.9), ("Norveç Denizi", 2.0, 64.0),
+    ("Norveç Kıyıları", 11.0, 67.8), ("Barents Denizi", 32.0, 71.2), ("Beyaz Deniz", 38.0, 65.8),
+    ("Peçora Denizi", 54.0, 70.2), ("Kara Denizi", 66.0, 71.2), ("Manş Denizi (doğu)", 0.3, 50.3),
+    ("Manş Denizi (batı)", -4.2, 49.4), ("Kelt Denizi", -7.5, 50.6), ("İrlanda Denizi", -5.0, 53.7),
+    ("Hebrid Denizi", -7.8, 57.2), ("Faroe Açıkları", -7.5, 61.0), ("İzlanda Açıkları", -16.0, 62.8),
+    ("İzlanda Kuzeyi", -18.0, 67.2), ("İrlanda Açıkları", -13.0, 54.0), ("Biscay Körfezi", -4.5, 45.5),
+    ("Galiçya Açıkları", -12.0, 43.5), ("Portekiz Açıkları", -12.5, 39.0), ("Fas Açıkları", -11.5, 33.0),
+    ("Kanarya Açıkları", -17.0, 28.5), ("Moritanya Açıkları", -19.5, 21.5), ("Senegal Açıkları", -20.5, 14.5),
+    ("Atlantik (kuzey)", -22.0, 48.5), ("Atlantik (orta)", -22.0, 37.0), ("Atlantik (Gine)", -20.0, 10.0),
+    # Akdeniz
+    ("Cebelitarık Boğazı", -5.6, 35.95), ("Alboran Denizi", -3.0, 36.2), ("Balear Denizi", 2.5, 40.5),
+    ("Lion Körfezi", 4.5, 42.4), ("Ligurya Denizi", 8.8, 43.6), ("Sardinya Denizi", 6.3, 39.5),
+    ("Tiren Denizi", 12.0, 40.0), ("Sicilya Boğazı", 12.0, 36.8), ("Cezayir Açıkları", 4.0, 37.6),
+    ("Sirte Körfezi", 18.0, 32.6), ("İyon Denizi", 18.5, 37.2), ("Adriyatik (kuzey)", 13.8, 44.4),
+    ("Adriyatik (güney)", 17.6, 41.8), ("Ege Denizi (kuzey)", 24.6, 39.9), ("Ege Denizi (güney)", 25.5, 37.0),
+    ("Girit Denizi", 25.0, 35.0), ("Libya Denizi", 23.5, 33.3), ("Levant Denizi", 33.5, 33.4),
+    ("Mısır Kıyıları", 29.5, 32.0), ("Marmara Denizi", 28.0, 40.75), ("Karadeniz (batı)", 30.5, 43.6),
+    ("Karadeniz (orta)", 34.5, 43.0), ("Karadeniz (doğu)", 38.8, 42.4), ("Azak Denizi", 36.6, 46.1),
+    ("Hazar (kuzey)", 50.0, 45.0), ("Hazar (orta)", 51.0, 41.6), ("Hazar (güney)", 51.5, 38.6),
+    # Baltık
+    ("Baltık (güney)", 15.5, 55.0), ("Baltık (orta)", 19.5, 57.0), ("Riga Körfezi", 23.4, 57.6),
+    ("Fin Körfezi", 26.0, 59.8), ("Botni Denizi", 19.5, 61.5), ("Botni Körfezi", 22.6, 64.5),
+    # Kızıldeniz, Basra, Hint Okyanusu
+    ("Kızıldeniz (kuzey)", 35.0, 26.0), ("Kızıldeniz (orta)", 38.6, 20.8), ("Kızıldeniz (güney)", 41.6, 15.5),
+    ("Aden Körfezi", 47.5, 12.5), ("Basra Körfezi", 51.0, 27.0), ("Hürmüz Boğazı", 56.8, 26.0),
+    ("Umman Denizi", 60.0, 23.0), ("Arap Denizi (batı)", 57.0, 15.0), ("Arap Denizi (doğu)", 66.0, 18.0),
+    ("Sind Açıkları", 66.0, 23.6), ("Malabar Kıyıları", 72.5, 12.5), ("Lakadiv Denizi", 73.5, 7.5),
+    ("Seylan Açıkları", 81.0, 4.5), ("Koromandel Kıyıları", 82.0, 12.5), ("Bengal Körfezi (kuzey)", 89.0, 19.5),
+    ("Bengal Körfezi (güney)", 87.0, 11.5), ("Andaman Denizi", 96.5, 11.0), ("Malakka Boğazı", 99.6, 4.0),
+    ("Hint Okyanusu (batı)", 62.0, 6.0), ("Hint Okyanusu (orta)", 75.0, -1.0), ("Hint Okyanusu (doğu)", 89.0, -1.0),
+    ("Sumatra Açıkları", 96.0, -4.5), ("Cava Denizi", 110.0, -5.0), ("Cava Güneyi", 110.0, -9.5),
+    ("Karimata Boğazı", 107.5, -1.8),
+    # Pasifik
+    ("Güney Çin Denizi (güney)", 106.5, 6.0), ("Siam Körfezi", 101.5, 10.0), ("Güney Çin Denizi (orta)", 113.0, 13.0),
+    ("Tonkin Körfezi", 107.6, 19.6), ("Güney Çin Denizi (kuzey)", 115.5, 20.0), ("Tayvan Boğazı", 119.6, 24.0),
+    ("Doğu Çin Denizi", 124.0, 29.0), ("Sarı Deniz", 123.0, 35.5), ("Bohai Körfezi", 120.0, 38.8),
+    ("Kore Boğazı", 129.0, 34.0), ("Japon Denizi (güney)", 133.0, 37.6), ("Japon Denizi (kuzey)", 136.0, 42.0),
+    ("Pasifik (Japonya)", 139.5, 32.0), ("Pasifik (Tohoku)", 144.0, 38.5), ("Okhotsk Denizi", 146.0, 50.0),
+    ("Tatar Boğazı", 140.6, 48.5), ("Filipin Denizi", 128.0, 20.0), ("Sulu Denizi", 120.0, 9.0),
+    ("Celebes Denizi", 122.0, 3.0), ("Banda Denizi", 126.0, -6.0), ("Flores Denizi", 120.0, -7.5),
+    ("Pasifik (Filipin)", 131.0, 10.0), ("Molukka Denizi", 127.0, 0.5), ("Timor Denizi", 127.0, -10.0),
+    ("Arafura Denizi", 137.0, -9.5), ("Yeni Gine Açıkları", 143.0, -3.0), ("Pasifik (Mikronezya)", 145.0, 15.0),
+    ("Pasifik (Bonin)", 145.0, 27.0),
+]

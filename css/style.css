@@ -231,6 +231,63 @@ button.good { background: linear-gradient(#3f6a30, #25401c); }
 .modal-box .ev-opts button { text-align: left; padding: 8px 12px; }
 .modal-box .ev-opts small { display: block; color: var(--muted); }
 
+/* ---------- Ordular paneli ---------- */
+#ordupanel {
+  position: fixed; top: 50px; right: 8px;
+  width: 340px; max-height: calc(100% - 330px); min-height: 120px;
+  overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px; z-index: 9;
+}
+#ordupanel h3 { margin: 0 0 8px; font-family: var(--title); font-weight: 600; font-size: 14px; color: var(--gold); }
+.ordu-card { border: 1px solid #4a3f2b; border-left: 4px solid var(--gold); border-radius: 3px; padding: 6px 8px; margin-bottom: 8px; background: rgba(0,0,0,0.2); }
+.ordu-card .top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.ordu-card .nm { font-family: var(--title); font-weight: 600; font-size: 13px; cursor: pointer; }
+.ordu-card .gen { font-size: 13px; color: var(--muted); }
+.ordu-card .gen b { color: var(--text); font-weight: 600; }
+.ordu-card .stars { color: var(--gold); letter-spacing: 1px; }
+.ordu-card .row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; align-items: center; }
+.ordu-card select, #armypanel select { font-family: inherit; font-size: 13px; background: #2a241a; color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 3px; }
+.ordu-card button, #armypanel button { padding: 3px 8px; font-size: 13px; }
+button.on { border-color: var(--gold); color: var(--gold); background: linear-gradient(#5a4a2b, #3a2f1b); }
+.trait { font-size: 12px; font-style: italic; color: #b8c890; }
+#modebar {
+  position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
+  background: rgba(120, 30, 25, 0.92); border: 1px solid #e07a5a; border-radius: 4px;
+  padding: 6px 14px; z-index: 12; font-size: 14px;
+}
+
+/* ---------- Donanma ---------- */
+#navywin {
+  position: fixed; top: 48px; left: 50%; transform: translateX(-50%);
+  width: min(1100px, calc(100% - 16px)); height: calc(100% - 64px);
+  display: flex; flex-direction: column;
+  background: linear-gradient(rgba(22,30,34,0.97), rgba(16,22,26,0.97));
+  border: 2px solid #4a6a74; border-radius: 6px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  z-index: 15;
+}
+#navywin .focus-head { border-bottom-color: #2f4a52; }
+#navywin h2 { color: #a8d0dc; }
+.navy-body { flex: 1; display: grid; grid-template-columns: 1.15fr 1fr; gap: 12px; padding: 12px; overflow: hidden; }
+#navy-fleets, #navy-docks { overflow-y: auto; }
+.navy-body h3 { margin: 0 0 8px; font-family: var(--title); font-weight: 400; letter-spacing: 1px; color: #a8d0dc; font-size: 14px; border-bottom: 1px solid #2f4a52; padding-bottom: 3px; }
+.fleet-card, .dock-card { border: 1px solid #2f4a52; border-radius: 4px; padding: 8px 10px; margin-bottom: 10px; background: rgba(0,0,0,0.25); }
+.fleet-card.sel { border-color: #a8e0f0; box-shadow: 0 0 8px rgba(168,224,240,0.25); }
+.fleet-card .top { display: flex; justify-content: space-between; gap: 8px; }
+.fleet-card .nm { font-family: var(--title); font-weight: 600; font-size: 14px; cursor: pointer; }
+.ship-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 5px; }
+.ship-table td, .ship-table th { padding: 2px 4px; text-align: left; }
+.ship-table th { color: var(--muted); font-weight: 400; font-size: 12px; border-bottom: 1px solid #2f4a52; }
+.ship-table td.num, .ship-table th.num { text-align: right; }
+.hpbar { display: inline-block; width: 50px; height: 5px; background: #1a2a30; border: 1px solid #000; vertical-align: middle; }
+.hpbar > div { height: 100%; background: #7fc4e0; }
+.build-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin-top: 6px; }
+.build-btn { text-align: left; padding: 5px 7px; font-size: 12px; line-height: 1.3; }
+.build-btn b { font-family: var(--title); font-size: 12px; }
+.build-btn span { color: var(--muted); }
+.cargo { font-size: 13px; color: #e0c890; margin-top: 4px; }
+
 /* ---------- Odak ağacı ---------- */
 #focuswin {
   position: fixed; top: 48px; left: 50%; transform: translateX(-50%);
@@ -272,6 +329,8 @@ button.good { background: linear-gradient(#3f6a30, #25401c); }
   #panel { width: calc(100% - 16px); max-height: 40%; }
   #log { width: calc(100% - 16px); max-height: 90px; }
   #armypanel { width: calc(100% - 16px); }
+  #ordupanel { width: calc(100% - 16px); max-height: 40%; }
+  .navy-body { grid-template-columns: 1fr; overflow-y: auto; }
   .tb-block { padding: 2px 5px; }
   #tb-date { min-width: 0; }
 }
