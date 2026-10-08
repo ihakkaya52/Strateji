@@ -65,16 +65,19 @@ G.RELIGIONS = {
 // Kültür grubuna göre ordu yapısı: süvari oranı
 G.GROUP_CAV = {
   turk_bozkir: 0.75, turk_yerlesik: 0.5, iran: 0.4, arap: 0.4, berberi: 0.45,
-  bizans: 0.35, latin: 0.25, iskandinav: 0.08, kelt: 0.05, slav: 0.2,
+  bizans: 0.35, latin: 0.25, iskandinav: 0.08, kelt: 0.05, anglosakson: 0.06, slav: 0.2,
   kafkas: 0.3, hint: 0.25, cin: 0.2, dogu_asya: 0.2, gdasya: 0.12, afrika: 0.25,
 };
 
 G.GROUP_NAMES = {
   turk_bozkir: 'Bozkır Türkleri', turk_yerlesik: 'Yerleşik Türkler', iran: 'İranî', arap: 'Arap',
-  berberi: 'Berberi', bizans: 'Rum', latin: 'Latin', iskandinav: 'İskandinav', kelt: 'Kelt',
+  berberi: 'Berberi', bizans: 'Rum', latin: 'Latin', iskandinav: 'İskandinav', kelt: 'Kelt', anglosakson: 'Anglo-Sakson',
   slav: 'Slav / Baltık', kafkas: 'Kafkas', hint: 'Hint', cin: 'Çin', dogu_asya: 'Doğu Asya',
   gdasya: 'Güneydoğu Asya', afrika: 'Afrika',
 };
+
+G.FONT_TITLE = "'Cinzel', Georgia, serif";
+G.FONT_BODY = "'EB Garamond', Georgia, serif";
 
 G.KIND_NAMES = { capital: 'Başkent', city: 'Şehir', rural: 'Kırsal', waste: 'Issız bölge' };
 

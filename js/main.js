@@ -24,6 +24,11 @@
   };
 
   M.init(canvas);
+  // fontlar yüklenince haritayı yeniden çiz
+  if (document.fonts) {
+    Promise.all([document.fonts.load(`600 20px ${G.FONT_TITLE}`), document.fonts.load(`14px ${G.FONT_BODY}`),
+      document.fonts.load(`italic 14px ${G.FONT_BODY}`)]).then(() => { G.mapDirty = true; }).catch(() => {});
+  }
   // menü arka planı: Akdeniz
   M.cam = { x: 28, y: -46, scale: Math.max(9, window.innerWidth / 70) };
   M.clampCam();
@@ -93,6 +98,7 @@
     let html = `<b>${G.esc(p.name)}</b>`;
     if (p.owner) {
       html += `<br>${U.flag(p.owner)} ${G.esc(nations[p.owner].name)}`;
+      if (nations[p.owner].overlord) html += `<br><span class="muted">${G.esc(nations[nations[p.owner].overlord].name)} vasalı</span>`;
       if (G.S && p.ctrl !== p.owner) html += `<br><span style="color:#ff8a6a">İşgal: ${G.esc(nations[p.ctrl].name)}</span>`;
       if (M.mode === 'religion') html += `<br>${G.RELIGIONS[nations[p.owner].religion].name}`;
     } else html += '<br><span class="muted">Geçilemez</span>';

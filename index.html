@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Strateji 1040</title>
+<link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -20,6 +21,10 @@
   </div>
   <div class="tb-block" title="Ordu sayısı / toplam asker">
     <span class="ico">⚑</span><span id="tb-armies">0</span>
+  </div>
+  <div id="tb-focus" class="tb-block clickable hidden" title="Ulusal odak ağacı">
+    <span class="ico">❖</span><span id="tb-focus-name">Odak seç</span>
+    <div class="bar mini"><div id="tb-focus-bar"></div></div>
   </div>
   <div class="tb-block" title="Savaşta olduğunuz ülkeler">
     <span class="ico">☠</span><span id="tb-wars">Barış</span>
@@ -58,6 +63,8 @@
       Vikinglerin torunları Kuzey Denizi'ne hükmediyor. Bir ülke seç ve tarihi yeniden yaz.</p>
     <h3>Büyük güçler</h3>
     <div id="major-list"></div>
+    <h3>Özel başlangıç</h3>
+    <div id="special-list"></div>
     <div class="menu-other">
       <button id="btn-pick-map">Haritadan başka bir ülke seç</button>
     </div>
@@ -73,6 +80,16 @@
   <button id="btn-pick-cancel">Geri</button>
 </div>
 
+<!-- Odak ağacı -->
+<div id="focuswin" class="hidden">
+  <div class="focus-head">
+    <h2 id="focus-title">Ulusal Odak</h2>
+    <span id="focus-sub" class="muted"></span>
+    <button id="focus-close">✕</button>
+  </div>
+  <div id="focus-tree"></div>
+</div>
+
 <!-- Olay penceresi -->
 <div id="modal" class="hidden"><div class="modal-box"></div></div>
 
@@ -81,6 +98,7 @@
 <script src="js/state.js"></script>
 <script src="js/sim.js"></script>
 <script src="js/ai.js"></script>
+<script src="js/focus.js"></script>
 <script src="js/events.js"></script>
 <script src="js/map.js"></script>
 <script src="js/ui.js"></script>

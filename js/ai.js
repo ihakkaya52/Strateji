@@ -115,10 +115,10 @@ G.ai.neighbors = function () {
   return map;
 };
 
-G.ai.strength = tag => {
-  const st = G.nationStats(tag);
-  return st.men + G.S.nations[tag].manpower * 0.4;
-};
+G.ai.strength = tag => G.realm(tag).reduce((sum, t) => {
+  const st = G.nationStats(t);
+  return sum + st.men + G.S.nations[t].manpower * 0.4;
+}, 0);
 
 G.ai.monthly = function () {
   const S = G.S;
@@ -133,15 +133,15 @@ G.ai.monthly = function () {
   const nbs = G.ai.neighbors();
   const grace = S.time.y < 1041;
   for (const n of Object.values(S.nations)) {
-    if (!n.alive || !G.ai.isAI(n.tag) || n.enemies.size) continue;
+    if (!n.alive || !G.ai.isAI(n.tag) || n.enemies.size || n.overlord) continue;
     const chance = n.major ? 0.018 : 0.004;
     if (G.rng() > chance) continue;
     const mine = G.ai.strength(n.tag);
     let best = null;
     for (const o of nbs[n.tag] || []) {
       const on = S.nations[o];
-      if (!on || !on.alive || (n.truces[o] || 0) > S.hour) continue;
-      if (o === S.player && grace) continue;
+      if (!on || !on.alive || (n.truces[o] || 0) > S.hour || G.sameRealm(n.tag, o)) continue;
+      if (G.realm(o).includes(S.player) && grace) continue;
       const theirs = G.ai.strength(o) + 1;
       const need = o === S.player ? 2.2 : 1.7;
       if (mine < theirs * need) continue;
@@ -151,7 +151,7 @@ G.ai.monthly = function () {
     }
     if (best) {
       G.declareWar(n.tag, best.o);
-      if (best.o === S.player) G.ui.warDeclaredOnPlayer(n.tag);
+      if (G.realm(best.o).includes(S.player)) G.ui.warDeclaredOnPlayer(n.tag);
     }
   }
 };

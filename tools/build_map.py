@@ -24,7 +24,7 @@ from shapely.prepared import prep
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
-from scenario_1040 import NATIONS, CITIES, WASTELAND_BOXES, STRAITS  # noqa: E402
+from scenario_1040 import NATIONS, CITIES, WASTELAND_BOXES, STRAITS, VASSALS  # noqa: E402
 
 CACHE = os.path.join(HERE, ".cache")
 NE_BASE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/"
@@ -37,7 +37,13 @@ AFRICA_MIN_LAT = 10.0  # Afrika'nın bu enlemin güneyi haritaya dahil edilmez
 FILLER_STEP = 1.9        # dolgu eyaletlerin ızgara aralığı (projeksiyon birimi)
 FILLER_MIN_DIST = 1.45   # şehre bu mesafeden yakın dolgu noktası atılır
 OWNER_MAX_DIST = 5.5     # dolgu eyalet en yakın şehre bundan uzaksa ıssız olur
-SIMPLIFY = 0.025
+SIMPLIFY = 0.02
+
+# Sınırları doğal göstermek için düzgün bir bükme alanı: her nokta konumuna göre
+# aynı miktarda kaydırıldığı için komşu eyaletlerin ortak sınırları birebir örtüşür.
+# (genlik, dalga boyu) çiftleri; toplam eğim 1'in altında tutulur ki sınırlar kesişmesin.
+WARP_OCTAVES = [(0.13, 2.6), (0.06, 1.25), (0.022, 0.55)]
+WARP_SEGMENT = 0.07
 
 DIRS = ["Doğusu", "Kuzeydoğusu", "Kuzeyi", "Kuzeybatısı", "Batısı", "Güneybatısı", "Güneyi", "Güneydoğusu"]
 
@@ -207,6 +213,22 @@ def main():
     vor = Voronoi(allpts)
 
     print("poligonlar kesiliyor...")
+    import shapely
+    wrng = np.random.RandomState(1040)
+    waves = []
+    for amp, lam in WARP_OCTAVES:
+        for axis in (0, 1):
+            ang = wrng.uniform(0, 2 * np.pi)
+            k = 2 * np.pi / lam
+            waves.append((axis, amp, k * np.cos(ang), k * np.sin(ang), wrng.uniform(0, 2 * np.pi)))
+
+    def warp(c):
+        c = np.round(c, 9)
+        out = c.copy()
+        for axis, amp, kx, ky, ph in waves:
+            out[:, axis] += amp * np.sin(kx * c[:, 0] + ky * c[:, 1] + ph)
+        return out
+
     geoms = []
     for i in range(len(seeds)):
         reg = vor.regions[vor.point_region[i]]
@@ -214,6 +236,8 @@ def main():
             geoms.append(None)
             continue
         poly = Polygon(vor.vertices[reg])
+        poly = shapely.segmentize(poly, WARP_SEGMENT)
+        poly = shapely.transform(poly, warp)
         if not poly.is_valid:
             poly = poly.buffer(0)
         g = poly.intersection(land)
@@ -306,7 +330,7 @@ def main():
 
     world = dict(
         bounds=[round(minx, 2), round(miny, 2), round(maxx, 2), round(maxy, 2)],
-        nations=nations, provinces=provinces, edges=edges,
+        nations=nations, provinces=provinces, edges=edges, vassals=VASSALS,
     )
     out = os.path.join(ROOT, "js", "data", "world.js")
     os.makedirs(os.path.dirname(out), exist_ok=True)

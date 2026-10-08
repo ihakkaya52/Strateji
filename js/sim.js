@@ -128,7 +128,7 @@ G.stepBattles = function () {
     live.add(k);
     const tp = P[target];
     const power = (arr, att) => arr.reduce((s, a) => s + a.men / 1000 * (0.35 + 0.65 * a.org / 100) *
-      (att ? 1 + 0.55 * a.cav : 1 + 0.25 * (1 - a.cav)), 0);
+      (att ? (1 + 0.55 * a.cav) * S.nations[a.tag].atkMult : (1 + 0.25 * (1 - a.cav)) * S.nations[a.tag].defMult), 0);
     const ap = power(atk, true);
     const dp = power(def, false) * G.fortMod(tp) * (tp.owner === def[0].tag ? 1.1 : 1);
     const ratio = G.clamp(ap / Math.max(0.01, dp), 0.2, 5);
@@ -187,7 +187,7 @@ G.retreat = function (a) {
   for (const n of p.nb) {
     const np = P[n];
     if (!G.canEnter(a.tag, np) || G.hostileArmiesIn(n, a.tag).length) continue;
-    const score = (np.ctrl === a.tag ? 10 : 0) + G.rand();
+    const score = (np.ctrl === a.tag ? 10 : G.sameRealm(np.ctrl, a.tag) ? 8 : 0) + G.rand();
     if (!best || score > best.s) best = { s: score, n };
   }
   a.org = Math.max(a.org, 0);
@@ -268,7 +268,7 @@ G.daily = function () {
   for (const a of S.armies) {
     const recent = a.inCombat != null && S.hour - a.inCombat < 2;
     if (!recent) {
-      const home = P[a.prov].ctrl === a.tag;
+      const home = G.sameRealm(P[a.prov].ctrl, a.tag);
       a.org = Math.min(100, a.org + (home ? 14 : 7));
       if (home && a.men < a.maxMen) {
         const n = S.nations[a.tag];
@@ -290,6 +290,7 @@ G.daily = function () {
   }
   // teslimiyet kontrolü
   for (const n of Object.values(S.nations)) if (n.alive && n.enemies.size) G.checkCapitulation(n.tag);
+  G.focus.daily();
   G.events.check();
 };
 
@@ -313,8 +314,12 @@ G.monthly = function () {
   const S = G.S;
   for (const n of Object.values(S.nations)) {
     if (!n.alive) continue;
-    n.manpower += G.monthlyManpower(n.tag);
-    const cap = G.monthlyManpower(n.tag) * 24 + 20000;
+    const mp = G.monthlyManpower(n.tag);
+    if (n.overlord && S.nations[n.overlord] && S.nations[n.overlord].alive) {
+      n.manpower += mp * (1 - n.tribute);
+      S.nations[n.overlord].manpower += mp * n.tribute;
+    } else n.manpower += mp;
+    const cap = mp * 24 + 20000;
     if (n.manpower > cap) n.manpower = cap;
   }
   G.ai.monthly();

@@ -21,12 +21,13 @@ NATIONS = {
     "HRE": ("Kutsal Roma İmparatorluğu", "#c9b458", True, "III. Heinrich", "katolik", "latin"),
     "FRA": ("Fransa Krallığı", "#3463b5", True, "I. Henri", "katolik", "latin"),
     "KIE": ("Kiev Rus'u", "#b8742f", True, "Bilge Yaroslav", "ortodoks", "slav"),
-    "DEN": ("Danimarka-İngiltere", "#c03a35", True, "Hardeknud", "katolik", "iskandinav"),
+    "DEN": ("Danimarka Krallığı", "#b8443a", True, "Hardeknud", "katolik", "iskandinav"),
     "GAZ": ("Gazneliler", "#8b6b3c", True, "I. Mesud", "sunni", "turk_yerlesik"),
     "SNG": ("Song Hanedanı", "#d9a92b", True, "Renzong", "konfucyus", "cin"),
     "LIA": ("Liao Hanedanı", "#6d7f93", True, "Xingzong", "budist", "turk_bozkir"),
 
     # --- Britanya ve İrlanda ---
+    "ENG": ("İngiltere Krallığı", "#c9675a", False, "Hardeknud (Kont Godwin naip)", "katolik", "anglosakson"),
     "SCO": ("İskoçya Krallığı", "#4b5fa8", False, "I. Duncan", "katolik", "kelt"),
     "GWY": ("Gwynedd Krallığı", "#a8323e", False, "Gruffydd ap Llywelyn", "katolik", "kelt"),
     "DEH": ("Deheubarth Krallığı", "#c46c3a", False, "Hywel ab Edwin", "katolik", "kelt"),
@@ -354,19 +355,20 @@ CITIES = [
     ("Maguelone", 3.88, 43.61, "FRA"), ("Nîmes", 4.36, 43.84, "FRA"),
     ("Provins", 3.29, 48.56, "FRA"),
 
-    # ================= DANİMARKA-İNGİLTERE =================
-    ("Londra", -0.13, 51.51, "DEN"), ("Winchester", -1.31, 51.06, "DEN"),
-    ("Canterbury", 1.08, 51.28, "DEN"), ("Oxford", -1.26, 51.75, "DEN"),
-    ("York", -1.08, 53.96, "DEN"), ("Lincoln", -0.54, 53.23, "DEN"),
-    ("Norwich", 1.30, 52.63, "DEN"), ("Exeter", -3.53, 50.72, "DEN"),
-    ("Bristol", -2.59, 51.45, "DEN"), ("Gloucester", -2.24, 51.86, "DEN"),
-    ("Chester", -2.89, 53.19, "DEN"), ("Worcester", -2.22, 52.19, "DEN"),
-    ("Leicester", -1.13, 52.64, "DEN"), ("Cambridge", 0.12, 52.20, "DEN"),
-    ("Dorchester", -2.43, 50.71, "DEN"), ("Durham", -1.57, 54.78, "DEN"),
-    ("Bamburgh", -1.71, 55.61, "DEN"), ("Lancaster", -2.80, 54.05, "DEN"),
-    ("Stafford", -2.12, 52.81, "DEN"), ("Hereford", -2.72, 52.06, "DEN"),
-    ("Shrewsbury", -2.75, 52.71, "DEN"), ("Kernow", -5.05, 50.26, "DEN"),
-    ("Lewes", 0.01, 50.87, "DEN"), ("Derby", -1.48, 52.92, "DEN"),
+    # ================= İNGİLTERE =================
+    ("Londra", -0.13, 51.51, "ENG"), ("Winchester", -1.31, 51.06, "ENG"),
+    ("Canterbury", 1.08, 51.28, "ENG"), ("Oxford", -1.26, 51.75, "ENG"),
+    ("York", -1.08, 53.96, "ENG"), ("Lincoln", -0.54, 53.23, "ENG"),
+    ("Norwich", 1.30, 52.63, "ENG"), ("Exeter", -3.53, 50.72, "ENG"),
+    ("Bristol", -2.59, 51.45, "ENG"), ("Gloucester", -2.24, 51.86, "ENG"),
+    ("Chester", -2.89, 53.19, "ENG"), ("Worcester", -2.22, 52.19, "ENG"),
+    ("Leicester", -1.13, 52.64, "ENG"), ("Cambridge", 0.12, 52.20, "ENG"),
+    ("Dorchester", -2.43, 50.71, "ENG"), ("Durham", -1.57, 54.78, "ENG"),
+    ("Bamburgh", -1.71, 55.61, "ENG"), ("Lancaster", -2.80, 54.05, "ENG"),
+    ("Stafford", -2.12, 52.81, "ENG"), ("Hereford", -2.72, 52.06, "ENG"),
+    ("Shrewsbury", -2.75, 52.71, "ENG"), ("Kernow", -5.05, 50.26, "ENG"),
+    ("Lewes", 0.01, 50.87, "ENG"), ("Derby", -1.48, 52.92, "ENG"),
+    # ================= DANİMARKA =================
     ("Roskilde", 12.08, 55.64, "DEN"), ("Lund", 13.19, 55.70, "DEN"),
     ("Odense", 10.39, 55.40, "DEN"), ("Viborg", 9.40, 56.45, "DEN"),
     ("Aarhus", 10.20, 56.15, "DEN"), ("Ribe", 8.76, 55.33, "DEN"),
@@ -952,3 +954,8 @@ STRAITS = [
     ("Cerbe", "Kâbis"),
     ("Agder", "Aalborg"),
 ]
+
+# Vasal ilişkileri: vasal -> efendi
+VASSALS = {
+    "ENG": "DEN",   # Hardeknud'un İngiltere'si Danimarka tacına bağlı
+}

@@ -27,6 +27,15 @@ U.initMenu = function (onStart) {
     const c = e.target.closest('.major-card');
     if (c) onStart(c.dataset.tag);
   };
+  const eng = window.WORLD.nations.ENG;
+  const sp = $('special-list');
+  sp.innerHTML = eng ? `
+    <div class="major-card" data-tag="ENG">
+      <span class="flag" style="background:${eng.color}"></span>
+      <div><div class="nm">${G.esc(eng.name)}</div>
+      <div class="rl">Danimarka tacının vasalı · Bağımsızlık odak ağacı</div></div>
+    </div>` : '';
+  sp.onclick = list.onclick;
   $('btn-pick-map').onclick = () => {
     $('menu').classList.add('hidden');
     $('pickbar').classList.remove('hidden');
@@ -64,6 +73,11 @@ U.initGame = function () {
   $('tb-name').textContent = n.name;
   $('tb-nation').onclick = () => U.showNation(S.player);
   $('btn-pause').onclick = () => U.togglePause();
+  if (G.focus.tree(S.player)) {
+    $('tb-focus').classList.remove('hidden');
+    $('tb-focus').onclick = () => U.showFocus();
+  }
+  $('focus-close').onclick = () => $('focuswin').classList.add('hidden');
   const sp = $('tb-speed');
   sp.innerHTML = [1, 2, 3, 4, 5].map(i => `<span data-s="${i}"></span>`).join('');
   sp.onclick = e => { const s = e.target.dataset.s; if (s) U.setSpeed(+s); };
@@ -100,6 +114,12 @@ U.refreshTop = function () {
   $('tb-manpower').textContent = G.fmtNum(n.manpower);
   const st = G.nationStats(S.player);
   $('tb-armies').textContent = `${st.armies} / ${G.fmtK(st.men)}`;
+  if (G.focus.tree(S.player)) {
+    const f = n.focus.cur && G.focus.get(S.player, n.focus.cur);
+    $('tb-focus-name').textContent = f ? f.name : 'Odak seç';
+    $('tb-focus-bar').style.width = f ? `${n.focus.prog / G.FOCUS_DAYS * 100}%` : '0%';
+    $('tb-focus').classList.toggle('pulse', !f);
+  }
   const wars = [...n.enemies];
   $('tb-wars').innerHTML = wars.length ? wars.map(t => U.flag(t)).join(' ') : 'Barış';
   $('topbar').classList.toggle('paused', S.paused);
@@ -154,8 +174,13 @@ U.showNation = function (tag) {
   let diplo = '';
   if (!n.alive) {
     diplo = '<p class="muted">Bu ülke artık yok.</p>';
+  } else if (!isMe && G.sameRealm(tag, S.player)) {
+    diplo = `<h3>Diplomasi</h3><div class="muted">${n.overlord === S.player ? 'Vasalınız.' : 'Efendiniz.'}
+      Aynı diyarın ülkeleri birbirine savaş ilan edemez.</div>`;
   } else if (!isMe) {
-    if (me.enemies.has(tag)) {
+    if (me.enemies.has(tag) && me.overlord) {
+      diplo = `<h3>Savaş</h3><div class="muted">Barışa efendiniz ${G.esc(S.nations[me.overlord].name)} karar verir.</div>`;
+    } else if (me.enemies.has(tag)) {
       const ws = G.warScore(S.player, tag);
       diplo = `<h3>Savaş</h3>
         <div>Savaş skoru: <b style="color:${ws >= 0 ? '#9ad07a' : '#ff8a6a'}">${ws > 0 ? '+' : ''}${ws}</b></div>
@@ -166,7 +191,8 @@ U.showNation = function (tag) {
         </div>`;
     } else {
       const truce = (me.truces[tag] || 0) > S.hour;
-      diplo = `<h3>Diplomasi</h3>
+      if (me.overlord) diplo = `<h3>Diplomasi</h3><div class="muted">Vasallar kendi başlarına savaş ilan edemez.</div>`;
+      else diplo = `<h3>Diplomasi</h3>
         ${truce ? `<div class="muted">Ateşkes: ${Math.ceil((me.truces[tag] - S.hour) / 24 / 30)} ay daha savaş ilan edilemez.</div>` : ''}
         <div class="row-btns"><button class="danger" id="btn-war" ${truce ? 'disabled' : ''}>Savaş ilan et</button></div>`;
     }
@@ -182,6 +208,9 @@ U.showNation = function (tag) {
     <div class="muted">${n.major ? 'Büyük güç' : 'Küçük ülke'}${isMe ? ' · Sizin ülkeniz' : ''}</div>
     <table>
       <tr><td>Hükümdar</td><td>${G.esc(n.ruler)}</td></tr>
+      ${n.overlord ? `<tr><td>Efendisi</td><td>${U.nlink(n.overlord)}</td></tr>
+        <tr><td>Haraç</td><td>%${Math.round(n.tribute * 100)} insan gücü</td></tr>` : ''}
+      ${G.vassalsOf(tag).length ? `<tr><td>Vasalları</td><td>${G.vassalsOf(tag).map(U.nlink).join('<br>')}</td></tr>` : ''}
       <tr><td>Din</td><td>${G.RELIGIONS[n.religion].name}</td></tr>
       <tr><td>Kültür</td><td>${G.GROUP_NAMES[n.group] || '-'}</td></tr>
       <tr><td>Başkent</td><td>${n.capital != null ? `<span class="link" data-prov="${n.capital}">${G.esc(S.provinces[n.capital].name)}</span>` : '-'}</td></tr>
@@ -219,6 +248,7 @@ U.showNation = function (tag) {
 U.refreshPanel = function () {
   if (U.panelKind === 'prov') U.showProvince(U.panelId);
   else if (U.panelKind === 'nation') U.showNation(U.panelId);
+  if (!$('focuswin').classList.contains('hidden')) U.showFocus();
 };
 
 // ------------------------------------------------------------ ordu paneli
@@ -310,8 +340,56 @@ U.showWelcome = function () {
   const wars = [...n.enemies].map(t => S.nations[t].name);
   U.showEvent(`${n.name}`, `${n.ruler} adına hüküm sürüyorsunuz. Yıl 1040. ` +
     (wars.length ? `Ülkeniz şu anda ${wars.join(', ')} ile savaşta! ` : '') +
+    (n.overlord ? `Ülkeniz ${S.nations[n.overlord].name} tacının vasalı ve insan gücünün dörtte birini haraç olarak ödüyor. ` +
+      'Üst çubuktaki odak düğmesinden bağımsızlık yolunu seçebilirsiniz. ' : '') +
     'Ordularınızı seçip sağ tıkla yürütün, düşman şehirlerini kuşatın. Başka bir ülkeye tıklayarak savaş ilan edebilirsiniz. ' +
     'Oyunu başlatmak için Boşluk tuşuna basın.', [{ text: 'Tarihi yazmaya başla' }]);
+};
+
+// ------------------------------------------------------------ odak ağacı
+U.showFocus = function () {
+  const S = G.S, tag = S.player, n = S.nations[tag], tree = G.focus.tree(tag);
+  if (!tree) return;
+  $('focuswin').classList.remove('hidden');
+  $('focus-title').textContent = `${n.name} · Ulusal Odak`;
+  const cur = n.focus.cur && G.focus.get(tag, n.focus.cur);
+  $('focus-sub').textContent = cur
+    ? `Sürüyor: ${cur.name} (${G.FOCUS_DAYS - n.focus.prog} gün kaldı)`
+    : 'Bir odak seçin. Her odak ' + G.FOCUS_DAYS + ' gün sürer.';
+  const W = 190, H = 112, PX = 24, PY = 20;
+  const pos = f => ({ x: PX + f.x * W, y: PY + f.y * H });
+  const maxX = Math.max(...tree.map(f => f.x)), maxY = Math.max(...tree.map(f => f.y));
+  const width = PX * 2 + (maxX + 1) * W, height = PY * 2 + (maxY + 1) * H;
+  let lines = '';
+  for (const f of tree) {
+    for (const r of f.req || []) {
+      const a = pos(G.focus.get(tag, r)), b = pos(f);
+      const done = n.focus.done.has(r);
+      lines += `<path d="M${a.x + 84},${a.y + 64} C${a.x + 84},${a.y + 88} ${b.x + 84},${b.y - 24} ${b.x + 84},${b.y}"
+        stroke="${done ? '#d6b36a' : '#5a4b30'}" stroke-width="2" fill="none"/>`;
+    }
+  }
+  const nodes = tree.map(f => {
+    const st = G.focus.state(n, f), p = pos(f);
+    const prog = st === 'current' ? `<div class="bar"><div style="width:${n.focus.prog / G.FOCUS_DAYS * 100}%"></div></div>` : '';
+    return `<div class="fnode ${st}" data-f="${f.id}" style="left:${p.x}px;top:${p.y}px" title="${G.esc(f.desc)}">
+      <div class="fn-icon">${st === 'done' ? '✦' : '❖'}</div>
+      <div class="fn-name">${G.esc(f.name)}</div>
+      <div class="fn-eff">${G.esc(f.effectText)}</div>${prog}</div>`;
+  }).join('');
+  const el = $('focus-tree');
+  el.innerHTML = `<div style="position:relative;width:${width}px;height:${height}px;margin:0 auto">
+    <svg width="${width}" height="${height}">${lines}</svg>${nodes}</div>`;
+  el.onclick = e => {
+    const node = e.target.closest('.fnode.available');
+    if (!node) return;
+    const f = G.focus.get(tag, node.dataset.f);
+    const go = () => { G.focus.start(tag, f.id); U.showFocus(); U.refreshTop(); };
+    if (cur) {
+      U.showEvent('Odağı değiştir', `"${cur.name}" odağındaki ilerleme kaybolacak. "${f.name}" odağına geçilsin mi?`,
+        [{ text: 'Evet, değiştir', action: go }, { text: 'Vazgeç' }]);
+    } else go();
+  };
 };
 
 // ------------------------------------------------------------ ipucu

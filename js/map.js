@@ -103,12 +103,64 @@ M.shade = function (hex, f) {
   return `rgb(${r | 0},${g | 0},${b | 0})`;
 };
 
+// Eski harita görünümü: ülke renkleri parşömen tonuyla karıştırılıp soldurulur
+M.PARCHMENT = [205, 186, 145];
+M.muted = new Map();
+M.mute = function (hex) {
+  let c = M.muted.get(hex);
+  if (!c) {
+    const n = parseInt(hex.slice(1), 16);
+    let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    const grey = (r + g + b) / 3;
+    const sat = 0.78, mix = 0.24, [pr, pg, pb] = M.PARCHMENT;
+    r = (grey + (r - grey) * sat) * (1 - mix) + pr * mix;
+    g = (grey + (g - grey) * sat) * (1 - mix) + pg * mix;
+    b = (grey + (b - grey) * sat) * (1 - mix) + pb * mix;
+    c = `rgb(${r | 0},${g | 0},${b | 0})`;
+    M.muted.set(hex, c);
+  }
+  return c;
+};
+
 M.provColor = function (p) {
   const S = G.S;
-  if (p.kind === 'waste' || !p.owner) return '#4a4335';
+  if (p.kind === 'waste' || !p.owner) return '#5b5242';
   const n = S ? S.nations[p.owner] : window.WORLD.nations[p.owner];
-  if (M.mode === 'religion') return (G.RELIGIONS[n.religion] || { color: '#888' }).color;
-  return n.color;
+  if (M.mode === 'religion') return M.mute((G.RELIGIONS[n.religion] || { color: '#888888' }).color);
+  return M.mute(n.color);
+};
+
+// Parşömen dokusu (bir kez üretilir)
+M.paper = function () {
+  if (M.paperPat) return M.paperPat;
+  const c = document.createElement('canvas'), N = 256;
+  c.width = c.height = N;
+  const x = c.getContext('2d'), img = x.createImageData(N, N);
+  const rnd = G.makeRng(7);
+  // birkaç ölçekte gürültü: lekeli kâğıt hissi
+  const layer = (cell, amp, acc) => {
+    const g = [];
+    const m = N / cell;
+    for (let i = 0; i <= m; i++) { g.push([]); for (let j = 0; j <= m; j++) g[i].push(rnd()); }
+    for (let i = 0; i <= m; i++) { g[i][m] = g[i][0]; g[m] = g[0]; }
+    for (let y = 0; y < N; y++) for (let xx = 0; xx < N; xx++) {
+      const gx = xx / cell, gy = y / cell, ix = gx | 0, iy = gy | 0;
+      const fx = gx - ix, fy = gy - iy;
+      const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+      const a = g[iy][ix] + (g[iy][ix + 1] - g[iy][ix]) * sx;
+      const b = g[iy + 1][ix] + (g[iy + 1][ix + 1] - g[iy + 1][ix]) * sx;
+      acc[y * N + xx] += (a + (b - a) * sy) * amp;
+    }
+  };
+  const acc = new Float32Array(N * N);
+  layer(64, 0.5, acc); layer(16, 0.3, acc); layer(4, 0.2, acc);
+  for (let i = 0; i < N * N; i++) {
+    const v = 200 + acc[i] * 55;
+    img.data[i * 4] = v; img.data[i * 4 + 1] = v * 0.96; img.data[i * 4 + 2] = v * 0.88; img.data[i * 4 + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+  M.paperPat = M.ctx.createPattern(c, 'repeat');
+  return M.paperPat;
 };
 
 M.hatch = function (color) {
@@ -132,12 +184,14 @@ M.hatch = function (color) {
 // ------------------------------------------------------------ sınırlar ve etiketler
 M.rebuildBorders = function () {
   const P = G.S ? G.S.provinces : window.WORLD.provinces;
-  const inner = new Path2D(), outer = new Path2D();
+  const lord = t => (G.S && t ? G.topLord(t) : t);
+  const inner = new Path2D(), outer = new Path2D(), realm = new Path2D();
   for (const [a, b, segs] of window.WORLD.edges) {
     const pa = P[a], pb = P[b];
     const wa = pa.kind === 'waste', wb = pb.kind === 'waste';
     if (wa && wb) continue;
-    const target = (pa.owner !== pb.owner) ? outer : inner;
+    let target = inner;
+    if (pa.owner !== pb.owner) target = lord(pa.owner) === lord(pb.owner) ? realm : outer;
     for (const s of segs) {
       target.moveTo(s[0], s[1]);
       for (let i = 2; i < s.length; i += 2) target.lineTo(s[i], s[i + 1]);
@@ -145,6 +199,7 @@ M.rebuildBorders = function () {
   }
   M.innerBorders = inner;
   M.outerBorders = outer;
+  M.realmBorders = realm;
 };
 
 M.rebuildLabels = function () {
@@ -198,7 +253,7 @@ M.draw = function () {
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const grd = ctx.createLinearGradient(0, 0, 0, M.h);
-  grd.addColorStop(0, '#1d3442'); grd.addColorStop(1, '#162a36');
+  grd.addColorStop(0, '#30474a'); grd.addColorStop(1, '#25393c');
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, M.w, M.h);
 
@@ -212,20 +267,25 @@ M.draw = function () {
     vis.push(i);
   }
 
-  // kıyı parıltısı
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = 'rgba(120, 170, 190, 0.35)';
-  ctx.lineWidth = 4 / sc;
+  // kıyı: eski haritalardaki gibi yumuşak, katmanlı su çizgisi
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(160, 190, 180, 0.10)';
+  ctx.lineWidth = 9 / sc;
+  for (const i of vis) ctx.stroke(M.paths[i]);
+  ctx.strokeStyle = 'rgba(170, 200, 190, 0.16)';
+  ctx.lineWidth = 3.5 / sc;
   for (const i of vis) ctx.stroke(M.paths[i]);
 
   // dolgular
   const selNation = M.selNation;
   for (const i of vis) {
     const p = P[i];
-    let col = M.provColor(p);
-    if (selNation && p.owner === selNation) col = M.shade(col, 0.22);
-    ctx.fillStyle = col;
+    ctx.fillStyle = M.provColor(p);
     ctx.fill(M.paths[i]);
+    if (selNation && p.owner === selNation) {
+      ctx.fillStyle = 'rgba(255,245,220,0.2)';
+      ctx.fill(M.paths[i]);
+    }
   }
   ctx.fillStyle = 'rgba(0,0,0,0)';
   // işgal taraması
@@ -233,7 +293,7 @@ M.draw = function () {
     for (const i of vis) {
       const p = P[i];
       if (p.ctrl && p.ctrl !== p.owner) {
-        const pat = M.hatch(S.nations[p.ctrl].color);
+        const pat = M.hatch(M.mute(S.nations[p.ctrl].color));
         pat.setTransform(new DOMMatrix([1 / sc, 0, 0, 1 / sc, 0, 0]));
         ctx.fillStyle = pat;
         ctx.fill(M.paths[i]);
@@ -253,18 +313,36 @@ M.draw = function () {
     ctx.stroke(M.paths[M.selProv]);
   }
 
-  // sınırlar
+  // sınırlar: yumuşak, iki katmanlı (geniş gölge + ince mürekkep)
   if (sc > 9) {
-    ctx.strokeStyle = 'rgba(20,15,8,0.28)';
-    ctx.lineWidth = 0.7 / sc;
+    ctx.strokeStyle = `rgba(40,28,14,${G.clamp((sc - 9) / 60, 0, 0.16)})`;
+    ctx.lineWidth = 0.6 / sc;
     ctx.stroke(M.innerBorders);
   }
-  ctx.strokeStyle = 'rgba(15,10,5,0.85)';
-  ctx.lineWidth = Math.min(2.2, 0.6 + sc / 30) / sc;
+  const bw = Math.min(1.6, 0.5 + sc / 40);
+  ctx.strokeStyle = 'rgba(30,20,10,0.16)';
+  ctx.lineWidth = bw * 3.2 / sc;
   ctx.stroke(M.outerBorders);
+  ctx.strokeStyle = 'rgba(35,24,12,0.55)';
+  ctx.lineWidth = bw / sc;
+  ctx.stroke(M.outerBorders);
+  // efendi-vasal sınırı: kesik çizgi
+  ctx.setLineDash([3 / sc, 3 / sc]);
+  ctx.strokeStyle = 'rgba(35,24,12,0.45)';
+  ctx.lineWidth = bw * 0.8 / sc;
+  ctx.stroke(M.realmBorders);
+  ctx.setLineDash([]);
 
-  // ekran koordinatlarına geç
+  // ekran koordinatlarına geç ve parşömen dokusunu bindir
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalAlpha = 0.55;
+  const pat = M.paper();
+  pat.setTransform(new DOMMatrix([1.6, 0, 0, 1.6, (ox * 0.25) % 410, (oy * 0.25) % 410]));
+  ctx.fillStyle = pat;
+  ctx.fillRect(0, 0, M.w, M.h);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
   M.drawLabels(vis, P);
   if (S) {
     M.drawSieges(vis, P);
@@ -285,48 +363,49 @@ M.drawLabels = function (vis, P) {
   const ctx = M.ctx, sc = M.cam.scale;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  // ülke adları
+  // ülke adları: silik, ince, harfleri aralıklı
   for (const L of M.labels) {
-    const fs = G.clamp(L.spread * sc * 0.42, 0, 46);
+    const fs = G.clamp(L.spread * sc * 0.3, 0, 30);
     if (fs < 9) continue;
-    if (sc > 70 && fs > 30) continue;
+    if (sc > 70 && fs > 22) continue;
     const s = M.toScreen(L.x, L.y);
     if (s.x < -400 || s.x > M.w + 400 || s.y < -100 || s.y > M.h + 100) continue;
     ctx.save();
     ctx.translate(s.x, s.y);
     ctx.rotate(L.ang);
-    ctx.font = `bold ${fs | 0}px Georgia, serif`;
-    const txt = L.name.toLocaleUpperCase('tr-TR');
-    if ('letterSpacing' in ctx) ctx.letterSpacing = `${Math.max(1, fs / 8) | 0}px`;
-    ctx.lineWidth = Math.max(2, fs / 7);
-    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-    ctx.strokeText(txt, 0, 0);
-    ctx.fillStyle = 'rgba(255,248,230,0.9)';
-    ctx.fillText(txt, 0, 0);
+    ctx.font = `600 ${fs | 0}px ${G.FONT_TITLE}`;
+    if ('letterSpacing' in ctx) ctx.letterSpacing = `${(fs / 5).toFixed(1)}px`;
+    ctx.shadowColor = 'rgba(20,12,4,0.55)';
+    ctx.shadowBlur = fs / 4;
+    ctx.fillStyle = `rgba(250,240,215,${fs > 18 ? 0.42 : 0.55})`;
+    ctx.fillText(L.name, 0, 0);
+    ctx.shadowBlur = 0;
     if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
     ctx.restore();
   }
   // şehir adları
   if (sc < 28) return;
-  ctx.font = `${sc > 60 ? 13 : 11}px Georgia, serif`;
+  ctx.font = `${sc > 60 ? 14 : 12}px ${G.FONT_BODY}`;
   for (const i of vis) {
     const p = P[i];
     if (p.kind === 'waste') { if (sc < 45) continue; }
     else if (p.kind === 'rural' && sc < 90) continue;
     const s = M.toScreen(p.x, p.y);
     if (p.kind === 'capital' || p.kind === 'city') {
-      ctx.fillStyle = p.kind === 'capital' ? '#ffd760' : '#f4ead0';
-      ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+      ctx.fillStyle = p.kind === 'capital' ? '#e8c869' : '#efe4c8';
+      ctx.strokeStyle = 'rgba(30,20,10,0.8)'; ctx.lineWidth = 1;
       ctx.beginPath();
       if (p.kind === 'capital') M.star(ctx, s.x, s.y, 5, 2.4);
-      else ctx.arc(s.x, s.y, 2.6, 0, Math.PI * 2);
+      else ctx.arc(s.x, s.y, 2.3, 0, Math.PI * 2);
       ctx.fill(); ctx.stroke();
     }
-    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillStyle = p.kind === 'waste' ? '#b9ad90' : '#fff8e6';
+    ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(25,16,8,0.45)';
+    ctx.fillStyle = p.kind === 'waste' ? 'rgba(220,205,170,0.6)' : 'rgba(255,248,230,0.85)';
     const ty = p.kind === 'rural' || p.kind === 'waste' ? s.y : s.y + 11;
+    if (p.kind === 'rural' || p.kind === 'waste') ctx.font = `italic ${sc > 60 ? 13 : 11}px ${G.FONT_BODY}`;
     ctx.strokeText(p.name, s.x, ty);
     ctx.fillText(p.name, s.x, ty);
+    if (p.kind === 'rural' || p.kind === 'waste') ctx.font = `${sc > 60 ? 14 : 12}px ${G.FONT_BODY}`;
   }
 };
 
@@ -383,7 +462,7 @@ M.drawCounters = function () {
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(a);
   }
-  ctx.font = 'bold 11px Georgia, serif';
+  ctx.font = `600 12px ${G.FONT_BODY}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const small = sc < 16;
   for (const [, arr] of groups) {
@@ -422,9 +501,9 @@ M.drawCounters = function () {
         ctx.fillStyle = '#000';
         ctx.fillRect(x + w - 1, y - 6, 12, 11);
         ctx.fillStyle = '#ffd760';
-        ctx.font = 'bold 9px Georgia, serif';
+        ctx.font = `600 10px ${G.FONT_BODY}`;
         ctx.fillText(String(arr.length), x + w + 5, y);
-        ctx.font = 'bold 11px Georgia, serif';
+        ctx.font = `600 12px ${G.FONT_BODY}`;
       }
     }
     if (sel) {
@@ -453,7 +532,7 @@ M.drawBattles = function () {
     ctx.fillStyle = involved ? (good ? '#3f7a2f' : '#8a2a22') : '#5a4a2a';
     ctx.fill();
     ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Georgia, serif';
+    ctx.fillStyle = '#fff'; ctx.font = `13px ${G.FONT_BODY}`;
     ctx.fillText('⚔', x, y + 1);
   }
 };

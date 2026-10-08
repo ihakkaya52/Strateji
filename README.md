@@ -21,8 +21,13 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 ## Şu an oyunda olanlar (1. sürüm)
 
 - **Harita:** Gerçek kıyı şeritleri (Natural Earth). Her şehir bir eyalet, aralarda kırsal eyaletler, çöl ve tundralar geçilemez.
-- **Ülkeler:** 10 büyük güç (Bizans, Büyük Selçuklu, Fâtımî, Kutsal Roma, Fransa, Kiev Rus'u, Danimarka-İngiltere,
+- **Ülkeler:** 10 büyük güç (Bizans, Büyük Selçuklu, Fâtımî, Kutsal Roma, Fransa, Kiev Rus'u, Danimarka,
   Gazneliler, Song, Liao) ve yaklaşık 130 küçük ülke. Hepsi oynanabilir.
+- **Vasallık:** İngiltere, Danimarka tacının vasalı olarak başlar. Vasallar efendilerinin savaşlarına katılır,
+  insan gücünün %25'ini haraç olarak öder ve kendi başına savaş ilan edemez. Aynı diyardaki ordular birbirinin
+  topraklarından geçebilir.
+- **Odak ağacı:** İngiltere'ye özel 14 odaklı bağımsızlık ağacı (Witenagemot, Danegeld'i reddet, Edward'ı sürgünden
+  çağır, Bağımsızlık İlanı, Sakson Tacı...). Yapay zekâ İngiltere'si de bu ağacı izler.
 - **Zaman:** HOI4 gibi saatlik takvim, duraklatma ve 5 hız kademesi.
 - **Ordular:** Hareket, muharebe (örgütlenme ve mevcut), geri çekilme, kuşatılıp imha edilme. Kültüre göre süvari oranı
   (bozkır orduları hızlı ve saldırıda güçlü).
@@ -33,15 +38,16 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Olaylar:** Macbeth'in tahta çıkışı (1040), Petar Delyan ayaklanması (1040), Normanların Melfi'yi alışı (1041),
   Büyük Ayrılık (1054).
 - **Harita modları:** Siyasi ve din.
+- **Görünüm:** Parşömen dokulu eski harita görünümü, doğal kıvrımlı sınırlar, Cinzel ve EB Garamond fontları.
 
 ## Yol haritası
 
 1. Ekonomi: atölyeler, teçhizat üretimi (kılıç, zırh, yay, at)
-2. Odak ağaçları: büyük güçlere özel ağaçlar, diğerlerine standart ağaç
+2. Odak ağaçları: büyük güçlere özel ağaçlar, diğerlerine standart ağaç (İngiltere'ninki hazır)
 3. Araştırma: döneme uygun teknolojiler (üzengi, kompozit yay, zincir zırh, Rum ateşi...)
 4. Din ve misyonerlik
 5. Daha fazla tarihî ve kurgusal olay (Malazgirt, Viking akınları, Arapların Anadolu seferleri...)
-6. Diplomasi: ittifaklar ve vasallık (vasalların ana ülkeden ayrılması)
+6. Diplomasi: ittifaklar, diğer vasallar (Fransa ve Kutsal Roma dükalıkları), deniz geçişleri
 7. Kayıt / yükleme
 8. Amerika ve Avustralya
 
@@ -55,12 +61,14 @@ js/util.js            sabitler ve yardımcılar
 js/state.js           oyun durumu, ülkeler, ordular, savaş / barış
 js/sim.js             zaman, hareket, muharebe, kuşatma, insan gücü
 js/ai.js              yapay zekâ
+js/focus.js           odak ağaçları
 js/events.js          olaylar
 js/map.js             harita çizimi
 js/ui.js              paneller ve pencereler
 js/main.js            başlatma, girdi ve oyun döngüsü
 tools/scenario_1040.py  ülkeler ve şehirler (senaryo verisi)
 tools/build_map.py      haritayı üretir
+fonts/                  Cinzel ve EB Garamond (SIL Open Font License)
 ```
 
 ### Haritayı yeniden üretmek
