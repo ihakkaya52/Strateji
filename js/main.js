@@ -282,10 +282,12 @@
     else if (e.key === 'Escape') {
       if (U.targetOrdu) U.endTargetMode();
       else if (!document.getElementById('dipwin').classList.contains('hidden')) U.closeDiplomacy();
+      else if (!document.getElementById('prodwin').classList.contains('hidden')) document.getElementById('prodwin').classList.add('hidden');
       else if (!document.getElementById('navywin').classList.contains('hidden')) document.getElementById('navywin').classList.add('hidden');
       else { G.clearSelection(); U.closePanel(); }
     }
     else if (e.key === 'o' || e.key === 'O') U.toggleOrdular();
+    else if (e.key === 'p' || e.key === 'P') U.toggleProduction();
     else if (e.key === 'n' || e.key === 'N') {
       const w = document.getElementById('navywin');
       if (w.classList.contains('hidden')) U.showNavy(); else w.classList.add('hidden');
@@ -323,7 +325,7 @@
         if (now - lastUi > 400) {
           lastUi = now; U.refreshArmyPanel(); U.refreshOrdular();
           if (U.panelKind === 'prov') U.showProvince(U.panelId);
-          if (now - (U.lastNavy || 0) > 1000) { U.lastNavy = now; U.refreshNavy(); U.refreshDiplomacy(); }
+          if (now - (U.lastNavy || 0) > 1000) { U.lastNavy = now; U.refreshNavy(); U.refreshDiplomacy(); U.refreshProduction(); }
         }
       }
     } else acc = 0;

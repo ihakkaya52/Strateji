@@ -176,6 +176,8 @@
           <span style="grid-column:1/3;font-size:13px">Komutan: <b>${G.esc(g.name)}</b> <span style="color:var(--gold)">${stars(g.skill)}</span> ${traitHtml(g.trait)}
             ${g.skill < 5 ? `<span class="muted"> · tecrübe ${Math.round((g.xp || 0) / (60 * g.skill) * 100)}%</span>` : ''}</span>
           <span class="muted" style="grid-column:1/3">${m ? `Mareşal ${G.esc(m.leader.name)}` : 'Bağımsız ordu'} · ${status}</span>
+          <span style="grid-column:1/3;font-size:12px">Teçhizat: <b style="color:${G.econ.ratio(a) > 0.9 ? '#9ad07a' : G.econ.ratio(a) > 0.6 ? '#e0c060' : '#ff7a5a'}">%${Math.round(G.econ.ratio(a) * 100)}</b>
+            ${a.gear ? `<span class="muted">· ${G.econ.TYPES.filter(t => G.econ.need(a)[t] > 0).map(t => `${G.EQUIP[t].icon} ${G.fmtK(a.gear[t])}/${G.fmtK(G.econ.need(a)[t])}`).join(' ')}</span>` : ''}</span>
           <details style="grid-column:1/3"><summary class="muted">${bs.length} bölük: ${Object.entries(byType).map(([k, v]) => `${v} ${k.toLowerCase()}`).join(', ')}</summary>
             <div class="boluk-list">${bs.map(b => `<div><span>${G.esc(b.name)}</span><span class="muted">${G.esc(b.cmdr)}</span><span>${G.fmtNum(b.men)}</span></div>`).join('')}</div>
           </details>

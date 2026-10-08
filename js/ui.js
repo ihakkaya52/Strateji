@@ -80,6 +80,8 @@ U.initGame = function () {
   $('focus-close').onclick = () => $('focuswin').classList.add('hidden');
   $('tb-ordular').onclick = () => U.toggleOrdular();
   $('tb-navy').onclick = () => U.showNavy();
+  $('tb-prod').onclick = () => U.toggleProduction();
+  $('prod-close').onclick = () => $('prodwin').classList.add('hidden');
   $('navy-close').onclick = () => $('navywin').classList.add('hidden');
   const sp = $('tb-speed');
   sp.innerHTML = [1, 2, 3, 4, 5].map(i => `<span data-s="${i}"></span>`).join('');
@@ -117,6 +119,10 @@ U.refreshTop = function () {
   $('tb-manpower').textContent = G.fmtNum(n.manpower);
   const st = G.nationStats(S.player);
   $('tb-armies').textContent = `${G.command.of(S.player).length} mareşal · ${st.armies} ordu · ${G.fmtK(st.men)}`;
+  {
+    const avg = (() => { const ar = S.armies.filter(a => a.tag === S.player); return ar.length ? ar.reduce((t, a) => t + G.econ.ratio(a), 0) / ar.length : 1; })();
+    $('tb-prodtxt').innerHTML = `${n.civTotal || 0} atölye · ${n.milTotal || 0} silahhane · <span style="color:${avg > 0.9 ? '#9ad07a' : avg > 0.6 ? '#e0c060' : '#ff7a5a'}">teçhizat %${Math.round(avg * 100)}</span>`;
+  }
   $('tb-ships').textContent = `${G.navy.fleetsOf(S.player).reduce((t, f) => t + f.ships.length, 0)} gemi`;
   if (G.focus.tree(S.player)) {
     const f = n.focus.cur && G.focus.get(S.player, n.focus.cur);
@@ -140,6 +146,7 @@ U.closePanel = function () {
 
 U.showProvince = function (pid) {
   const S = G.S, p = S.provinces[pid];
+  if (U.closeDiplomacy && U.dipTag) U.closeDiplomacy();
   U.panelKind = 'prov'; U.panelId = pid;
   G.map.selProv = pid; G.map.selNation = null; G.mapDirty = true;
   const el = $('panel');
@@ -149,7 +156,7 @@ U.showProvince = function (pid) {
       <p class="muted">Issız, geçilemez topraklar. Burada ordu yürüyemez.</p>`;
   } else {
     const armies = G.armiesIn(pid);
-    const siege = p.siege ? `<h3>Kuşatma</h3>${U.nlink(p.siege.by)} kuşatıyor
+    const siege = p.siege ? `<h3>Kuşatma</h3>${U.nlink(p.siege.by)} kuşatıyor${p.siege.stalled ? ' <span style="color:#ff8a6a">(garnizon çok güçlü, kuşatma ilerlemiyor)</span>' : ''}
       <div class="bar"><div style="width:${Math.min(100, p.siege.progress / p.siege.need * 100)}%"></div></div>` : '';
     el.innerHTML = `<button class="close">✕</button>
       <h2>${G.esc(p.name)}</h2>
@@ -158,13 +165,14 @@ U.showProvince = function (pid) {
         <tr><td>Sahibi</td><td>${U.nlink(p.owner)}</td></tr>
         ${p.ctrl !== p.owner ? `<tr><td>İşgalci</td><td>${U.nlink(p.ctrl)}</td></tr>` : ''}
         <tr><td>Alan</td><td>${G.fmtNum(p.area)} km²</td></tr>
-        <tr><td>Kale</td><td>${p.kind === 'capital' ? 'Büyük sur' : p.kind === 'city' ? 'Sur' : 'Yok'}</td></tr>
         <tr><td>Aylık insan gücü</td><td>${p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140}</td></tr>
       </table>
       ${siege}
+      ${U.buildingSection(p)}
       ${U.portSection(p)}
       ${armies.length ? `<h3>Ordular</h3>${armies.map(a => `<div>${U.flag(a.tag)} ${G.esc(a.name)} · ${G.esc(a.general.name)} · ${G.fmtK(a.men)}</div>`).join('')}` : ''}`;
     U.bindPortSection(p);
+    U.bindBuildingSection(p);
   }
   el.querySelector('.close').onclick = U.closePanel;
 };
@@ -257,6 +265,7 @@ U.refreshPanel = function () {
   else if (U.panelKind === 'nation') U.showNation(U.panelId);
   if (!$('focuswin').classList.contains('hidden')) U.showFocus();
   U.refreshOrdular && U.refreshOrdular();
+  U.refreshProduction && U.refreshProduction();
   U.refreshNavy && U.refreshNavy();
 };
 

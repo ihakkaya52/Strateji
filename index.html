@@ -22,6 +22,9 @@
   <div id="tb-ordular" class="tb-block clickable" title="Komuta çubuğunu küçült / büyüt (O)">
     <span class="ico">⚑</span><span id="tb-armies">0</span>
   </div>
+  <div id="tb-prod" class="tb-block clickable" title="Üretim ve inşaat (P)">
+    <span class="ico">⚒</span><span id="tb-prodtxt">0</span>
+  </div>
   <div id="tb-navy" class="tb-block clickable" title="Donanma ve tersaneler (N)">
     <span class="ico">⚓</span><span id="tb-ships">0</span>
   </div>
@@ -77,7 +80,7 @@
     <div class="menu-other">
       <button id="btn-pick-map">Haritadan başka bir ülke seç</button>
     </div>
-    <p class="hint">Kontroller: sol tık seç · sol tıkla sürükle kaydır · Shift + sürükle ordu seç · sağ tık ordu / filo yürüt, ülkeye sağ tık diplomasi · O ordular · N donanma ·
+    <p class="hint">Kontroller: sol tık seç · sol tıkla sürükle kaydır · Shift + sürükle ordu seç · sağ tık ordu / filo yürüt, ülkeye sağ tık diplomasi · O komuta · N donanma · P üretim ·
       tekerlek yakınlaştır · Boşluk duraklat · 1-5 hız</p>
   </div>
 </div>
@@ -112,6 +115,16 @@
   </div>
 </div>
 
+<!-- Üretim penceresi -->
+<div id="prodwin" class="hidden">
+  <div class="focus-head">
+    <h2>Üretim ve İnşaat</h2>
+    <span id="prod-sub" class="muted"></span>
+    <button id="prod-close">✕</button>
+  </div>
+  <div class="prod-body"></div>
+</div>
+
 <!-- Diplomasi penceresi -->
 <div id="dipwin" class="hidden"><div class="dip-body"></div></div>
 
@@ -125,6 +138,7 @@
 <script src="js/sim.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/diplomacy.js"></script>
+<script src="js/economy.js"></script>
 <script src="js/command.js"></script>
 <script src="js/navy.js"></script>
 <script src="js/focus.js"></script>
@@ -134,6 +148,7 @@
 <script src="js/ui.js"></script>
 <script src="js/ui_mil.js"></script>
 <script src="js/ui_dip.js"></script>
+<script src="js/ui_econ.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

@@ -1,7 +1,6 @@
 // Simülasyon: zaman, hareket, muharebe, kuşatma, insan gücü
 'use strict';
 
-const SIEGE_NEED = { capital: 420, city: 160, rural: 36 };  // "ordu-saat" cinsinden
 
 // Bir ordu için en kısa yol (Dijkstra). Hedefe ulaşılamazsa null.
 G.findPath = function (tag, from, to) {
@@ -110,7 +109,7 @@ G.stepArmies = function () {
   }
 };
 
-G.fortMod = p => p.kind === 'capital' ? 1.45 : p.kind === 'city' ? 1.2 : 1.0;
+G.fortMod = (p, defTag) => G.econ.fortMod(p, defTag);
 
 G.stepBattles = function () {
   const S = G.S, P = S.provinces;
@@ -128,11 +127,11 @@ G.stepBattles = function () {
     if (!def.length) { for (const a of atk) a.attacking = null; continue; }
     live.add(k);
     const tp = P[target];
-    const power = (arr, att) => arr.reduce((s, a) => s + a.men / 1000 * (0.35 + 0.65 * a.org / 100) *
+    const power = (arr, att) => arr.reduce((s, a) => s + a.men / 1000 * (0.35 + 0.65 * a.org / 100) * G.econ.combatFactor(a) *
       (att ? (1 + 0.55 * a.cav) * S.nations[a.tag].atkMult * (1 + G.command.bonus(a, 'atk')) * (a.fleet != null ? ((G.navy.fleet(a.fleet) || {}).harborWon ? 0.9 : 0.55) : 1)
         : (1 + 0.25 * (1 - a.cav)) * S.nations[a.tag].defMult * (1 + G.command.bonus(a, 'def'))), 0);
     const ap = power(atk, true);
-    const dp = power(def, false) * G.fortMod(tp) * (tp.owner === def[0].tag ? 1.1 : 1);
+    const dp = power(def, false) * G.fortMod(tp, def[0].tag) * (tp.owner === def[0].tag ? 1.1 : 1);
     const ratio = G.clamp(ap / Math.max(0.01, dp), 0.2, 5);
     for (const d of def) {
       d.org -= 2.6 * ratio * G.rand(0.7, 1.3);
@@ -224,21 +223,32 @@ G.stepSieges = function () {
   for (const [pid, arr] of besiegers) {
     const p = P[pid];
     const tag = arr.reduce((b, a) => (a.men > b.men ? a : b)).tag;
-    let need = SIEGE_NEED[p.kind] || 40;
+    let need = G.econ.siegeNeed(p);
     if (p.owner === tag) need /= 3;   // kendi toprağını kurtarmak kolaydır
     if (!p.siege || p.siege.by !== tag) p.siege = { by: tag, progress: 0, need };
+    const men = arr.reduce((s, a) => s + a.men, 0);
+    const maxG = G.econ.maxGarrison(p);
+    // garnizon kuşatanlara kayıp verdirir, kuşatanlar da garnizonu eritir
+    if (p.garrison > 0) {
+      for (const a of arr) a.men -= a.men * 0.0004 * (p.garrison / 1000);
+      p.garrison = Math.max(0, p.garrison - men * 0.0006);
+    }
+    // garnizonun iki katından az askerle kuşatma ilerlemez
+    if (p.garrison > 0 && men < p.garrison * 2) { p.siege.stalled = true; continue; }
+    p.siege.stalled = false;
     const power = arr.reduce((s, a) => s + a.men / G.ARMY_MEN * (1 + G.command.bonus(a, 'siege')) * (S.nations[a.tag].siegeMult || 1), 0);
-    p.siege.progress += power;
+    p.siege.progress += power * (maxG ? 1 - 0.5 * p.garrison / maxG : 1);
     if (p.siege.progress >= p.siege.need) {
       const old = p.ctrl;
-      p.ctrl = tag; p.siege = null;
+      const wasCapital = G.econ.isCapital(p) && p.owner === old;
+      p.ctrl = tag; p.siege = null; p.garrison = 0;
       G.mapDirty = true;
       for (const a of arr) a.besieging = false;
       if (p.kind !== 'rural' || tag === S.player || old === S.player) {
         const verb = p.owner === tag ? 'geri aldı' : 'ele geçirdi';
-        G.log(`${S.nations[tag].name} ${p.name}'ı ${verb}.`, tag === S.player ? 'good' : 'war', [tag, old]);
+        G.log(`${S.nations[tag].name} ${p.fort ? `${p.name} kalesini` : `${p.name}'ı`} ${verb}.`, tag === S.player ? 'good' : 'war', [tag, old]);
       }
-      if (p.kind === 'capital' && p.owner === old) G.checkCapitulation(old);
+      if (wasCapital) G.checkCapitulation(old);
     }
   }
 };
@@ -281,6 +291,7 @@ G.daily = function () {
       }
     }
   }
+  G.econ.daily();
   // eğitim kuyrukları
   for (const n of Object.values(S.nations)) {
     if (!n.alive || !n.queue.length) continue;

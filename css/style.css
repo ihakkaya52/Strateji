@@ -301,8 +301,8 @@ button.on { border-color: var(--gold); color: var(--gold); background: linear-gr
 
 /* ---------- Diplomasi penceresi ---------- */
 #dipwin {
-  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: min(1040px, calc(100% - 16px)); max-height: calc(100% - 70px); overflow-y: auto;
+  position: fixed; top: 48px; left: 8px;
+  width: min(440px, calc(100% - 16px)); max-height: calc(100% - 64px); overflow-y: auto;
   background: linear-gradient(rgba(40,32,22,0.98), rgba(22,18,12,0.98));
   border: 2px solid var(--border); border-radius: 6px;
   box-shadow: 0 12px 50px rgba(0,0,0,0.7);
@@ -318,11 +318,12 @@ button.on { border-color: var(--gold); color: var(--gold); background: linear-gr
   box-shadow: inset 0 0 0 3px rgba(255,230,160,0.6);
 }
 .dip-shield span { font-family: var(--title); font-weight: 700; color: #fff8e6; text-shadow: 0 1px 3px #000; margin-bottom: 8px; }
-.dip-title h2 { margin: 0; font-family: var(--title); font-weight: 600; color: var(--gold); font-size: 22px; }
+.dip-title h2 { margin: 0; font-family: var(--title); font-weight: 600; color: var(--gold); font-size: 17px; }
 .dip-op { margin-left: auto; text-align: center; padding: 4px 14px; border: 1px solid #4a3f2b; border-radius: 4px; background: rgba(0,0,0,0.3); }
 .dip-op b { font-family: var(--title); font-size: 22px; }
 .dip-close { align-self: flex-start; }
-.dip-cols { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 14px; padding: 12px 16px 16px; }
+.dip-cols { display: flex; flex-direction: column-reverse; gap: 12px; padding: 10px 14px 14px; }
+.dip-cols .acts { order: 0; }
 .dip-col h3 { margin: 0 0 6px; font-family: var(--title); font-weight: 400; letter-spacing: 1px; font-size: 13px; color: var(--gold); border-bottom: 1px solid #4a3f2b; padding-bottom: 3px; }
 .dip-col h3 + * { margin-top: 0; }
 .dip-col table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -341,6 +342,29 @@ button.on { border-color: var(--gold); color: var(--gold); background: linear-gr
 .dip-act .ok, .dip-act.ok, .why .ok { color: #9ad07a; }
 .why .no { color: #e08a6a; }
 .dip-war { padding: 6px 8px; margin-bottom: 8px; border: 1px solid #6a2a22; border-radius: 4px; background: rgba(120,30,25,0.2); }
+
+/* ---------- Üretim penceresi ---------- */
+#prodwin {
+  position: fixed; top: 48px; left: 50%; transform: translateX(-50%);
+  width: min(1180px, calc(100% - 16px)); max-height: calc(100% - 64px);
+  display: flex; flex-direction: column;
+  background: linear-gradient(rgba(38,31,21,0.98), rgba(22,18,12,0.98));
+  border: 2px solid var(--border); border-radius: 6px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  z-index: 15;
+}
+.prod-body { display: grid; grid-template-columns: 1.1fr 1.1fr 0.9fr; gap: 14px; padding: 12px 14px; overflow-y: auto; }
+.prod-col h3 { margin: 0 0 6px; font-family: var(--title); font-weight: 400; letter-spacing: 1px; font-size: 13px; color: var(--gold); border-bottom: 1px solid #4a3f2b; padding-bottom: 3px; }
+.small { font-size: 12px; margin-bottom: 6px; }
+.build-row, .line-row { display: flex; gap: 8px; align-items: center; padding: 5px 4px; border-bottom: 1px solid #3a3122; }
+.build-row .bi, .line-row .li { font-size: 20px; width: 26px; text-align: center; color: var(--gold); }
+.build-row .bmain, .line-row .lmain { flex: 1; font-size: 13px; }
+.build-row button { padding: 1px 6px; }
+.lname { font-family: var(--title); font-size: 12px; font-weight: 600; }
+.lctl { display: flex; align-items: center; gap: 6px; }
+.lctl button { padding: 0 8px; }
+.bar.eff > div { background: #7ab04a; }
+.stock-row { display: grid; grid-template-columns: 70px 1fr auto; gap: 8px; align-items: center; font-size: 13px; padding: 3px 0; }
+.stock-row .bar { margin: 0; }
 
 /* ---------- Donanma ---------- */
 #navywin {
@@ -438,7 +462,7 @@ button.on { border-color: var(--gold); color: var(--gold); background: linear-gr
   #armypanel { width: calc(100% - 16px); }
   #cmdbar { left: 8px; right: 8px; bottom: 100px; max-height: 170px; }
   .navy-body { grid-template-columns: 1fr; overflow-y: auto; }
-  .dip-cols { grid-template-columns: 1fr; }
+  .prod-body { grid-template-columns: 1fr; }
   .tb-block { padding: 2px 5px; }
   #tb-date { min-width: 0; }
 }

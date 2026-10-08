@@ -77,6 +77,7 @@ G.initState = function (playerTag) {
   for (const a of S.armies) if (a.tag === 'GAZ') { a.org = 65; a.men *= 0.8; }
   // orduları mareşallere bağla, donanmaları kur
   for (const n of Object.values(S.nations)) G.command.organize(n.tag);
+  G.econ.init();
   G.navy.init();
   return S;
 };
@@ -103,6 +104,10 @@ G.addNation = function (tag, def) {
     allies: new Set(), guarantees: new Set(), accessGranted: new Set(),
     envoys: def.major ? 3 : 2, envoyTo: new Set(), claims: new Set(), justify: null,
     siegeMult: 1, speedMult: 1, orgMult: 1, navalMult: 1, capBonus: 0,
+    // ekonomi
+    stock: { kilic: 0, yay: 0, zirh: 0, at: 0 },
+    lines: { kilic: { f: 0, eff: 0.5 }, yay: { f: 0, eff: 0.5 }, zirh: { f: 0, eff: 0.5 }, at: { f: 0, eff: 0.5 } },
+    build: [], civTotal: 0, milTotal: 0, milFree: 0,
     armyNo: 0,
     armyTarget: 3,
     alive: true,

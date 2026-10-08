@@ -518,13 +518,16 @@ M.drawLabels = function (vis, P) {
     else if (p.kind === 'rural' && sc < 90) continue;
     const s = M.toScreen(p.x, p.y);
     if (p.kind === 'capital' || p.kind === 'city') {
-      ctx.fillStyle = p.kind === 'capital' ? '#e8c869' : '#efe4c8';
+      // yıldız yalnızca bugünkü başkentlerde; fethedilmiş eski başkentler sıradan şehir gibi görünür
+      const cap = G.S ? G.econ.isCapital(p) : p.kind === 'capital';
+      ctx.fillStyle = cap ? '#e8c869' : '#efe4c8';
       ctx.strokeStyle = 'rgba(30,20,10,0.8)'; ctx.lineWidth = 1;
       ctx.beginPath();
-      if (p.kind === 'capital') M.star(ctx, s.x, s.y, 5, 2.4);
+      if (cap) M.star(ctx, s.x, s.y, 5, 2.4);
       else ctx.arc(s.x, s.y, 2.3, 0, Math.PI * 2);
       ctx.fill(); ctx.stroke();
     }
+    if (G.S && p.fort && sc >= 40) M.drawFort(ctx, s.x - 14, s.y - 2, p);
     ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(25,16,8,0.45)';
     ctx.fillStyle = p.kind === 'waste' ? 'rgba(220,205,170,0.6)' : 'rgba(255,248,230,0.85)';
     const ty = p.kind === 'rural' || p.kind === 'waste' ? s.y : s.y + 11;
@@ -555,6 +558,7 @@ M.drawSieges = function (vis, P) {
     ctx.fillRect(s.x - 17, s.y + 10, 34, 6);
     ctx.fillStyle = G.S.nations[p.siege.by].color;
     ctx.fillRect(s.x - 16, s.y + 11, 32 * f, 4);
+    if (p.siege.stalled) { ctx.strokeStyle = '#ff5a3a'; ctx.lineWidth = 1.5; ctx.strokeRect(s.x - 17.5, s.y + 9.5, 35, 7); }
   }
 };
 
@@ -842,4 +846,23 @@ M.fleetAt = function (sx, sy) {
     if (sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h) return r.fleet;
   }
   return null;
+};
+
+// Kale simgesi: seviye ve garnizon
+M.drawFort = function (ctx, x, y, p) {
+  const w = 11, h = 9;
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,14,8,0.85)';
+  ctx.fillRect(x - w / 2 - 1, y - h - 1, w + 2, h + 4);
+  ctx.fillStyle = '#c8b48a';
+  ctx.fillRect(x - w / 2, y - h + 3, w, h - 3);
+  for (let i = 0; i < 3; i++) ctx.fillRect(x - w / 2 + i * 4, y - h, 3, 3);
+  const max = G.econ.maxGarrison(p);
+  ctx.fillStyle = '#7a1e14';
+  ctx.fillRect(x - w / 2, y + 1, w, 2);
+  ctx.fillStyle = '#e0a060';
+  ctx.fillRect(x - w / 2, y + 1, w * (max ? p.garrison / max : 0), 2);
+  ctx.font = `600 9px ${G.FONT_BODY}`; ctx.fillStyle = '#2a1a0a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(String(p.fort), x, y - 2);
+  ctx.restore();
 };

@@ -15,6 +15,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | Sağ tık | Seçili orduları yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder. Seçim yokken: ülkenin diplomasi sayfası |
 | O | Alt ortadaki komuta çubuğunu küçült / büyüt |
 | N | Donanma arayüzü |
+| P | Üretim ve inşaat |
 | Fare tekerleği | Yakınlaştır / uzaklaştır |
 | Boşluk | Duraklat / devam |
 | 1–5, + / - | Oyun hızı |
@@ -56,7 +57,12 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   muharebesi verir (surlar ve limandaki gemiler); liman düşünce ordu doğrudan karaya çıkar. Limansız kıyılara
   çıkarma daha yavaş ve zayıftır. Aynı deniz bölgesine
   giren düşman filolar çarpışır; batan nakliye gemileriyle askerler de boğulur. Yapay zekâ da çıkarma planlar.
-- **Kuşatma:** Kaleli şehirler ve başkentler hemen düşmez.
+- **Kaleler ve garnizonlar:** Başkentlerde ve bazı şehirlerde 1–5 seviye kale ve garnizon vardır. Kale savunmayı
+  artırır, kuşatmayı uzatır; garnizonun iki katından az askerle kuşatma ilerlemez. Garnizon kayıpları insan gücünden
+  yenilenir. Kaleler inşa edilerek güçlendirilebilir.
+- **Ekonomi ve üretim (HOI4 tarzı):** Atölyeler inşaat yapar (yeni atölye, silahhane, kale), silahhaneler teçhizat
+  üretir: kılıç ve mızrak, yay ve ok, zırh ve kalkan, savaş atı. Silahhaneler üretim hatlarına dağıtılır, yeni
+  hatların verimi zamanla artar. Ordular teçhizatı depodan çeker; teçhizatı eksik ordu daha zayıf savaşır.
 - **Savaş ve barış:** Savaş skoru, toprak devriyle barış veya beyaz barış, ateşkes ve teslimiyet.
 - **İnsan gücü:** Eyaletlerden aylık asker gelir. Yeni ordu toplama (8B asker, 60 gün, yeni komutanla) ve takviye.
 - **Yapay zekâ:** Savaş ilan eder, cephe kurar, kuşatır, barış yapar ve asker toplar.
@@ -68,7 +74,6 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 
 ## Yol haritası
 
-1. Ekonomi: atölyeler, teçhizat üretimi (kılıç, zırh, yay, at)
 2. Odak ağaçları: büyük güçlere özel ağaçlar, diğerlerine standart ağaç (İngiltere'ninki hazır)
 3. Araştırma: döneme uygun teknolojiler (üzengi, kompozit yay, zincir zırh, Rum ateşi...)
 4. Din ve misyonerlik
@@ -90,6 +95,8 @@ js/ai.js              yapay zekâ
 js/diplomacy.js       ilişkiler, elçiler, ittifak, garanti, geçiş hakkı, savaş gerekçesi
 js/focus_trees.js     büyük güçlerin ve ortak odak ağaçları
 js/ui_dip.js          diplomasi penceresi
+js/economy.js         atölyeler, silahhaneler, teçhizat, kale ve garnizon
+js/ui_econ.js         üretim penceresi ve eyalet binaları
 js/command.js         ordular, komutanlar, cepheler
 js/navy.js            gemiler, tersaneler, deniz savaşı, çıkarma
 js/names.js           komutan, kaptan ve gemi adları

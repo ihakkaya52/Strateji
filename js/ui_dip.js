@@ -13,6 +13,7 @@
     if (!S || !S.nations[tag]) return;
     if (tag === S.player) { U.showNation(tag); return; }
     U.dipTag = tag;
+    $('panel').classList.add('hidden');
     $('dipwin').classList.remove('hidden');
     U.refreshDiplomacy();
   };
