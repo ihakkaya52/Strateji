@@ -206,7 +206,7 @@ N.embark = function (f, units) {
   if (f.docked == null) return 'Filo limanda değil.';
   let free = N.cap(f) - N.cargoMen(f), n = 0;
   for (const a of units) {
-    if (a.prov !== f.docked || a.fleet != null || a.attacking != null || a.men > free) continue;
+    if (a.prov !== f.docked || a.fleet != null || a.attacking != null || a.retreating || a.men > free) continue;
     free -= a.men;
     a.fleet = f.id; a.prov = null; a.path = []; a.besieging = false; a.sel = false;
     f.cargo.push(a.id);
@@ -413,14 +413,14 @@ N.applyLosses = function (f) {
       for (const id of f.cargo.slice()) {
         const a = S.armies.find(x => x.id === id);
         if (!a) continue;
-        a.men *= 1 - lostFrac;
-        if (a.men < 200) G.removeArmy(a);
+        G.war.kill(a, a.men * lostFrac, null);
+        if (a.men < 200) G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) gemileriyle birlikte boğuldu.`, null);
       }
     }
     if (f.tag === S.player) G.log(`${f.name}: ${sunk.map(s => s.name).join(', ')} battı.`, 'war', [f.tag]);
   }
   if (!f.ships.length) {
-    for (const id of f.cargo.slice()) { const a = S.armies.find(x => x.id === id); if (a) G.removeArmy(a); }
+    for (const id of f.cargo.slice()) { const a = S.armies.find(x => x.id === id); if (a) G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) denizde boğuldu.`, null); }
     S.fleets.splice(S.fleets.indexOf(f), 1);
     if (G.selFleet === f) G.selFleet = null;
     G.log(`${f.name} (${S.nations[f.tag].name}) tamamen batırıldı!`, 'war', [f.tag]);

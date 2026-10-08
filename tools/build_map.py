@@ -31,8 +31,20 @@ NE_BASE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master
 NE_FILES = ["ne_50m_land.geojson", "ne_50m_lakes.geojson"]
 
 # Harita sınırları (boylam/enlem)
-LON0, LAT0, LON1, LAT1 = -26.0, -11.0, 150.0, 72.0
-AFRICA_MIN_LAT = 10.0  # Afrika'nın bu enlemin güneyi haritaya dahil edilmez
+LON0, LAT0, LON1, LAT1 = -26.0, -36.0, 150.0, 72.0
+SEA_LAT0 = -11.0       # deniz bölgeleri bu enlemin kuzeyinde
+AFRICA_MIN_LAT = 10.0  # Afrika'nın bu enlemin güneyi keşfedilmemiş topraktır
+# Keşfedilmemiş bölgeler (boylam/enlem kutuları): kara burada çizilir ama eyalet yoktur
+UNEXPLORED_BOXES = [
+    (-26, -60, 43.0, AFRICA_MIN_LAT),   # Sahraaltı Afrika
+    (43.0, -60, 52, 1.0),               # Afrika Boynuzu güneyi ve Madagaskar
+    (52, -90, 180, -11.0),              # Avustralya
+]
+# Keşfedilmemiş toprak yazıları
+UNEXPLORED_LABELS = [
+    ("Terra Incognita", 21.0, 1.0), ("Bilinmeyen Diyarlar", 24.0, -22.0),
+    ("Terra Australis", 134.0, -24.0),
+]
 
 FILLER_STEP = 1.9        # dolgu eyaletlerin ızgara aralığı (projeksiyon birimi)
 FILLER_MIN_DIST = 1.45   # şehre bu mesafeden yakın dolgu noktası atılır
@@ -93,9 +105,6 @@ def load_land():
                 lands.append(g.intersection(clip))
     land = unary_union(lands)
     full = proj_geom(land)   # deniz bölgeleri için kesilmemiş kara
-    # Arabistan'ı koru: Afrika kesimi yalnızca Kızıldeniz'in batısında
-    land = land.difference(box(-26, -60, 43.0, AFRICA_MIN_LAT))
-    land = land.difference(box(43.0, -60, 52, 1.0))  # Afrika Boynuzu güneyi
     lakes = []
     with open(os.path.join(CACHE, "ne_50m_lakes.geojson")) as fh:
         for f in json.load(fh)["features"]:
@@ -109,6 +118,10 @@ def load_land():
     # çok küçük adacıkları at
     parts = [p for p in getattr(land, "geoms", [land]) if p.area > 0.02]
     return proj_geom(MultiPolygon(parts)), full
+
+
+def polys(g, min_area):
+    return [p for p in getattr(g, "geoms", [g]) if isinstance(p, Polygon) and p.area > min_area]
 
 
 def waste_box(lon, lat):
@@ -126,7 +139,39 @@ def direction_name(dx, dy):
 def main():
     fetch()
     print("kara verisi yükleniyor...")
-    land, full_land = load_land()
+    all_land, full_land = load_land()
+    import shapely
+    wrng = np.random.RandomState(1040)
+    waves = []
+    for amp, lam in WARP_OCTAVES:
+        for axis in (0, 1):
+            ang = wrng.uniform(0, 2 * np.pi)
+            k = 2 * np.pi / lam
+            waves.append((axis, amp, k * np.cos(ang), k * np.sin(ang), wrng.uniform(0, 2 * np.pi)))
+
+    def warp(c):
+        c = np.round(c, 9)
+        out = c.copy()
+        for axis, amp, kx, ky, ph in waves:
+            out[:, axis] += amp * np.sin(kx * c[:, 0] + ky * c[:, 1] + ph)
+        return out
+
+    # keşfedilmemiş bölgeler: sınırı da kıvrımlı olsun
+    cut = unary_union([proj_geom(box(*b[:4])) for b in UNEXPLORED_BOXES])
+    crng = np.random.RandomState(7)
+    cwaves = [(amp, 2 * np.pi / lam, crng.uniform(0, 2 * np.pi), crng.uniform(0, 2 * np.pi))
+              for amp, lam in [(1.1, 9.0), (0.5, 3.7), (0.2, 1.4)]]
+
+    def wobble(c):
+        c = warp(c)
+        out = c.copy()
+        for amp, k, p1, p2 in cwaves:
+            out[:, 1] += amp * np.sin(k * c[:, 0] + p1)
+            out[:, 0] += amp * np.sin(k * c[:, 1] + p2)
+        return out
+    cut = shapely.transform(shapely.segmentize(cut, WARP_SEGMENT), wobble).buffer(0)
+    land = MultiPolygon(polys(all_land.difference(cut), 0.02))
+    unexplored = MultiPolygon(polys(all_land.intersection(cut), 0.05))
     land_p = prep(land)
     minx, miny, maxx, maxy = land.bounds
 
@@ -214,22 +259,6 @@ def main():
     vor = Voronoi(allpts)
 
     print("poligonlar kesiliyor...")
-    import shapely
-    wrng = np.random.RandomState(1040)
-    waves = []
-    for amp, lam in WARP_OCTAVES:
-        for axis in (0, 1):
-            ang = wrng.uniform(0, 2 * np.pi)
-            k = 2 * np.pi / lam
-            waves.append((axis, amp, k * np.cos(ang), k * np.sin(ang), wrng.uniform(0, 2 * np.pi)))
-
-    def warp(c):
-        c = np.round(c, 9)
-        out = c.copy()
-        for axis, amp, kx, ky, ph in waves:
-            out[:, axis] += amp * np.sin(kx * c[:, 0] + ky * c[:, 1] + ph)
-        return out
-
     geoms = []
     for i in range(len(seeds)):
         reg = vor.regions[vor.point_region[i]]
@@ -329,8 +358,17 @@ def main():
     for tag, (name, color, major, ruler, religion, group) in NATIONS.items():
         nations[tag] = dict(name=name, color=color, major=major, ruler=ruler, religion=religion, group=group)
 
+    ux0, uy0, ux1, uy1 = unexplored.bounds
+    unk = []
+    for p in unexplored.geoms:
+        p = p.simplify(0.04, preserve_topology=True)
+        unk.append([round(v, 2) for xy in list(p.exterior.coords)[:-1] for v in xy])
+        for h in p.interiors:
+            unk.append([round(v, 2) for xy in list(h.coords)[:-1] for v in xy])
+    unk_labels = [dict(name=n, x=round(proj(lo, la)[0], 2), y=round(proj(lo, la)[1], 2)) for (n, lo, la) in UNEXPLORED_LABELS]
     world = dict(
-        bounds=[round(minx, 2), round(miny, 2), round(maxx, 2), round(maxy, 2)],
+        bounds=[round(min(minx, ux0), 2), round(min(miny, uy0), 2), round(max(maxx, ux1), 2), round(max(maxy, uy1), 2)],
+        unexplored=unk, unexploredLabels=unk_labels,
         nations=nations, provinces=provinces, edges=edges, vassals=VASSALS,
         seas=build_seas(full_land, keep, newid, geoms, provinces),
     )
@@ -353,7 +391,7 @@ def build_seas(full_land, keep, newid, geoms, provinces):
     from shapely.strtree import STRtree
     print("deniz bölgeleri...")
     x0, y0 = proj(LON0, LAT1)
-    x1, y1 = proj(LON1, LAT0)
+    x1, y1 = proj(LON1, SEA_LAT0)
     sea = box(x0, y0, x1, y1).difference(full_land)
     seeds = [proj(lon, lat) for (_, lon, lat) in SEA_ZONES]
     pts = np.array(seeds)

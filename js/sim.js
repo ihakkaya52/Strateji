@@ -54,6 +54,7 @@ G.pathFromPrev = (prev, from, to) => {
 };
 
 G.orderMove = function (a, to) {
+  if (a.retreating) return false;   // bozgundaki ordu emir dinlemez
   const path = G.findPath(a.tag, a.prov, to);
   if (!path) return false;
   a.path = path; a.prog = 0; a.attacking = null; a.besieging = false;
@@ -87,14 +88,30 @@ G.tick = function () {
 G.stepArmies = function () {
   const S = G.S, P = S.provinces;
   for (const a of S.armies) {
-    if (!a.path.length || a.fleet != null) continue;
+    if (!a.path.length || a.fleet != null) { a.retreating = false; continue; }
     const next = a.path[0], np = P[next];
-    if (!G.canEnter(a.tag, np)) { a.path = []; a.prog = 0; continue; }
+    if (!G.canEnter(a.tag, np)) { a.path = []; a.prog = 0; a.retreating = false; continue; }
     const cur = P[a.prov];
+    if (a.retreating) {
+      // çekilme yolu kesildiyse yeni yol ara; bulunamazsa ordu imha olur
+      if (G.hostileArmiesIn(next, a.tag).some(e => !e.retreating)) {
+        const np2 = G.war.escapePath(a);
+        if (!np2) { G.war.trapped.push(a); continue; }
+        a.path = np2; a.prog = 0;
+        continue;
+      }
+      a.prog += G.armySpeed(a) * 0.8;
+      const i = G.nbIndex(cur, a.path[0]);
+      if (a.prog >= (i >= 0 ? cur.nbDist[i] : 200)) {
+        a.prov = a.path.shift(); a.prog = 0;
+        if (!a.path.length) a.retreating = false;
+      }
+      continue;
+    }
     // kuşatma sürerken ordu yerinde kalır
     if (a.besieging && G.atWar(a.tag, cur.ctrl)) continue;
     a.besieging = false;
-    if (G.hostileArmiesIn(next, a.tag).length) {
+    if (G.hostileArmiesIn(next, a.tag).some(e => !e.retreating)) {
       if (a.org > 10) a.attacking = next; else { a.path = []; a.attacking = null; }
       continue;
     }
@@ -105,7 +122,11 @@ G.stepArmies = function () {
     if (a.prog >= d) {
       a.prov = next; a.path.shift(); a.prog = 0;
       if (G.atWar(a.tag, np.ctrl)) a.besieging = true;
+      G.war.overrun(a);
     }
+  }
+  for (const a of G.war.trapped.splice(0)) {
+    if (S.armies.includes(a)) G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) çekilirken kuşatıldı ve imha edildi.`, null);
   }
 };
 
@@ -123,7 +144,7 @@ G.stepBattles = function () {
   const live = new Set();
   for (const [k, atk] of groups) {
     const target = atk[0].attacking, tag = atk[0].tag;
-    const def = G.hostileArmiesIn(target, tag);
+    const def = G.hostileArmiesIn(target, tag).filter(d => !d.retreating);
     if (!def.length) { for (const a of atk) a.attacking = null; continue; }
     live.add(k);
     const tp = P[target];
@@ -135,14 +156,14 @@ G.stepBattles = function () {
     const ratio = G.clamp(ap / Math.max(0.01, dp), 0.2, 5);
     for (const d of def) {
       d.org -= 2.6 * ratio * G.rand(0.7, 1.3);
-      d.men -= d.men * 0.0022 * ratio * G.rand(0.6, 1.4);
+      G.war.kill(d, d.men * 0.0022 * ratio * G.rand(0.6, 1.4), tag);
       d.inCombat = S.hour;
     }
     for (const d of def) G.command.gainXp(d, 0.08);
     for (const a of atk) {
       G.command.gainXp(a, 0.08 * Math.min(2, ratio));
       a.org -= 2.6 / ratio * G.rand(0.7, 1.3);
-      a.men -= a.men * 0.0022 / ratio * G.rand(0.6, 1.4);
+      G.war.kill(a, a.men * 0.0022 / ratio * G.rand(0.6, 1.4), def[0].tag);
       a.inCombat = S.hour;
     }
     let b = S.battles.get(k);
@@ -157,14 +178,14 @@ G.stepBattles = function () {
     b.ratio = ratio; b.from = atk[0].fleet != null ? target : atk[0].prov;
     // sonuçlar
     for (const d of def) {
-      if (d.men < 500) { G.destroyArmy(d, `${d.name} (${S.nations[d.tag].name}) ${tp.name}'da yok edildi.`); continue; }
-      if (d.org <= 0) G.retreat(d);
+      if (d.men < 500) { G.destroyArmy(d, `${d.name} (${S.nations[d.tag].name}) ${tp.name}'da yok edildi.`, tag); continue; }
+      if (d.org <= 0) G.retreat(d, tag);
     }
     for (const a of atk) {
-      if (a.men < 500) { G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) saldırıda yok edildi.`); continue; }
+      if (a.men < 500) { G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) saldırıda yok edildi.`, def[0].tag); continue; }
       if (a.org <= 3) { a.attacking = null; a.path = []; }
     }
-    if (!G.hostileArmiesIn(target, tag).length) {
+    if (!G.hostileArmiesIn(target, tag).some(d => !d.retreating)) {
       live.delete(k);
       if (tag === S.player || b.defTag === S.player) {
         G.log(`${tp.name} muharebesini ${S.nations[tag].name} kazandı.`, tag === S.player ? 'good' : 'war', [tag, b.defTag]);
@@ -179,28 +200,28 @@ G.stepBattles = function () {
   for (const k of [...S.battles.keys()]) if (!live.has(k)) S.battles.delete(k);
 };
 
-G.destroyArmy = function (a, msg) {
+// Ordu yok edilir: geride kalan askerler ölür ya da esir düşer
+G.destroyArmy = function (a, msg, byTag) {
+  G.war.kill(a, a.men, byTag);
   G.removeArmy(a);
   G.log(msg, 'war', [a.tag]);
 };
 
-G.retreat = function (a) {
-  const S = G.S, P = S.provinces, p = P[a.prov];
-  let best = null;
-  for (const n of p.nb) {
-    const np = P[n];
-    if (!G.canEnter(a.tag, np) || G.hostileArmiesIn(n, a.tag).length) continue;
-    const score = (np.ctrl === a.tag ? 10 : G.sameRealm(np.ctrl, a.tag) ? 8 : 0) + G.rand();
-    if (!best || score > best.s) best = { s: score, n };
-  }
+// Bozguna uğrayan ordu: dost toprağa yürüyerek çekilir (ışınlanmaz). Kaçacak yer yoksa imha olur.
+G.retreat = function (a, byTag) {
+  const S = G.S, P = S.provinces;
+  if (a.retreating) return;
   a.org = Math.max(a.org, 0);
-  a.attacking = null; a.path = []; a.prog = 0;
-  if (!best) {
-    G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) kuşatıldı ve imha edildi.`);
+  a.attacking = null; a.besieging = false; a.prog = 0;
+  // takip sırasında verilen kayıplar
+  G.war.kill(a, a.men * G.rand(0.05, 0.1), byTag);
+  const path = a.encircled ? null : G.war.escapePath(a);
+  if (!path) {
+    G.destroyArmy(a, `${a.name} (${S.nations[a.tag].name}) kuşatıldı ve imha edildi: ${G.fmtNum(a.men)} asker öldü ya da esir düştü.`, byTag);
     return;
   }
-  a.prov = best.n;
-  a.besieging = G.atWar(a.tag, P[best.n].ctrl);
+  a.path = path;
+  a.retreating = true;
 };
 
 G.stepSieges = function () {
@@ -230,8 +251,10 @@ G.stepSieges = function () {
     const maxG = G.econ.maxGarrison(p);
     // garnizon kuşatanlara kayıp verdirir, kuşatanlar da garnizonu eritir
     if (p.garrison > 0) {
-      for (const a of arr) a.men -= a.men * 0.0004 * (p.garrison / 1000);
-      p.garrison = Math.max(0, p.garrison - men * 0.0006);
+      for (const a of arr) G.war.kill(a, a.men * 0.0004 * (p.garrison / 1000), p.ctrl);
+      const gl = Math.min(p.garrison, men * 0.0006);
+      p.garrison -= gl;
+      G.war.record(p.ctrl, gl, tag);
     }
     // garnizonun iki katından az askerle kuşatma ilerlemez
     if (p.garrison > 0 && men < p.garrison * 2) { p.siege.stalled = true; continue; }
@@ -265,22 +288,32 @@ G.checkCapitulation = function (tag) {
   }
   const capLost = n.capital == null || S.provinces[n.capital].ctrl !== tag;
   const ratio = total ? held / total : 0;
-  if (ratio < 0.2) { G.capitulate(tag); return; }
-  if (capLost && ratio < 0.4) {
+  n.capRatio = ratio;
+  let ready = ratio < 0.2;
+  if (!ready && capLost && ratio < 0.4) {
     // ordusu hâlâ güçlüyse direnmeye devam eder
     const mine = G.nationStats(tag).men;
     let foes = 0;
     for (const e of n.enemies) foes += G.nationStats(e).men;
-    if (mine < foes * 0.4) G.capitulate(tag);
+    ready = mine < foes * 0.4;
   }
+  // oyuncuya karşı savaşan ülke: teslimiyet oyuncunun onayına sunulur
+  if (tag !== S.player && n.enemies.has(S.player)) {
+    if (held <= 0) { G.capitulate(tag); return; }        // bütün toprakları işgal edildi: hepsi işgalcilere geçer
+    if (ready && !n.surrenderRefused && !n.surrenderAsked) G.war.offerSurrender(tag);
+    return;
+  }
+  if (ready) G.capitulate(tag);
 };
 
 G.daily = function () {
   const S = G.S, P = S.provinces;
   // örgütlenme ve takviye
+  G.war.daily();
   for (const a of S.armies) {
     const recent = a.inCombat != null && S.hour - a.inCombat < 2;
     if (a.fleet != null) { a.org = Math.max(30, a.org - 2); continue; }   // gemide yorulur
+    if (a.encircled) continue;   // kuşatılmış ordu toparlanamaz ve takviye alamaz
     if (!recent) {
       const home = G.sameRealm(P[a.prov].ctrl, a.tag);
       a.org = Math.min(100, a.org + (home ? 14 : 7) * (1 + G.command.bonus(a, 'org')) * (S.nations[a.tag].orgMult || 1));

@@ -35,7 +35,7 @@
     <span class="ico">❖</span><span id="tb-focus-name">Odak seç</span>
     <div class="bar mini"><div id="tb-focus-bar"></div></div>
   </div>
-  <div class="tb-block" title="Savaşta olduğunuz ülkeler">
+  <div id="tb-war" class="tb-block clickable" title="Savaş durumu ve kayıplar (K)">
     <span class="ico">☠</span><span id="tb-wars">Barış</span>
   </div>
   <div class="tb-spacer"></div>
@@ -45,6 +45,9 @@
     <div id="tb-speed" title="Hız (1-5, + / -)"></div>
   </div>
 </div>
+
+<!-- Savaş durumu: üstte açılır kapanır -->
+<div id="warpanel" class="hidden"></div>
 
 <!-- Sol panel: eyalet / ülke bilgisi -->
 <div id="panel" class="hidden"></div>
@@ -142,6 +145,7 @@
 <script src="js/names.js"></script>
 <script src="js/state.js"></script>
 <script src="js/sim.js"></script>
+<script src="js/warfare.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/diplomacy.js"></script>
 <script src="js/economy.js"></script>
@@ -155,6 +159,7 @@
 <script src="js/ui_mil.js"></script>
 <script src="js/ui_dip.js"></script>
 <script src="js/ui_econ.js"></script>
+<script src="js/ui_war.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

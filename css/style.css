@@ -494,3 +494,46 @@ button.on { border-color: var(--gold); color: var(--gold); background: linear-gr
   .tb-block { padding: 2px 5px; }
   #tb-date { min-width: 0; }
 }
+
+/* ------------------------------------------------------------ savaş durumu paneli */
+#tb-war.atwar { border-color: var(--red); }
+#warpanel {
+  position: fixed; top: 48px; left: 50%; transform: translateX(-50%);
+  width: min(780px, calc(100% - 16px)); max-height: calc(100% - 64px); overflow-y: auto;
+  background: linear-gradient(rgba(40,24,18,0.97), rgba(22,15,11,0.97));
+  border: 2px solid #8a4a38; border-radius: 6px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  z-index: 16; padding-bottom: 10px;
+}
+.wp-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #5a3226; }
+.wp-head h2 { margin: 0; font-family: var(--title); font-weight: 600; font-size: 16px; letter-spacing: 1px; color: #e6a58c; }
+.wp-head .x { margin-left: auto; }
+.wp-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.wp-tabs button { padding: 2px 8px; font-size: 12px; }
+.wp-tabs button.on { border-color: #e6a58c; color: #ffd9c8; }
+.wp-empty { padding: 16px; color: var(--muted); }
+.wp-title { padding: 8px 14px 2px; font-family: var(--title); font-size: 14px; letter-spacing: 0.5px; }
+.wp-score { display: flex; align-items: center; gap: 10px; padding: 4px 14px 8px; font-size: 13px; }
+.wp-bar { flex: 1; height: 9px; background: #6b2a20; border: 1px solid #000; border-radius: 2px; overflow: hidden; }
+.wp-bar .our { height: 100%; background: linear-gradient(#e2c27a, #b08a40); }
+.wp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 14px; }
+.wp-col { border: 1px solid #4a3226; border-radius: 4px; padding: 6px 10px; background: rgba(0,0,0,0.22); }
+.wp-col.our { border-top: 3px solid #d6b36a; }
+.wp-col.their { border-top: 3px solid #d0503f; }
+.wp-col h3 { margin: 0 0 4px; font-family: var(--title); font-weight: 400; font-size: 13px; letter-spacing: 1px; color: var(--gold); }
+.wp-big { display: flex; justify-content: space-between; font-size: 13px; padding: 1px 0; }
+.wp-big b { font-size: 15px; font-weight: 600; }
+.wp-big b.neg, .wp-score b.neg { color: #e46a58; }
+.wp-big b.pos, .wp-score b.pos { color: #8fd078; }
+.wp-nat { display: flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 0; border-top: 1px solid #3a2a20; margin-top: 3px; }
+.wp-nat .link { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-mini { color: var(--muted); white-space: nowrap; }
+.wp-cap { position: relative; width: 54px; height: 13px; background: #2a1a14; border: 1px solid #000; border-radius: 2px; overflow: hidden; }
+.wp-cap i { position: absolute; left: 0; top: 0; bottom: 0; background: #9a3a2c; }
+.wp-cap b { position: relative; display: block; text-align: center; font-size: 10px; line-height: 12px; font-weight: 600; }
+.wp-chart { margin: 10px 14px 0; border: 1px solid #4a3226; border-radius: 4px; background: rgba(0,0,0,0.25); padding: 6px 8px 4px; }
+.wp-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.wp-legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 5px; }
+.wp-legend i.dash { height: 0; border-top: 2px dashed; }
+#wp-canvas { width: 100%; height: 170px; display: block; }
+.muted { color: var(--muted); }
+@media (max-width: 640px) { .wp-cols { grid-template-columns: 1fr; } }

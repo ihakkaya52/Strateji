@@ -46,6 +46,14 @@ M.init = function (canvas) {
     }
     M.seaPaths.push(path); M.seaBbox.push([x0, y0, x1, y1]);
   }
+  // keşfedilmemiş topraklar (henüz eyalet yok)
+  M.unkPath = new Path2D();
+  for (const r of W.unexplored || []) {
+    M.unkPath.moveTo(r[0], r[1]);
+    for (let i = 2; i < r.length; i += 2) M.unkPath.lineTo(r[i], r[i + 1]);
+    M.unkPath.closePath();
+  }
+  M.fogY = Math.max(...M.seaBbox.map(b => b[3]), -Infinity);
   M.edgeMap = new Map();
   for (const [a, b, segs] of W.edges) M.edgeMap.set(a < b ? a + '|' + b : b + '|' + a, segs);
   M.patterns = new Map();
@@ -388,6 +396,8 @@ M.draw = function () {
     ctx.setLineDash([]);
   }
 
+  M.drawUnexplored(sc);
+
   // kıyı: eski haritalardaki gibi yumuşak, katmanlı su çizgisi
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.strokeStyle = 'rgba(160, 190, 180, 0.10)';
@@ -465,6 +475,7 @@ M.draw = function () {
   ctx.fillRect(0, 0, M.w, M.h);
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
+  M.drawUnexploredNames();
   M.drawLabels(vis, P);
   if (S) {
     M.drawSeaNames();
@@ -630,7 +641,20 @@ M.drawCounters = function () {
       ctx.strokeText(label, s.x + 2, y + (h - 5) / 2 + 1);
       ctx.fillText(label, s.x + 2, y + (h - 5) / 2 + 1);
     }
-    if (a.sel) {
+    if (a.retreating) {   // bozgun: soluk
+      ctx.fillStyle = 'rgba(20,14,8,0.45)';
+      ctx.fillRect(x, y, w, h);
+    }
+    if (a.encircled) {    // kuşatılmış: kırmızı çerçeve ve işaret
+      ctx.strokeStyle = (S.hour >> 2) % 2 ? '#ff3b2a' : '#a01d12'; ctx.lineWidth = 2.5;
+      ctx.strokeRect(x - 2.5, y - 2.5, w + 5, h + 5);
+      if (!small) {
+        ctx.fillStyle = '#a01d12';
+        ctx.beginPath(); ctx.arc(x + w + 4, y + 2, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = `700 9px ${G.FONT_BODY}`;
+        ctx.fillText('!', x + w + 4, y + 2.5);
+      }
+    } else if (a.sel) {
       ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 2;
       ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
     } else if (a.tag === S.player) {
@@ -724,6 +748,49 @@ M.drawArrows = function () {
     const a = M.toScreen(cx, cy), b = M.toScreen(P[o.target].x, P[o.target].y);
     M.arrow(ctx, a.x, a.y, b.x, b.y, 'rgba(200,60,45,0.85)', 5);
   }
+};
+
+// ------------------------------------------------------------ keşfedilmemiş topraklar
+M.drawUnexplored = function (sc) {
+  const ctx = M.ctx;
+  // bilinmeyen denizler: haritanın güneyi sise gömülür
+  if (isFinite(M.fogY)) {
+    const g = ctx.createLinearGradient(0, M.fogY - 3, 0, M.fogY + 14);
+    g.addColorStop(0, 'rgba(12,18,18,0)'); g.addColorStop(1, 'rgba(12,18,18,0.32)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-60, M.fogY - 3, 300, 80);
+  }
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(160, 190, 180, 0.08)';
+  ctx.lineWidth = 8 / sc;
+  ctx.stroke(M.unkPath);
+  ctx.fillStyle = '#857a64';
+  ctx.fill(M.unkPath);
+  const pat = M.hatch('rgba(60,48,32,0.16)');
+  pat.setTransform(new DOMMatrix([1.4 / sc, 0, 0, 1.4 / sc, 0, 0]));
+  ctx.fillStyle = pat;
+  ctx.fill(M.unkPath);
+  ctx.setLineDash([2 / sc, 3 / sc]);
+  ctx.strokeStyle = 'rgba(45,34,20,0.45)';
+  ctx.lineWidth = 0.9 / sc;
+  ctx.stroke(M.unkPath);
+  ctx.setLineDash([]);
+};
+
+M.drawUnexploredNames = function () {
+  const ctx = M.ctx, sc = M.cam.scale, L = window.WORLD.unexploredLabels || [];
+  if (sc > 70) return;
+  const size = G.clamp(sc * 1.1, 13, 44);
+  ctx.font = `italic 600 ${size}px ${G.FONT_TITLE}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if ('letterSpacing' in ctx) ctx.letterSpacing = `${Math.round(size * 0.25)}px`;
+  ctx.fillStyle = 'rgba(40,30,18,0.38)';
+  for (const l of L) {
+    const s = M.toScreen(l.x, l.y);
+    if (s.x < -400 || s.x > M.w + 400 || s.y < -50 || s.y > M.h + 50) continue;
+    ctx.fillText(l.name, s.x, s.y);
+  }
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
 };
 
 // ------------------------------------------------------------ deniz

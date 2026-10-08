@@ -437,7 +437,10 @@ G.capitulate = function (tag) {
   G.log(`${n.name} teslim oldu ve barış istedi: ${lost} eyaletini kaybetti.`, 'war', [tag, ...enemies]);
   G.checkElimination();
   if (tag === S.player && n.alive) G.ui.notify(`Ülkemiz teslim oldu. İşgal edilen ${lost} eyalet düşmana geçti, ama krallık yaşıyor.`);
-  else if (enemies.includes(S.player)) G.ui.notify(`Zafer! ${n.name} teslim oldu, işgal ettiğimiz topraklar artık bizim.`);
+  else if (enemies.includes(S.player)) {
+    G.ui.notify(n.alive ? `Zafer! ${n.name} teslim oldu, işgal ettiğimiz topraklar artık bizim.`
+      : `Mutlak zafer! ${n.name} bütünüyle fethedildi; bütün toprakları artık bizim.`);
+  }
 };
 
 G.checkElimination = function () {

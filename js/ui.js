@@ -81,6 +81,7 @@ U.initGame = function () {
   $('tb-ordular').onclick = () => U.toggleOrdular();
   $('tb-navy').onclick = () => U.showNavy();
   $('tb-prod').onclick = () => U.toggleProduction();
+  $('tb-war').onclick = () => U.toggleWarPanel();
   $('tb-gold').onclick = () => U.toggleProduction();
   $('prod-close').onclick = () => $('prodwin').classList.add('hidden');
   $('navy-close').onclick = () => $('navywin').classList.add('hidden');
@@ -136,7 +137,8 @@ U.refreshTop = function () {
     $('tb-focus').classList.toggle('pulse', !f);
   }
   const wars = [...n.enemies];
-  $('tb-wars').innerHTML = wars.length ? wars.map(t => U.flag(t)).join(' ') : 'Barış';
+  $('tb-wars').innerHTML = wars.length ? wars.map(t => U.flag(t)).join(' ') + ` <span class="muted">${G.fmtK(n.dead || 0)} kayıp</span>` : 'Barış';
+  $('tb-war').classList.toggle('atwar', wars.length > 0);
   $('topbar').classList.toggle('paused', S.paused);
   $('btn-pause').textContent = S.paused ? '▶' : '⏸';
   [...$('tb-speed').children].forEach((el, i) => el.classList.toggle('on', i < S.speed));

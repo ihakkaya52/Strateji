@@ -288,6 +288,7 @@
     }
     else if (e.key === 'o' || e.key === 'O') U.toggleOrdular();
     else if (e.key === 'p' || e.key === 'P') U.toggleProduction();
+    else if (e.key === 'k' || e.key === 'K') U.toggleWarPanel();
     else if (e.key === 'n' || e.key === 'N') {
       const w = document.getElementById('navywin');
       if (w.classList.contains('hidden')) U.showNavy(); else w.classList.add('hidden');
@@ -355,7 +356,7 @@
         if (now - lastUi > 400) {
           lastUi = now; U.refreshArmyPanel(); U.refreshOrdular();
           if (U.provId != null) U.refreshProvince();
-          if (now - (U.lastNavy || 0) > 1000) { U.lastNavy = now; U.refreshNavy(); U.refreshDiplomacy(); U.refreshProduction(); }
+          if (now - (U.lastNavy || 0) > 1000) { U.lastNavy = now; U.refreshNavy(); U.refreshDiplomacy(); U.refreshProduction(); U.refreshWarPanel(); }
         }
       }
     } else acc = 0;

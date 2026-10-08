@@ -16,6 +16,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | O | Alt ortadaki komuta çubuğunu küçült / büyüt |
 | N | Donanma arayüzü |
 | P | Üretim ve inşaat |
+| K | Savaş durumu paneli (kayıplar, tahmini düşman gücü, grafik) |
 | Fare tekerleği, Q / E | Yakınlaştır / uzaklaştır |
 | Boşluk | Duraklat / devam |
 | 1–5, + / - | Oyun hızı |
@@ -24,6 +25,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 ## Şu an oyunda olanlar (1. sürüm)
 
 - **Harita:** Gerçek kıyı şeritleri (Natural Earth). Her şehir bir eyalet, aralarda kırsal eyaletler, çöl ve tundralar geçilemez.
+  Afrika'nın tamamı ve Avustralya'nın kuzeyi görünür ama keşfedilmemiş topraktır (Terra Incognita); keşif ileride gelecek.
 - **Ülkeler:** 10 büyük güç (Bizans, Büyük Selçuklu, Fâtımî, Kutsal Roma, Fransa, Kiev Rus'u, Danimarka,
   Gazneliler, Song, Liao) ve yaklaşık 130 küçük ülke. Hepsi oynanabilir.
 - **Vasallık:** İngiltere, Danimarka tacının vasalı olarak başlar. Vasallar efendilerinin savaşlarına katılır,
@@ -70,6 +72,14 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   ve tuz madenleri altın getirir. Çiftlikler insan gücünü artırır (tahıl bölgelerinde daha çok).
 - **Garnizon yönetimi:** Kale sekmesinden garnizonun büyüklüğü (%0–100) seçilir, ordudan garnizona asker aktarılır.
 - **Savaş ve barış:** Savaş skoru, toprak devriyle barış veya beyaz barış, ateşkes ve teslimiyet.
+- **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
+  yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
+- **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,
+  takviye alamaz, yenilirse imha olur, 45 günde açlıktan teslim olur.
+- **Savaş durumu paneli:** Üst çubuktaki ☠ simgesi (K): savaş skoru, iki tarafın sahadaki askeri (düşmanınki tahmini),
+  bölük sayıları, kayıplar, teslimiyet ilerlemesi ve zaman içindeki güç / kayıp grafiği.
+- **Teslimiyet teklifi:** Size karşı savaşan ülke teslim olmak istediğinde bildirim gelir. Kabul ederseniz işgal
+  ettiğiniz topraklar sizin olur; reddederseniz savaş sürer ve bütün topraklarını işgal ettiğinizde hepsi size geçer.
 - **İnsan gücü:** Eyaletlerden aylık asker gelir. Yeni ordu toplama (8B asker, 60 gün, yeni komutanla) ve takviye.
 - **Yapay zekâ:** Savaş ilan eder, cephe kurar, kuşatır, barış yapar ve asker toplar.
 - **Olaylar:** Macbeth'in tahta çıkışı (1040), Petar Delyan ayaklanması (1040), Normanların Melfi'yi alışı (1041),
@@ -97,6 +107,8 @@ js/data/world.js      üretilmiş harita verisi (elle düzenlenmez)
 js/util.js            sabitler ve yardımcılar
 js/state.js           oyun durumu, ülkeler, ordular, savaş / barış
 js/sim.js             zaman, hareket, muharebe, kuşatma, insan gücü
+js/warfare.js         kayıplar, ikmal ve kuşatılmış ordular, bozgun, teslimiyet teklifleri
+js/ui_war.js          savaş durumu paneli ve grafiği
 js/ai.js              yapay zekâ
 js/diplomacy.js       ilişkiler, elçiler, ittifak, garanti, geçiş hakkı, savaş gerekçesi
 js/focus_trees.js     büyük güçlerin ve ortak odak ağaçları

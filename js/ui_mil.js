@@ -198,7 +198,7 @@
       </div>` : ''}`;
     if (!mine) return;
     const done = () => { U.refreshArmyPanel(); U.refreshOrdular(); G.mapDirty = true; };
-    $('btn-army-stop').onclick = () => { for (const a of G.selected) { a.path = []; a.attacking = null; a.besieging = false; } done(); };
+    $('btn-army-stop').onclick = () => { for (const a of G.selected) { if (a.retreating) continue; a.path = []; a.attacking = null; a.besieging = false; } done(); };
     const sp = $('btn-army-split');
     if (sp) sp.onclick = () => {
       const a = sel[0], b = C.split(a);
