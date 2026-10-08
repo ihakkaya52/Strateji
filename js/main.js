@@ -368,6 +368,17 @@
       if (keys.has('KeyE') || keys.has('PageUp')) z += 1;
       if (keys.has('KeyQ') || keys.has('PageDown')) z -= 1;
       if (z) M.zoomAt(M.w / 2, M.h / 2, Math.exp(z * dt / 380));
+      // yumuşak kamera kayması (komuta çubuğunda orduya sağ tık)
+      if (M.glide) {
+        if (dx || dy || drag) M.glide = null;
+        else {
+          const g = M.glide, f = 1 - Math.exp(-dt / 160);
+          M.cam.x += (g.x - M.cam.x) * f; M.cam.y += (g.y - M.cam.y) * f;
+          if (g.scale) M.cam.scale *= Math.pow(g.scale / M.cam.scale, f);
+          M.clampCam(); G.mapDirty = true;
+          if (Math.hypot(g.x - M.cam.x, g.y - M.cam.y) * M.cam.scale < 0.5 && (!g.scale || Math.abs(g.scale / M.cam.scale - 1) < 0.01)) M.glide = null;
+        }
+      }
     }
     const S = G.S;
     if (S && !S.paused && !S.over) {

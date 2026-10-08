@@ -97,3 +97,45 @@
 #mus-pop label { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; }
 #mus-pop input[type=range] { width: 110px; accent-color: #c79b45; }
 .mus-title { font-family: var(--title); font-size: 12px; color: var(--gold); text-align: center; border-bottom: 1px solid #4a3f2b; padding-bottom: 4px; }
+
+/* ---------- sağ alt: 3 + 3 düğme ---------- */
+#mapmodes { display: grid; grid-template-columns: repeat(3, 96px); gap: 4px; align-items: stretch; }
+#mapmodes .mm-group, #barmodes { display: contents; }
+#mapmodes button, #barmodes button { width: 100%; min-width: 0; text-align: center; padding: 4px 6px; white-space: nowrap; }
+
+/* ---------- sade komuta çubuğu ---------- */
+#cmdbar:not(.navy):not(.garr) {
+  width: fit-content; max-width: calc(100% - 716px); margin: 0 auto; max-height: none; overflow: hidden;
+  padding: 4px 6px; background: linear-gradient(rgba(34,28,19,0.93), rgba(22,18,12,0.95));
+}
+#cmdbar.collapsed:not(.navy):not(.garr) .ob-row { display: none; }
+#cmdbar.collapsed:not(.navy):not(.garr)::after { content: '⚑ Ordular (O)'; font-size: 12px; color: var(--muted); padding: 2px 6px; }
+.ob-row { display: flex; flex-wrap: nowrap; justify-content: center; gap: 5px; }
+.og { flex: 0 1 auto; min-width: 0; }
+.og { border: 1px solid var(--mc, #8a7a5a); border-radius: 4px; padding: 0 3px 3px; position: relative; margin-top: 7px; }
+.og.free { border-style: dashed; border-color: #6a5a3a; }
+.og-name {
+  position: absolute; top: -8px; left: 6px; padding: 0 4px; line-height: 13px; cursor: pointer; white-space: nowrap;
+  font-family: var(--title); font-size: 10px; letter-spacing: 0.5px; color: var(--mc, var(--muted));
+  background: #221c13; max-width: calc(100% - 10px); overflow: hidden; text-overflow: ellipsis;
+}
+.og.free .og-name { color: var(--muted); }
+.og-cards { display: flex; gap: 2px; padding-top: 7px; }
+.oc {
+  flex: 0 1 40px; width: 40px; min-width: 22px; overflow: hidden; padding: 2px 3px 3px; cursor: pointer; text-align: center;
+  background: rgba(255,255,255,0.04); border: 1px solid transparent; border-radius: 2px;
+}
+.oc:hover { border-color: rgba(214,179,106,0.5); }
+.oc.sel { border-color: #ffe9a8; background: rgba(255,233,168,0.1); }
+.oc.enc { border-color: #c0443a; }
+.oc-men { font-size: 11px; font-weight: 600; line-height: 14px; white-space: nowrap; }
+.oc-men i { font-style: normal; font-size: 10px; margin-left: 2px; color: var(--muted); }
+.oc-bar { height: 2px; background: #1a140c; margin-top: 2px; }
+.oc-bar > div { height: 100%; }
+.oc-bar.org > div { background: #6fd05a; }
+.oc-bar.str > div { background: #e0a060; }
+.mc-box { margin: 8px 0 4px; padding: 6px 8px; border: 1px solid var(--mc, #6a5a3a); border-radius: 4px; background: rgba(0,0,0,0.2); }
+.mc-title { font-family: var(--title); font-size: 12px; color: var(--mc, var(--gold)); margin-bottom: 4px; }
+.mc-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.mc-row select { font-family: inherit; font-size: 12px; background: #2a241a; color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 2px; }
+.mc-row button, .mc-box > button { padding: 2px 7px; font-size: 12px; }

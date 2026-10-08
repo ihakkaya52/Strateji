@@ -15,6 +15,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | Sağ tık | Seçili orduları yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder. Seçim yokken: ülkenin diplomasi sayfası |
 | Ctrl + sağ tık | Seçili ordular gemiyle gider: limana yürür, filoya biner, hedef kıyıya çıkarma yapar (karadan yol yoksa sağ tık yeterli) |
 | O | Alt ortadaki komuta çubuğunu küçült / büyüt |
+| Komuta çubuğu | Sol tık: orduyu seç (kamera kıpırdamaz) · sağ tık: kamera yumuşakça orduya kayar · mareşal adına tık: üç ordusunu seç |
 | N | Donanma arayüzü |
 | P | Üretim ve inşaat |
 | K | Savaş durumu paneli (kayıplar, tahmini düşman gücü, grafik) |
