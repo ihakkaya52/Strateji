@@ -234,8 +234,9 @@ N.unloadDead = function (a) {
 
 N.queueShip = function (dock, type) {
   const S = G.S, n = S.nations[dock.tag], t = G.SHIP_TYPES[type];
-  if (n.manpower < t.crew) return false;
-  n.manpower -= t.crew;
+  const gold = Math.ceil(t.crew / 20);
+  if (n.manpower < t.crew || n.gold < gold) return false;
+  n.manpower -= t.crew; n.gold -= gold;
   const start = dock.queue.length ? dock.queue[dock.queue.length - 1].done : S.hour;
   dock.queue.push({ type, done: start + t.days * 24, start });
   return true;

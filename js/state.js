@@ -107,7 +107,7 @@ G.addNation = function (tag, def) {
     // ekonomi
     stock: { kilic: 0, yay: 0, zirh: 0, at: 0 },
     lines: { kilic: { f: 0, eff: 0.5 }, yay: { f: 0, eff: 0.5 }, zirh: { f: 0, eff: 0.5 }, at: { f: 0, eff: 0.5 } },
-    build: [], civTotal: 0, milTotal: 0, milFree: 0,
+    build: [], civTotal: 0, milTotal: 0, milFree: 0, gold: 50, buildCiv: 0, tradeIncome: 0, ironBonus: 0,
     armyNo: 0,
     armyTarget: 3,
     alive: true,
@@ -199,7 +199,8 @@ G.monthlyManpower = function (tag) {
   let m = 0;
   for (const p of G.S.provinces) {
     if (p.owner === tag && p.ctrl === tag) {
-      m += p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140;
+      m += (p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140) *
+        (1 + (p.farm || 0) * 0.25 * (p.res === 'tahil' ? 1.5 : 1));
     }
   }
   return m * (G.S.nations[tag] ? G.S.nations[tag].mpMult : 1);

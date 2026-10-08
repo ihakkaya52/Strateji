@@ -343,6 +343,34 @@ button.on { border-color: var(--gold); color: var(--gold); background: linear-gr
 .why .no { color: #e08a6a; }
 .dip-war { padding: 6px 8px; margin-bottom: 8px; border: 1px solid #6a2a22; border-radius: 4px; background: rgba(120,30,25,0.2); }
 
+/* ---------- İl yönetimi paneli (sol alt) ---------- */
+#provpanel {
+  position: fixed; left: 8px; bottom: 8px;
+  width: 380px; max-height: calc(100% - 60px);
+  display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.45);
+  z-index: 10;
+}
+.pp-head { display: flex; align-items: baseline; gap: 8px; padding: 8px 10px 4px; }
+.pp-head h2 { margin: 0; font-family: var(--title); font-weight: 600; font-size: 16px; color: var(--gold); }
+.pp-head .pp-close { margin-left: auto; padding: 0 6px; }
+.pp-tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 8px; border-bottom: 1px solid #4a3f2b; }
+.pp-tabs button { padding: 3px 7px; font-size: 12px; border-radius: 3px 3px 0 0; border-bottom: none; background: #2a241a; }
+.pp-tabs button.on { background: linear-gradient(#5a4a2b, #3a2f1b); color: var(--gold); border-color: var(--gold); }
+.pp-body { padding: 8px 10px 10px; overflow-y: auto; font-size: 14px; }
+.pp-body table { width: 100%; border-collapse: collapse; }
+.pp-body td { padding: 2px 0; vertical-align: top; }
+.pp-body td:first-child { color: var(--muted); width: 42%; }
+.pp-body h3 { margin: 10px 0 4px; font-family: var(--title); font-weight: 400; font-size: 12px; letter-spacing: 1px; color: var(--gold); border-bottom: 1px solid #4a3f2b; padding-bottom: 2px; }
+.pp-body .row-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.pp-body .row-btns button { font-size: 13px; }
+.fort-big { font-size: 26px; color: var(--gold); letter-spacing: 3px; text-align: center; margin: 2px 0 6px; }
+.bar.gar > div { background: #e0a060; }
+.seg { display: flex; gap: 3px; }
+.seg button { flex: 1; padding: 3px 0; font-size: 12px; }
+.bad { color: #ff8a6a; }
+
 /* ---------- Üretim penceresi ---------- */
 #prodwin {
   position: fixed; top: 48px; left: 50%; transform: translateX(-50%);

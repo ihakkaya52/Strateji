@@ -9,14 +9,14 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 
 | Kontrol | İşlev |
 |---|---|
-| Sol tık | Eyalet seç / orduya tıkla |
-| Sol tıkla sürükle, WASD, ok tuşları | Haritayı kaydır |
+| Sol tık | İl seç (sol altta il yönetimi: Genel, Kale, Silahhane, Atölye, Maden, Tarım) / orduya tıkla |
+| Sol tıkla sürükle, WASD, ok tuşları | Haritayı kaydır (Shift ile hızlı, ekran kenarı da kaydırır) |
 | Shift + sürükle | Kutu içindeki orduları seç |
 | Sağ tık | Seçili orduları yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder. Seçim yokken: ülkenin diplomasi sayfası |
 | O | Alt ortadaki komuta çubuğunu küçült / büyüt |
 | N | Donanma arayüzü |
 | P | Üretim ve inşaat |
-| Fare tekerleği | Yakınlaştır / uzaklaştır |
+| Fare tekerleği, Q / E | Yakınlaştır / uzaklaştır |
 | Boşluk | Duraklat / devam |
 | 1–5, + / - | Oyun hızı |
 | Esc | Seçimi bırak |
@@ -60,9 +60,15 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Kaleler ve garnizonlar:** Başkentlerde ve bazı şehirlerde 1–5 seviye kale ve garnizon vardır. Kale savunmayı
   artırır, kuşatmayı uzatır; garnizonun iki katından az askerle kuşatma ilerlemez. Garnizon kayıpları insan gücünden
   yenilenir. Kaleler inşa edilerek güçlendirilebilir.
-- **Ekonomi ve üretim (HOI4 tarzı):** Atölyeler inşaat yapar (yeni atölye, silahhane, kale), silahhaneler teçhizat
-  üretir: kılıç ve mızrak, yay ve ok, zırh ve kalkan, savaş atı. Silahhaneler üretim hatlarına dağıtılır, yeni
-  hatların verimi zamanla artar. Ordular teçhizatı depodan çeker; teçhizatı eksik ordu daha zayıf savaşır.
+- **Ekonomi ve üretim (HOI4 tarzı):** Her ilde atölyelerin inşaat mı yoksa hangi ticari ürünü (kumaş, şarap, cam,
+  deri, ipekli, baharat) yapacağı, silahhanelerin hangi teçhizatı (kılıç ve mızrak, yay ve ok, zırh ve kalkan,
+  savaş atı) üreteceği seçilir. Yeni hatların verimi zamanla artar. Ordular teçhizatı depodan çeker; teçhizatı eksik
+  ordu daha zayıf savaşır.
+- **Hazine:** Vergi, ticari ürünler, madenler ve tarımdan altın gelir; ordu maaşı ve garnizonlar gider yazar. Altın
+  inşaat, yeni ordu ve gemi için harcanır. Hazine eksiye düşerse ordunun morali bozulur.
+- **Madencilik ve tarım:** Her ilin bir doğal kaynağı vardır. Demir madenleri silah üretimini artırır; gümüş, altın
+  ve tuz madenleri altın getirir. Çiftlikler insan gücünü artırır (tahıl bölgelerinde daha çok).
+- **Garnizon yönetimi:** Kale sekmesinden garnizonun büyüklüğü (%0–100) seçilir, ordudan garnizona asker aktarılır.
 - **Savaş ve barış:** Savaş skoru, toprak devriyle barış veya beyaz barış, ateşkes ve teslimiyet.
 - **İnsan gücü:** Eyaletlerden aylık asker gelir. Yeni ordu toplama (8B asker, 60 gün, yeni komutanla) ve takviye.
 - **Yapay zekâ:** Savaş ilan eder, cephe kurar, kuşatır, barış yapar ve asker toplar.

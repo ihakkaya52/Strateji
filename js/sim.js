@@ -324,8 +324,9 @@ G.spawnPoint = function (tag) {
 
 G.recruit = function (tag) {
   const S = G.S, n = S.nations[tag];
-  if (n.manpower < G.RECRUIT_COST) return false;
+  if (n.manpower < G.RECRUIT_COST || n.gold < G.econ.RECRUIT_GOLD) return false;
   n.manpower -= G.RECRUIT_COST;
+  n.gold -= G.econ.RECRUIT_GOLD;
   n.queue.push({ done: S.hour + G.RECRUIT_DAYS * 24 });
   return true;
 };
@@ -342,6 +343,7 @@ G.monthly = function () {
     const cap = mp * 24 + 20000;
     if (n.manpower > cap) n.manpower = cap;
   }
+  G.econ.monthly();
   G.ai.monthly();
   G.dip.monthly();
 };

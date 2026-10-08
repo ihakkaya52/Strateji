@@ -293,22 +293,52 @@
       if (w.classList.contains('hidden')) U.showNavy(); else w.classList.add('hidden');
     }
     keys.add(e.code);
+    if (e.code.startsWith('Arrow') || e.code === 'PageUp' || e.code === 'PageDown') e.preventDefault();
   });
   window.addEventListener('keyup', e => keys.delete(e.code));
+
+  // ekran kenarına gelen fare haritayı kaydırır
+  const panV = { x: 0, y: 0 };
+  let panHold = 0;
+  const edge = { on: false, dx: 0, dy: 0 };
+  window.addEventListener('mousemove', e => {
+    const m = 6;
+    edge.dx = e.clientX <= m ? -1 : e.clientX >= window.innerWidth - m ? 1 : 0;
+    edge.dy = e.clientY <= m ? -1 : e.clientY >= window.innerHeight - m ? 1 : 0;
+    edge.on = !!(edge.dx || edge.dy) && e.target === canvas;
+  });
+  document.addEventListener('mouseleave', () => { edge.on = false; });
+  window.addEventListener('blur', () => { edge.on = false; keys.clear(); });
 
   // ---------------------------------------------------------- döngü
   let last = performance.now(), acc = 0, lastUi = 0;
   function frame(now) {
     const dt = Math.min(250, now - last);
     last = now;
-    // klavyeyle kaydırma
-    const pan = 600 * dt / 1000 / M.cam.scale;
-    if (keys.size && G.S) {
-      if (keys.has('KeyW') || keys.has('ArrowUp')) { M.cam.y -= pan; G.mapDirty = true; }
-      if (keys.has('KeyS') || keys.has('ArrowDown')) { M.cam.y += pan; G.mapDirty = true; }
-      if (keys.has('KeyA') || keys.has('ArrowLeft')) { M.cam.x -= pan; G.mapDirty = true; }
-      if (keys.has('KeyD') || keys.has('ArrowRight')) { M.cam.x += pan; G.mapDirty = true; }
-      M.clampCam();
+    // klavye / ekran kenarı ile kaydırma: yumuşak hızlanma, Shift ile iki kat hız
+    if (G.S) {
+      let dx = 0, dy = 0;
+      if (keys.has('KeyW') || keys.has('ArrowUp')) dy -= 1;
+      if (keys.has('KeyS') || keys.has('ArrowDown')) dy += 1;
+      if (keys.has('KeyA') || keys.has('ArrowLeft')) dx -= 1;
+      if (keys.has('KeyD') || keys.has('ArrowRight')) dx += 1;
+      if (edge.on && !drag) { dx += edge.dx; dy += edge.dy; }
+      const len = Math.hypot(dx, dy) || 1;
+      const held = dx || dy ? (panHold += dt) : (panHold = 0);
+      const speed = (1100 + Math.min(1, held / 700) * 900) * (keys.has('ShiftLeft') || keys.has('ShiftRight') ? 2 : 1);
+      const k = 1 - Math.exp(-dt / 70);   // hız yumuşatma
+      panV.x += (dx / len * speed - panV.x) * k;
+      panV.y += (dy / len * speed - panV.y) * k;
+      if (Math.abs(panV.x) > 2 || Math.abs(panV.y) > 2) {
+        M.cam.x += panV.x * dt / 1000 / M.cam.scale;
+        M.cam.y += panV.y * dt / 1000 / M.cam.scale;
+        M.clampCam(); G.mapDirty = true;
+      } else { panV.x = 0; panV.y = 0; }
+      // Q / E ya da Page Up / Down ile yakınlaştırma
+      let z = 0;
+      if (keys.has('KeyE') || keys.has('PageUp')) z += 1;
+      if (keys.has('KeyQ') || keys.has('PageDown')) z -= 1;
+      if (z) M.zoomAt(M.w / 2, M.h / 2, Math.exp(z * dt / 380));
     }
     const S = G.S;
     if (S && !S.paused && !S.over) {
@@ -324,7 +354,7 @@
         if (G.selFleet && !S.fleets.includes(G.selFleet)) G.selFleet = null;
         if (now - lastUi > 400) {
           lastUi = now; U.refreshArmyPanel(); U.refreshOrdular();
-          if (U.panelKind === 'prov') U.showProvince(U.panelId);
+          if (U.provId != null) U.refreshProvince();
           if (now - (U.lastNavy || 0) > 1000) { U.lastNavy = now; U.refreshNavy(); U.refreshDiplomacy(); U.refreshProduction(); }
         }
       }

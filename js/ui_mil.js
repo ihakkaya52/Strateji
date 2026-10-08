@@ -338,9 +338,9 @@
         ${q}
         <div class="build-grid">${types.map(k => {
           const t = G.SHIP_TYPES[k];
-          return `<button class="build-btn" data-t="${k}" ${n.manpower < t.crew ? 'disabled' : ''} title="${G.esc(t.desc)}">
+          return `<button class="build-btn" data-t="${k}" ${n.manpower < t.crew || n.gold < Math.ceil(t.crew / 20) ? 'disabled' : ''} title="${G.esc(t.desc)}">
             <b>${G.esc(t.name)}</b> <span>· ${G.esc(t.role)}</span><br>
-            <span>Sağ. ${t.hp} · Sal. ${t.atk} · Hız ${t.speed}<br>Menzil ${t.range} · Yük ${t.cap}<br>${t.crew} denizci · ${t.days} gün</span></button>`;
+            <span>Sağ. ${t.hp} · Sal. ${t.atk} · Hız ${t.speed}<br>Menzil ${t.range} · Yük ${t.cap}<br>${t.crew} denizci · ${Math.ceil(t.crew / 20)} altın · ${t.days} gün</span></button>`;
         }).join('')}</div></div>`;
     }).join('') : '<p class="muted">Tersaneniz yok.</p>') +
       `<p class="muted" style="font-size:13px">Yeni tersane kurmak için kıyıdaki bir şehrinize tıklayın

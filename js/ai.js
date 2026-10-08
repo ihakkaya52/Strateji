@@ -126,7 +126,7 @@ G.ai.monthly = function () {
     if (!n.alive || !G.ai.isAI(n.tag)) continue;
     const st = G.nationStats(n.tag);
     const want = Math.ceil(n.armyTarget * (n.enemies.size ? 1.4 : 1));
-    if (st.armies + n.queue.length < want && n.queue.length < 3) G.recruit(n.tag);
+    if (st.armies + n.queue.length < want && n.queue.length < 3 && n.gold > G.econ.RECRUIT_GOLD + 40) G.recruit(n.tag);
   }
   // savaş: önce gerekçe hazırlanır, gerekçe hazır olunca hâlâ üstünse savaş ilan edilir
   const nbs = G.ai.neighbors();

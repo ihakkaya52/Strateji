@@ -81,6 +81,7 @@ U.initGame = function () {
   $('tb-ordular').onclick = () => U.toggleOrdular();
   $('tb-navy').onclick = () => U.showNavy();
   $('tb-prod').onclick = () => U.toggleProduction();
+  $('tb-gold').onclick = () => U.toggleProduction();
   $('prod-close').onclick = () => $('prodwin').classList.add('hidden');
   $('navy-close').onclick = () => $('navywin').classList.add('hidden');
   const sp = $('tb-speed');
@@ -120,6 +121,10 @@ U.refreshTop = function () {
   const st = G.nationStats(S.player);
   $('tb-armies').textContent = `${G.command.of(S.player).length} mareşal · ${st.armies} ordu · ${G.fmtK(st.men)}`;
   {
+    const b = n.lastBudget || G.econ.budget(n);
+    $('tb-goldtxt').innerHTML = `${G.fmtNum(n.gold)} <span style="color:${b.net >= 0 ? '#9ad07a' : '#ff7a5a'}">(${b.net >= 0 ? '+' : ''}${b.net.toFixed(1)})</span>`;
+  }
+  {
     const avg = (() => { const ar = S.armies.filter(a => a.tag === S.player); return ar.length ? ar.reduce((t, a) => t + G.econ.ratio(a), 0) / ar.length : 1; })();
     $('tb-prodtxt').innerHTML = `${n.civTotal || 0} atölye · ${n.milTotal || 0} silahhane · <span style="color:${avg > 0.9 ? '#9ad07a' : avg > 0.6 ? '#e0c060' : '#ff7a5a'}">teçhizat %${Math.round(avg * 100)}</span>`;
   }
@@ -140,6 +145,7 @@ U.refreshTop = function () {
 // ------------------------------------------------------------ paneller
 U.closePanel = function () {
   $('panel').classList.add('hidden');
+  if (U.closeProvPanel) U.closeProvPanel();
   U.panelKind = null;
   G.map.selProv = null; G.map.selNation = null; G.mapDirty = true;
 };
@@ -180,6 +186,8 @@ U.showProvince = function (pid) {
 U.showNation = function (tag) {
   const S = G.S, n = S.nations[tag], me = S.nations[S.player];
   if (tag !== S.player && U.showDiplomacy) { U.showDiplomacy(tag); return; }
+  if (U.closeProvPanel) U.closeProvPanel();
+  if (U.closeDiplomacy && U.dipTag) U.closeDiplomacy();
   U.panelKind = 'nation'; U.panelId = tag;
   G.map.selNation = tag; G.map.selProv = null; G.mapDirty = true;
   const st = G.nationStats(tag);
@@ -215,8 +223,8 @@ U.showNation = function (tag) {
   const queue = isMe ? `<h3>Ordu</h3>
       <div>Eğitimdeki ordular: ${n.queue.length}</div>
       ${n.queue.map(q => `<div class="queue-item"><span>Yeni ordu</span><span>${Math.ceil((q.done - S.hour) / 24)} gün</span></div>`).join('')}
-      <div class="row-btns"><button id="btn-recruit" ${n.manpower < G.RECRUIT_COST ? 'disabled' : ''}>
-        Yeni ordu topla (${G.fmtNum(G.RECRUIT_COST)} asker, ${G.RECRUIT_DAYS} gün, yeni komutanla)</button></div>` : '';
+      <div class="row-btns"><button id="btn-recruit" ${n.manpower < G.RECRUIT_COST || n.gold < G.econ.RECRUIT_GOLD ? 'disabled' : ''}>
+        Yeni ordu topla (${G.fmtNum(G.RECRUIT_COST)} asker, ${G.econ.RECRUIT_GOLD} altın, ${G.RECRUIT_DAYS} gün)</button></div>` : '';
   const wars = [...n.enemies];
   el.innerHTML = `<button class="close">✕</button>
     <h2>${U.flag(tag)} ${G.esc(n.name)}</h2>
