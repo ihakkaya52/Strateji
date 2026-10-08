@@ -32,8 +32,9 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Vasallık:** İngiltere, Danimarka tacının vasalı olarak başlar. Vasallar efendilerinin savaşlarına katılır,
   insan gücünün %25'ini haraç olarak öder ve kendi başına savaş ilan edemez. Aynı diyardaki ordular birbirinin
   topraklarından geçebilir.
-- **Odak ağaçları:** Madalyonlu, simgeli HOI4 tarzı görünüm. 10 büyük gücün her birine özel 19 odaklı ağaç
-  (siyasi, ekonomik, askerî / teknolojik kollar ve final odağı), İngiltere'ye özel bağımsızlık ağacı, diğer bütün
+- **Odak ağaçları:** Madalyonlu, simgeli HOI4 tarzı görünüm. 10 büyük gücün her birine özel 56 odaklı ağaç
+  (saray / siyaset, diplomasi / din, ekonomi, askerî / teknoloji ve ülkeye özel kol; birbirini dışlayan tarihî
+  seçimler, büyük final odağı), İngiltere'ye özel bağımsızlık ağacı, diğer bütün
   ülkelere ortak ağaç. Odaklar insan gücü, saldırı, savunma, kuşatma, hız, deniz gücü, ordu kapasitesi, tersane,
   elçi, yeni ordular ve savaş gerekçeleri verir. Yapay zekâ da odak seçer.
 - **Diplomasi:** Bir ülkeye sağ tıklayınca HOI4 / EU4 tarzı diplomasi sayfası açılır: ilişki puanı ve sebepleri,

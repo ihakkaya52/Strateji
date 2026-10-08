@@ -128,6 +128,8 @@ G.focus.state = function (n, f) {
 G.focus.canStart = function (n, f) {
   if (n.focus.done.has(f.id)) return false;
   if ((f.req || []).some(r => !n.focus.done.has(r))) return false;
+  // mutex: birbirini dışlayan odaklardan biri tamamlandıysa ya da sürüyorsa diğeri açılmaz
+  if (f.mutex && f.mutex.some(m => n.focus.done.has(m) || n.focus.cur === m)) return false;
   if (f.avail && !f.avail(n)) return false;
   return true;
 };
@@ -145,11 +147,11 @@ G.focus.daily = function () {
     if (!n.alive) continue;
     const tag = n.tag, fs = n.focus;
     if (!fs.cur && tag !== S.player) {
-      // yapay zekâ: uygun odaklardan birini seç (ağacın üst sıralarına öncelik)
+      // yapay zekâ: uygun odaklardan birini seç (ağacın üst sıralarına öncelik, büyük ağaçlarda biraz daha derin)
       const opts = G.focus.tree(tag).filter(f => G.focus.canStart(n, f) && (!f.ai || f.ai(n)));
       if (opts.length) {
         const minY = Math.min(...opts.map(f => f.y));
-        const top = opts.filter(f => f.y <= minY + 1);
+        const top = opts.filter(f => f.y <= minY + 2);
         G.focus.start(tag, G.pick(top).id);
       }
     }
