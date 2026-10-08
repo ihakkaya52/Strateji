@@ -13,6 +13,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | Sol tıkla sürükle, WASD, ok tuşları | Haritayı kaydır (Shift ile hızlı, ekran kenarı da kaydırır) |
 | Shift + sürükle | Kutu içindeki orduları seç |
 | Sağ tık | Seçili orduları yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder. Seçim yokken: ülkenin diplomasi sayfası |
+| Seçili ordu / filoyla kendi başka ordu / filona sağ tık | Hedefi komutanının (amiralinin) yönetebileceği en fazla askere (gemiye) kadar doldur; kalanlar kaynakta kalır. Uzaktaysa kaynak hedefe gider ve varınca aktarır |
 | Ctrl + sağ tık | Seçili ordular gemiyle gider: limana yürür, filoya biner, hedef kıyıya çıkarma yapar (karadan yol yoksa sağ tık yeterli) |
 | O | Alt ortadaki komuta çubuğunu küçült / büyüt |
 | Odak ağacı | Tekerlek: yakınlaştır / uzaklaştır · sol tıkla basılı tutup sürükle |

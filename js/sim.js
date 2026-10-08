@@ -77,6 +77,7 @@ G.tick = function () {
     }
   }
   G.stepArmies();
+  G.command.stepJoins();
   G.navy.step();
   G.stepBattles();
   G.stepSieges();

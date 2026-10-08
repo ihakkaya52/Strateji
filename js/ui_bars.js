@@ -65,7 +65,7 @@
       const cargo = f.cargo.map(id => S.armies.find(a => a.id === id)).filter(Boolean);
       const st = f.docked != null ? '⚓' : S.navalBattles.has(f.zone) ? '⚔' : f.order && f.order.kind === 'land' ? '⇲' : f.path.length ? '➜' : '';
       return `<div class="og ${G.selFleet === f ? 'selg' : ''}" data-f="${f.id}" style="--mc:${col}">
-        <div class="og-name" title="${G.esc(f.name)} · Amiral ${G.esc(f.admiral.name)} — tıkla: filoyu seç">${G.esc(f.admiral.name)}${st ? ' ' + st : ''}</div>
+        <div class="og-name" title="${G.esc(f.name)} · Amiral ${G.esc(f.admiral.name)} — tıkla: filoyu seç">${G.esc(f.admiral.name)} <span class="og-cnt">${f.ships.length}/${N.maxShips(f)}</span>${st ? ' ' + st : ''}</div>
         <div class="og-cards">${f.ships.map(ship).join('')}${cargo.length ? `<span class="og-sep"></span>${cargo.map(army).join('')}` : ''}</div></div>`;
     }).join('') : '<div class="muted" style="padding:6px">Henüz filonuz yok.</div>'}</div>`;
     const fleetOf = e => { const g = e.target.closest('.og'); return g && g.dataset.f ? N.fleet(+g.dataset.f) : null; };
@@ -86,6 +86,17 @@
       e.preventDefault();
       const f = fleetOf(e);
       if (!f) return;
+      // seçili filoyla başka bir filoya sağ tık: o filoyu doldur
+      if (G.selFleet && G.selFleet !== f && G.selFleet.tag === tag) {
+        const src = G.selFleet, before = f.ships.length, r = N.orderJoin(src, f);
+        const log = (t, c) => U.addLog(G.fmtDate(S.time, false), t, c);
+        if (r === 'done') log(`${f.name} filosuna ${f.ships.length - before} gemi katıldı (${f.ships.length} / ${N.maxShips(f)}).`, 'good');
+        else if (r === 'moving') log(`${src.name}, ${f.name} filosuna katılmak için yola çıktı.`, 'good');
+        else if (r === 'full') log(`${f.name} dolu: amirali en fazla ${N.maxShips(f)} gemi yönetebilir.`, 'war');
+        else log(r, 'war');
+        U.refreshOrdular(); U.refreshArmyPanel(true); G.mapDirty = true;
+        return;
+      }
       const z = S.seas[f.zone];
       G.map.glide = { x: z.x, y: z.y, scale: Math.max(G.map.cam.scale, 20) };
     };

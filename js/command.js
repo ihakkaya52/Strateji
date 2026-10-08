@@ -118,6 +118,46 @@ C.merge = function (armies) {
   return null;
 };
 
+// Bir ordudan diğerine asker aktarır: hedef, komutanının yönetebileceği en fazla askere kadar dolar, geri kalan kaynakta kalır.
+// Teçhizat askerle birlikte gider; örgütlenme ağırlıklı ortalama olur. Kaynakta 100'den az asker kalırsa ordu dağılır.
+C.transfer = function (src, dst) {
+  if (!src || !dst || src === dst || src.tag !== dst.tag) return 0;
+  const room = Math.max(0, dst.maxMen - dst.men);
+  const move = Math.min(room, src.men);
+  if (move <= 0) return 0;
+  const frac = move / src.men;
+  if (src.gear) {
+    dst.gear ||= G.econ.blank();
+    for (const t of G.econ.TYPES) { const g = (src.gear[t] || 0) * frac; dst.gear[t] = (dst.gear[t] || 0) + g; src.gear[t] -= g; }
+  }
+  dst.org = (dst.org * dst.men + src.org * move) / (dst.men + move);
+  dst.men += move; src.men -= move;
+  if (src.men < 100) { dst.men = Math.min(dst.maxMen, dst.men + src.men); G.removeArmy(src); }
+  return move;
+};
+
+// Sağ tıkla "bu orduyu doldur" emri: aynı yerdeyse hemen, değilse kaynak ordu hedefe yürür ve varınca aktarır
+C.orderJoin = function (src, dst) {
+  if (src.prov === dst.prov && src.fleet == null) return C.transfer(src, dst) > 0 ? 'done' : 'full';
+  if (dst.men >= dst.maxMen) return 'full';
+  if (!G.orderMove(src, dst.prov)) return 'nopath';
+  src.joinId = dst.id;
+  return 'moving';
+};
+C.stepJoins = function () {
+  const S = G.S;
+  for (const a of S.armies.slice()) {
+    if (a.joinId == null || a.path.length || a.fleet != null || !S.armies.includes(a)) continue;
+    const dst = S.armies.find(x => x.id === a.joinId);
+    a.joinId = null;
+    if (!dst || dst.fleet != null) continue;
+    if (dst.prov === a.prov) {
+      const n = C.transfer(a, dst);
+      if (n && a.tag === S.player) G.log(`${dst.name} ${G.fmtNum(n)} askerle takviye edildi.`, 'good', [a.tag]);
+    } else if (C.orderJoin(a, dst) !== 'moving') a.joinId = null;   // hedef yer değiştirdiyse peşinden git
+  }
+};
+
 // ------------------------------------------------------------ cepheler
 C.frontProvinces = function (tag, enemy) {
   const P = G.S.provinces, out = [];

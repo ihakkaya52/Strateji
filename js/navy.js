@@ -93,6 +93,7 @@ N.init = function () {
       const war = N.bestWar(n.tag), tr = N.bestTransport(n.tag);
       for (let i = 0; i < m * 3; i++) N.addShip(f, war);
       for (let i = 0; i < m * 3; i++) N.addShip(f, tr);
+      f.admiral.skill = Math.max(f.admiral.skill, Math.min(5, Math.ceil((f.ships.length - 12) / 4)));
     }
   }
 };
@@ -106,6 +107,8 @@ N.speed = f => f.ships.length ? Math.min(...f.ships.map(sh => G.SHIP_TYPES[sh.ty
 N.hp = f => f.ships.reduce((s, sh) => s + sh.hp, 0);
 N.maxHp = f => f.ships.reduce((s, sh) => s + G.SHIP_TYPES[sh.type].hp, 0);
 N.crew = f => f.ships.reduce((s, sh) => s + G.SHIP_TYPES[sh.type].crew, 0);
+// Bir amiralin yönetebileceği en fazla gemi: becerisine göre 16–32
+N.maxShips = f => 12 + 4 * (f.admiral ? f.admiral.skill : 1);
 N.maxMarines = f => f.ships.reduce((s, sh) => s + (G.SHIP_TYPES[sh.type].marines || 0), 0);
 N.MIN_MARINES = 300;   // bundan az deniz piyadesiyle çıkarma yapılmaz
 N.power = f => f.ships.reduce((s, sh) => s + G.SHIP_TYPES[sh.type].atk * (sh.type === 'dromon' ? 1.3 : 1), 0) *
@@ -256,6 +259,63 @@ N.splitFleet = function (f, shipIds) {
   const share = total ? N.maxMarines(nf) / total : 0;
   nf.marines = Math.round(f.marines * share); f.marines -= nf.marines;
   return nf;
+};
+
+// Gemi aktarımı: hedef filo amiralinin yönetebileceği kadar gemi alır (önce savaş gemileri), kalanlar kaynakta kalır.
+// Kaynak boşalırsa gemideki ordular ve deniz piyadeleri de hedefe geçer.
+N.transferShips = function (src, dst) {
+  const S = G.S;
+  if (!src || !dst || src === dst || src.tag !== dst.tag) return 0;
+  const room = N.maxShips(dst) - dst.ships.length;
+  if (room <= 0) return 0;
+  const order = src.ships.slice().sort((a, b) => G.SHIP_TYPES[b.type].atk - G.SHIP_TYPES[a.type].atk);
+  let move = order.slice(0, room);
+  // gemideki askerler kalan gemilere sığmalı
+  while (move.length && src.cargo.length && move.length < src.ships.length) {
+    const left = src.ships.filter(sh => !move.includes(sh));
+    const capLeft = left.reduce((t, sh) => t + G.SHIP_TYPES[sh.type].cap, 0);
+    if (capLeft >= N.cargoMen(src)) break;
+    move = move.slice(0, -1);
+  }
+  if (!move.length) return 0;
+  const mBefore = N.maxMarines(src);
+  src.ships = src.ships.filter(sh => !move.includes(sh));
+  dst.ships.push(...move);
+  const share = mBefore ? (mBefore - N.maxMarines(src)) / mBefore : 0;
+  const mm = Math.round(src.marines * share);
+  src.marines -= mm; dst.marines = Math.min(N.maxMarines(dst), dst.marines + mm);
+  if (!src.ships.length) {
+    for (const id of src.cargo) { const a = S.armies.find(x => x.id === id); if (a) a.fleet = dst.id; }
+    dst.cargo.push(...src.cargo); src.cargo = [];
+    if (src.plan) N.endPlan(src, false);
+    S.fleets.splice(S.fleets.indexOf(src), 1);
+    if (G.selFleet === src) G.selFleet = dst;
+  }
+  return move.length;
+};
+N.sameSpot = (a, b) => (a.docked != null || b.docked != null) ? a.docked === b.docked : a.zone === b.zone;
+// Sağ tıkla "bu filoyu doldur": aynı yerdeyse hemen, değilse kaynak filo hedefe gider ve varınca aktarır
+N.orderJoin = function (src, dst) {
+  if (N.sameSpot(src, dst)) return N.transferShips(src, dst) > 0 ? 'done' : 'full';
+  if (dst.ships.length >= N.maxShips(dst)) return 'full';
+  const err = dst.docked != null ? N.orderDock(src, dst.docked) : N.orderZone(src, dst.zone);
+  if (err) return err;
+  src.joinId = dst.id;
+  return 'moving';
+};
+N.stepJoins = function () {
+  const S = G.S;
+  for (const f of S.fleets.slice()) {
+    if (f.joinId == null || f.path.length || !S.fleets.includes(f)) continue;
+    if (f.order && f.order.kind === 'dock' && f.docked == null) continue;   // limana girmek üzere
+    const dst = N.fleet(f.joinId);
+    f.joinId = null;
+    if (!dst) continue;
+    if (N.sameSpot(f, dst)) {
+      const n = N.transferShips(f, dst);
+      if (n && f.tag === S.player) G.log(`${dst.name} filosuna ${n} gemi katıldı.`, 'good', [f.tag]);
+    } else if (N.orderJoin(f, dst) === 'moving') { /* hedef yer değiştirdi: peşinden git */ }
+  }
 };
 
 // En yakın dost limana dön
@@ -457,6 +517,7 @@ N.step = function () {
   const hostileIn = (f) => S.fleets.some(o => o !== f && o.zone === f.zone && o.docked == null && f.docked == null &&
     G.atWar(f.tag, o.tag));
   for (const f of S.fleets.slice()) if (f.plan) N.stepPlan(f);
+  N.stepJoins();
   for (const f of S.fleets.slice()) {
     if (!S.fleets.includes(f) || f.docked != null) continue;
     if (f.path.length) {
@@ -681,7 +742,7 @@ N.daily = function () {
     if (!S.nations[d.tag] || p.ctrl !== d.tag) continue;
     while (d.queue.length && d.queue[0].done <= S.hour) {
       const item = d.queue.shift();
-      let f = S.fleets.find(x => x.tag === d.tag && x.docked === d.prov && !x.cargo.length);
+      let f = S.fleets.find(x => x.tag === d.tag && x.docked === d.prov && !x.cargo.length && x.ships.length < N.maxShips(x));
       if (!f) f = N.createFleet(d.tag, d.prov);
       N.addShip(f, item.type, false);   // deniz piyadeleri limanda insan gücünden tamamlanır
       if (d.tag === S.player) G.log(`${p.name} tersanesinde yeni bir ${G.SHIP_TYPES[item.type].name} denize indirildi.`, 'good', [d.tag]);

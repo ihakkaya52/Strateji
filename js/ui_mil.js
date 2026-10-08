@@ -61,6 +61,8 @@
       e.preventDefault();
       const p = pick(e);
       if (!p) return;
+      // seçili ordularla başka bir orduya sağ tık: o orduyu doldur
+      if (p.a && G.selected.size && !G.selected.has(p.a) && p.a.fleet == null) { G.joinOrder([...G.selected].filter(a => a.tag === S.player), p.a); return; }
       const arr = p.a ? [p.a] : C.armies(p.m);
       const pos = arr.map(a => a.prov != null ? S.provinces[a.prov] : G.navy.fleet(a.fleet) && S.seas[G.navy.fleet(a.fleet).zone]).filter(Boolean);
       if (!pos.length) return;
@@ -151,7 +153,7 @@
 
   U.refreshArmyPanel = function (force) {
     const el = $('armypanel');
-    if (G.selFleet) { U.refreshFleetPanel(); return; }
+    if (G.selFleet) { U._fleetForce = !!force || U._fleetForce; U.refreshFleetPanel(); return; }
     const sel = [...G.selected];
     if (!sel.length) { el.classList.add('hidden'); U.armyAssignOpen = false; return; }
     // fare kutunun üzerindeyken ya da bir seçim kutusu açıkken kendiliğinden yenileme (açık menüyü kapatmasın)
@@ -338,44 +340,88 @@
       <span class="muted">${f.marines < N.MIN_MARINES ? '· çıkarma için yetersiz, dost limanda tamamlanır' : '· düşman kıyısına sağ tıklayınca kendiliğinden çıkarma yaparlar'}</span></div>`;
   };
 
+  // Seçili filo kutusu (ekranın solu): amiral, gemiler ve kaptanları, deniz piyadeleri, gemideki ordular, emirler
   U.refreshFleetPanel = function () {
     const el = $('armypanel'), f = G.selFleet, S = G.S;
     if (!f || !S.fleets.includes(f)) { G.selFleet = null; el.classList.add('hidden'); return; }
+    if (!el.classList.contains('hidden') && el.dataset.fleet === String(f.id) && el.matches(':hover') && !U._fleetForce) return;
+    U._fleetForce = false;
+    el.dataset.fleet = f.id;
     el.classList.remove('hidden');
-    const a = f.admiral;
-    el.innerHTML = `<h3>⛵ ${G.esc(f.name)}</h3>
-      <div class="muted" style="font-size:13px">Kaptan: <b style="color:var(--text)">${G.esc(a.name)}</b>
-        <span class="stars" style="color:var(--gold)">${stars(a.skill)}</span> ${traitHtml(a.trait)}</div>
-      <div class="muted" style="font-size:13px">${U.fleetStatus(f)} · Mürettebat ${G.fmtNum(N.crew(f))} denizci ·
-        Hız ${N.speed(f).toFixed(1)} km/s · Menzil ${N.range(f)} bölge</div>
-      ${U.shipSummary(f)}
-      ${U.marinesHtml(f)}
-      ${U.cargoHtml(f)}
-      <div class="muted" style="font-size:12px;margin-top:6px">Gemileri ayırmak için alttaki çubukta gemi kartlarına tıklayın. Sağ tık: denize → git · dost limana → demirle ·
-        düşman kıyısına → çıkarma (gemide ordu varsa ordu, yoksa geminin deniz piyadeleri çıkar). Açık renkli deniz bölgeleri menzil içinde.</div>
-      <div class="row-btns" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px">
-        ${f.docked != null && f.cargo.length ? '<button id="btn-unload">Askerleri limana indir</button>' : ''}
+    const a = f.admiral, nat = S.nations[f.tag], mine = f.tag === S.player;
+    const max = N.maxShips(f), mx = N.maxMarines(f);
+    const hp = N.hp(f), mhp = N.maxHp(f);
+    const kinds = { savas: 0, nakliye: 0, hafif: 0 };
+    for (const sh of f.ships) { const t = G.SHIP_TYPES[sh.type]; if (t.atk >= 6) kinds.savas++; else if (t.cap >= 1000) kinds.nakliye++; else kinds.hafif++; }
+    const cargo = f.cargo.map(id => S.armies.find(x => x.id === id)).filter(Boolean);
+    const marked = f.ships.filter(sh => U.shipSel.has(sh.id)).length;
+    el.innerHTML = `<div class="ap-head" style="--nc:${nat.color}"><span class="flag" style="background:${nat.color}"></span>
+        <span>⛵ ${G.esc(f.name)}</span><button class="x" id="btn-fleet-desel" title="Seçimi bırak (Esc)">✕</button></div>
+      <div class="ap-marshal" style="--mc:#6aa8c0">
+        <div class="ap-k">Amiral</div>
+        <div class="ap-mname">${G.esc(a.name)} <span class="stars">${stars(a.skill)}</span></div>
+        <div class="ap-sub">${traitHtml(a.trait)} <b style="color:${f.ships.length > max ? '#ff7a5a' : 'var(--text)'}">${f.ships.length} / ${max}</b> gemi yönetiyor</div>
+        <div class="bar str" style="margin-top:4px"><div style="width:${Math.min(100, f.ships.length / max * 100)}%"></div></div>
+      </div>
+      <div class="ap-cmd"><div class="ap-status">${U.fleetStatus(f)}</div>
+        <div class="ap-sub">Hız ${N.speed(f).toFixed(1)} km/s · menzil ${N.range(f)} bölge · saldırı ${Math.round(N.power(f))} · ${G.fmtNum(N.crew(f))} denizci</div></div>
+      <div class="ap-stats">
+        <div class="ap-bars">
+          <div title="Gövde sağlamlığı"><span>Sağlamlık</span><div class="bar hpb"><div style="width:${hp / Math.max(1, mhp) * 100}%"></div></div><em>%${Math.round(hp / Math.max(1, mhp) * 100)}</em></div>
+          <div title="Taşınan asker"><span>Yük</span><div class="bar str"><div style="width:${Math.min(100, N.cargoMen(f) / Math.max(1, N.cap(f)) * 100)}%"></div></div><em>${G.fmtK(N.cargoMen(f))}/${G.fmtK(N.cap(f))}</em></div>
+          ${mx ? `<div title="Deniz piyadeleri: düşman kıyısına sağ tıklayınca kendiliğinden çıkarma yaparlar"><span>Deniz piyadesi</span><div class="bar mar"><div style="width:${f.marines / mx * 100}%"></div></div><em>${G.fmtK(f.marines)}</em></div>` : ''}
+        </div>
+        <div class="ap-comp">
+          <div><i>⛵</i><b>${kinds.savas}</b><span>Savaş</span></div>
+          <div><i>⛴</i><b>${kinds.nakliye}</b><span>Nakliye</span></div>
+          <div><i>🚣</i><b>${kinds.hafif}</b><span>Hafif</span></div>
+        </div>
+      </div>
+      <div class="ap-ships">
+        <div class="ap-k">Gemiler ve kaptanları <span class="muted">· ayırmak için tıklayıp işaretleyin</span></div>
+        ${f.ships.map(sh => {
+          const t = G.SHIP_TYPES[sh.type];
+          sh.captain ||= G.nameFor(f.tag);
+          return `<div class="ap-ship ${U.shipSel.has(sh.id) ? 'sel' : ''}" data-ship="${sh.id}" title="${G.esc(t.desc)}">
+            <i>${t.atk >= 6 ? '⛵' : t.cap >= 1000 ? '⛴' : '🚣'}</i>
+            <span class="nm">${G.esc(sh.name)}<small>${G.esc(t.name)}</small></span>
+            <span class="cp">${G.esc(sh.captain)}</span>
+            <span class="hpw"><span class="hpbar"><div style="width:${sh.hp / t.hp * 100}%"></div></span></span></div>`;
+        }).join('')}
+      </div>
+      ${cargo.length ? `<div class="ap-cmd"><div class="ap-k">Gemideki ordular</div>
+        ${cargo.map(x => `<div class="ap-mini"><span>${G.esc(x.name)}</span><span class="muted">${G.esc(x.general.name)}</span><b>${G.fmtK(x.men)}</b><span>${x.marine ? '⚓' : '⚔'}</span></div>`).join('')}</div>` : ''}
+      ${mine ? `<div class="ap-actions">
         <button id="btn-fleet-home" title="En yakın dost limana dön">⚓ Limana dön</button>
-        ${[...U.shipSel].some(id => f.ships.some(sh => sh.id === id)) ? `<button id="btn-fleet-split" title="Komuta çubuğunda işaretlenen gemilerle yeni filo">✂ ${[...U.shipSel].filter(id => f.ships.some(sh => sh.id === id)).length} gemiyle yeni filo</button>` : ''}
-        <button id="btn-fleet-navy">Donanma arayüzü</button>
-        <button id="btn-fleet-desel">Seçimi bırak</button>
-      </div>`;
-    const un = $('btn-unload');
-    if (un) un.onclick = () => { N.disembark(f, f.docked); U.refreshFleetPanel(); G.mapDirty = true; };
-    $('btn-fleet-navy').onclick = () => U.showNavy();
+        ${f.docked != null && f.cargo.length ? '<button id="btn-unload">⬇ Askerleri indir</button>' : ''}
+        ${marked ? `<button id="btn-fleet-split" title="İşaretli gemilerle yeni filo">✂ ${marked} gemiyle yeni filo</button>` : ''}
+        <button id="btn-fleet-navy">Tersaneler</button>
+      </div>
+      <div class="ap-hint">Sağ tık: denize git · dost limana demirle · düşman kıyısına çıkarma · kendi başka filona sağ tık: o filoyu amiralinin yönetebileceği kadar gemiyle doldur</div>` : ''}`;
     $('btn-fleet-desel').onclick = () => G.clearSelection();
+    if (!mine) return;
+    const redo = () => { U._fleetForce = true; U.refreshFleetPanel(); U.refreshOrdular(); G.mapDirty = true; };
+    for (const r of el.querySelectorAll('[data-ship]')) r.onclick = () => {
+      const id = +r.dataset.ship;
+      for (const x of [...U.shipSel]) if (!f.ships.some(sh => sh.id === x)) U.shipSel.delete(x);
+      if (U.shipSel.has(id)) U.shipSel.delete(id); else U.shipSel.add(id);
+      redo();
+    };
     $('btn-fleet-home').onclick = () => {
       const err = N.orderHome(f);
       if (err) U.addLog(G.fmtDate(S.time, false), err, 'war');
-      U.refreshFleetPanel(); G.mapDirty = true;
+      redo();
     };
+    const un = $('btn-unload');
+    if (un) un.onclick = () => { N.disembark(f, f.docked); redo(); };
     const sp = $('btn-fleet-split');
     if (sp) sp.onclick = () => {
       const nf = N.splitFleet(f, f.ships.filter(sh => U.shipSel.has(sh.id)).map(sh => sh.id));
       if (!nf) U.addLog(G.fmtDate(S.time, false), 'Filo ayrılamadı: filo durmalı ve en az bir gemi kalmalı.', 'war');
       else { U.shipSel.clear(); G.selectFleet(nf); }
-      U.refreshOrdular(); G.mapDirty = true;
+      redo();
     };
+    $('btn-fleet-navy').onclick = () => U.showNavy();
   };
 
   // ------------------------------------------------------------ donanma arayüzü
@@ -449,12 +495,8 @@
       const card = e.target.closest('.fleet-card');
       if (!card || e.target.dataset.act !== 'merge' || !e.target.value) return;
       const f = N.fleet(+card.dataset.f), o = N.fleet(+e.target.value);
-      if (o.plan) N.endPlan(o, false);
-      f.ships.push(...o.ships); f.cargo.push(...o.cargo);
-      f.marines = Math.min(N.maxMarines(f), (f.marines || 0) + (o.marines || 0));
-      for (const id of o.cargo) { const a = S.armies.find(x => x.id === id); if (a) a.fleet = f.id; }
-      S.fleets.splice(S.fleets.indexOf(o), 1);
-      if (G.selFleet === o) G.selFleet = f;
+      const n = N.transferShips(o, f);
+      if (!n) U.addLog(G.fmtDate(S.time, false), `${f.name} dolu: amirali en fazla ${N.maxShips(f)} gemi yönetebilir.`, 'war');
       U.refreshNavy(); G.mapDirty = true;
     };
     $('navy-docks').onclick = e => {

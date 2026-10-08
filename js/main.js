@@ -188,10 +188,15 @@
       return;
     }
     if (!G.S || !G.selected.size) return;
+    const S = G.S;
+    const sel = [...G.selected].filter(a => a.tag === S.player);
+    // kendi başka bir ordumuza sağ tık: seçili ordular onu komutanının kapasitesine kadar doldurur
+    const ctr = M.counterAt(e.clientX, e.clientY);
+    const dst = ctr && ctr.tag === S.player ? ctr.armies.find(a => !G.selected.has(a)) : null;
+    if (dst && sel.length) { joinOrder(sel, dst); return; }
     const pid = M.provinceAt(e.clientX, e.clientY);
     if (pid == null) return;
-    const S = G.S, p = S.provinces[pid];
-    const sel = [...G.selected].filter(a => a.tag === S.player);
+    const p = S.provinces[pid];
     // Ctrl + sağ tık ya da karadan ulaşılamayan kıyı: gemiyle çıkarma
     const bySea = e.ctrlKey || (p.sea && p.sea.length && G.canEnter(S.player, p) && sel.every(a => !G.findPath(a.tag, a.prov, pid)));
     if (bySea && sel.length) {
@@ -202,7 +207,7 @@
     let ok = 0, fail = 0;
     for (const a of sel) {
       const old = a.transport;
-      a.transport = null;
+      a.transport = null; a.joinId = null;
       if (G.orderMove(a, pid)) ok++; else { fail++; a.transport = old; }
     }
     if (fail && !ok) {
@@ -214,6 +219,26 @@
     U.refreshArmyPanel();
     G.mapDirty = true;
   });
+
+  // Ordu takviyesi: hedef ordu dolana kadar seçili ordulardan asker aktarılır
+  function joinOrder(sel, dst) {
+    const S = G.S, C = G.command, log = (t, c) => U.addLog(G.fmtDate(S.time, false), t, c);
+    let moved = 0, going = 0;
+    for (const a of sel) {
+      if (dst.men >= dst.maxMen) break;
+      a.transport = null;
+      const before = dst.men;
+      const r = C.orderJoin(a, dst);
+      if (r === 'done') moved += dst.men - before;
+      else if (r === 'moving') going++;
+    }
+    if (moved) log(`${dst.name} ${G.fmtNum(moved)} askerle dolduruldu (${G.fmtNum(dst.men)} / ${G.fmtNum(dst.maxMen)}).`, 'good');
+    if (going) log(`${going} ordu ${dst.name}'ya katılmak için yola çıktı.`, 'good');
+    if (!moved && !going) log(`${dst.name} zaten dolu ya da ulaşılamıyor (${G.fmtNum(dst.men)} / ${G.fmtNum(dst.maxMen)}).`, 'war');
+    G.selectArmies(sel.filter(a => S.armies.includes(a)), false);
+    U.refreshOrdular(); G.mapDirty = true;
+  }
+  G.joinOrder = joinOrder;
 
   // Ordulara deniz yoluyla çıkarma emri: limana yürü, gemiye bin, hedefe çık
   function seaOrder(sel, pid) {
@@ -228,6 +253,20 @@
 
   function fleetOrder(x, y) {
     const S = G.S, N = G.navy, f = G.selFleet;
+    // kendi başka bir filomuza sağ tık: seçili filo onu amiralinin yönetebileceği kadar gemiyle doldurur
+    const other = M.fleetAt(x, y);
+    if (other && other !== f && other.tag === S.player) {
+      f.joinId = null;
+      const before = other.ships.length, r = N.orderJoin(f, other);
+      const log = (t, c) => U.addLog(G.fmtDate(S.time, false), t, c);
+      if (r === 'done') log(`${other.name} filosuna ${other.ships.length - before} gemi katıldı (${other.ships.length} / ${N.maxShips(other)}).`, 'good');
+      else if (r === 'moving') log(`${f.name}, ${other.name} filosuna katılmak için yola çıktı.`, 'good');
+      else if (r === 'full') log(`${other.name} dolu: amirali en fazla ${N.maxShips(other)} gemi yönetebilir.`, 'war');
+      else log(r, 'war');
+      U.refreshArmyPanel(true); U.refreshOrdular(); G.mapDirty = true;
+      return;
+    }
+    f.joinId = null;
     const pid = M.provinceAt(x, y);
     let err = null;
     if (pid != null) {

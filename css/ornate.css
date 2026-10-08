@@ -297,3 +297,17 @@
 #tb-focus-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
 #tb-music { order: 0; }
 #mus-pop { position: fixed; top: 64px; right: 236px; }
+
+/* filo kutusu */
+.bar.hpb > div { background: #7fc4e0; }
+.ap-bars .bar.mar > div { background: #d07a5a; }
+.ap-ships { margin-top: 8px; max-height: 230px; overflow-y: auto; border: 1px solid #2f4a52; border-radius: 4px; padding: 4px 6px; background: rgba(0,10,15,0.25); }
+.ap-ship { display: grid; grid-template-columns: 20px 1.2fr 1fr 52px; gap: 6px; align-items: center; padding: 2px 3px; font-size: 12px; cursor: pointer; border: 1px solid transparent; border-radius: 3px; }
+.ap-ship:hover { background: rgba(127,196,224,0.08); }
+.ap-ship.sel { border-color: #ffe9a8; background: rgba(255,233,168,0.08); }
+.ap-ship i { font-style: normal; text-align: center; }
+.ap-ship .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ap-ship .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 10px; }
+.ap-ship .cp { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ap-ship .hpbar { width: 50px; }
+.og-cnt { color: var(--muted); font-family: var(--body); letter-spacing: 0; }
