@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strateji 1040</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="map"></canvas>
+
+<!-- Üst çubuk -->
+<div id="topbar" class="hidden">
+  <div id="tb-nation" class="tb-block clickable" title="Ülke paneli">
+    <span id="tb-flag" class="flag"></span>
+    <span id="tb-name"></span>
+  </div>
+  <div class="tb-block" title="İnsan gücü: yeni ordular ve takviye için gereken asker">
+    <span class="ico">⚔</span><span id="tb-manpower">0</span>
+  </div>
+  <div class="tb-block" title="Ordu sayısı / toplam asker">
+    <span class="ico">⚑</span><span id="tb-armies">0</span>
+  </div>
+  <div class="tb-block" title="Savaşta olduğunuz ülkeler">
+    <span class="ico">☠</span><span id="tb-wars">Barış</span>
+  </div>
+  <div class="tb-spacer"></div>
+  <div id="tb-time" class="tb-block">
+    <button id="btn-pause" title="Duraklat / devam (Boşluk)">⏸</button>
+    <span id="tb-date"></span>
+    <div id="tb-speed" title="Hız (1-5, + / -)"></div>
+  </div>
+</div>
+
+<!-- Sol panel: eyalet / ülke bilgisi -->
+<div id="panel" class="hidden"></div>
+
+<!-- Sağ alt: seçili ordular -->
+<div id="armypanel" class="hidden"></div>
+
+<!-- Sol alt: olay günlüğü -->
+<div id="log" class="hidden"></div>
+
+<!-- Harita modları -->
+<div id="mapmodes" class="hidden">
+  <button data-mode="political" class="active" title="Siyasi harita">Siyasi</button>
+  <button data-mode="religion" title="Din haritası">Din</button>
+</div>
+
+<div id="tooltip" class="hidden"></div>
+
+<!-- Başlangıç ekranı -->
+<div id="menu">
+  <div class="menu-box">
+    <h1>STRATEJİ <span>1040</span></h1>
+    <p class="subtitle">Ortaçağ büyük strateji · 1040 – 1120</p>
+    <p class="intro">Yıl 1040. Tuğrul Bey Dandanakan'da Gaznelileri ezdi, Bizans Anadolu'yu elinde tutuyor,
+      Vikinglerin torunları Kuzey Denizi'ne hükmediyor. Bir ülke seç ve tarihi yeniden yaz.</p>
+    <h3>Büyük güçler</h3>
+    <div id="major-list"></div>
+    <div class="menu-other">
+      <button id="btn-pick-map">Haritadan başka bir ülke seç</button>
+    </div>
+    <p class="hint">Kontroller: sol tık seç · sol tıkla sürükle kaydır · Shift + sürükle ordu seç · sağ tık ordu yürüt ·
+      tekerlek yakınlaştır · Boşluk duraklat · 1-5 hız</p>
+  </div>
+</div>
+
+<!-- Haritadan seçme modu -->
+<div id="pickbar" class="hidden">
+  <span id="pick-text">Oynamak istediğin ülkeye tıkla.</span>
+  <button id="btn-pick-ok" disabled>Bu ülkeyle başla</button>
+  <button id="btn-pick-cancel">Geri</button>
+</div>
+
+<!-- Olay penceresi -->
+<div id="modal" class="hidden"><div class="modal-box"></div></div>
+
+<script src="js/data/world.js"></script>
+<script src="js/util.js"></script>
+<script src="js/state.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/events.js"></script>
+<script src="js/map.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
