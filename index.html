@@ -17,29 +17,32 @@
     <span id="tb-flag" class="flag"></span>
     <span id="tb-name"></span>
   </div>
-  <div id="tb-gold" class="tb-block clickable" title="Hazine (aylık net gelir)">
+  <div id="tb-focus" class="tb-block clickable hidden" title="Ulusal odak ağacı">
+    <span class="ico">❖</span><span id="tb-focus-name">Odak seç</span>
+    <div class="bar mini"><div id="tb-focus-bar"></div></div>
+  </div>
+  <div id="tb-gold" class="tb-block clickable" title="Hazine ve ekonomi">
     <span class="ico">◉</span><span id="tb-goldtxt">0</span>
   </div>
-  <div class="tb-block" title="İnsan gücü: yeni ordular ve takviye için gereken asker">
-    <span class="ico">⚔</span><span id="tb-manpower">0</span>
+  <div id="tb-mp" class="tb-block clickable" title="İnsan gücü: yeni ordular ve takviye için gereken asker">
+    <span class="ico">♟</span><span id="tb-manpower">0</span>
   </div>
-  <div id="tb-ordular" class="tb-block clickable" title="Komuta çubuğunu küçült / büyüt (O)">
+  <div id="tb-ordular" class="tb-block clickable" title="Bütün ordular">
     <span class="ico">⚑</span><span id="tb-armies">0</span>
   </div>
-  <div id="tb-prod" class="tb-block clickable" title="Üretim ve inşaat (P)">
+  <div id="tb-prod" class="tb-block clickable" title="Atölyeler, silahhaneler ve inşaat (P)">
     <span class="ico">⚒</span><span id="tb-prodtxt">0</span>
   </div>
   <div id="tb-navy" class="tb-block clickable" title="Donanma ve tersaneler (N)">
     <span class="ico">⚓</span><span id="tb-ships">0</span>
   </div>
-  <div id="tb-focus" class="tb-block clickable hidden" title="Ulusal odak ağacı">
-    <span class="ico">❖</span><span id="tb-focus-name">Odak seç</span>
-    <div class="bar mini"><div id="tb-focus-bar"></div></div>
-  </div>
   <div id="tb-war" class="tb-block clickable" title="Savaş durumu ve kayıplar (K)">
     <span class="ico">☠</span><span id="tb-wars">Barış</span>
   </div>
   <div class="tb-spacer"></div>
+  <div id="tb-events" class="tb-block clickable" title="Olaylar ve haberler (L)">
+    <span class="ico">✉</span><span>Olaylar</span><span id="tb-ev-count" class="hidden"></span>
+  </div>
   <div id="tb-music" class="tb-block clickable" title="Müzik">
     <span class="ico" id="mus-ico">♫</span>
     <div id="mus-pop" class="hidden">
@@ -49,12 +52,21 @@
       <button id="mus-mute">Sessiz</button>
     </div>
   </div>
-  <div id="tb-time" class="tb-block">
-    <button id="btn-pause" title="Duraklat / devam (Boşluk)">⏸</button>
-    <span id="tb-date"></span>
+  <div id="tb-clock-space"></div>
+</div>
+
+<!-- Saat: sağ üstte HOI4 tarzı kare kutu -->
+<div id="tb-time" class="hidden">
+  <button id="btn-pause" title="Duraklat / devam (Boşluk)">⏸</button>
+  <div class="clk-main">
+    <div id="tb-date"></div>
     <div id="tb-speed" title="Hız (1-5, + / -)"></div>
   </div>
 </div>
+
+<!-- Genel sayfa penceresi: ekonomi, ordular, atölyeler, olaylar -->
+<div id="pagewin" class="hidden"></div>
+<div id="toasts"></div>
 
 <!-- Savaş durumu: üstte açılır kapanır -->
 <div id="warpanel" class="hidden"></div>
@@ -185,6 +197,7 @@
 <script src="js/portraits.js"></script>
 <script src="js/music.js"></script>
 <script src="js/ui_art.js"></script>
+<script src="js/ui_pages.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

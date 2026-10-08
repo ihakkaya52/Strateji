@@ -67,7 +67,7 @@ U.pickNation = function (tag) {
 // ------------------------------------------------------------ oyun arayüzü
 U.initGame = function () {
   $('menu').classList.add('hidden');
-  for (const id of ['topbar', 'log', 'mapmodes', 'cmdbar']) $(id).classList.remove('hidden');
+  for (const id of ['topbar', 'tb-time', 'mapmodes', 'cmdbar']) $(id).classList.remove('hidden');
   const S = G.S, n = S.nations[S.player];
   $('tb-flag').style.background = n.color;
   $('tb-name').textContent = n.name;
@@ -122,16 +122,16 @@ U.refreshTop = function () {
   $('tb-date').textContent = G.fmtDate(S.time);
   $('tb-manpower').textContent = G.fmtNum(n.manpower);
   const st = G.nationStats(S.player);
-  $('tb-armies').textContent = `${G.command.of(S.player).length} mareşal · ${st.armies} ordu · ${G.fmtK(st.men)}`;
+  $('tb-armies').textContent = `${st.armies} ordu · ${G.fmtK(st.men)}`;
   {
     const b = n.lastBudget || G.econ.budget(n);
     $('tb-goldtxt').innerHTML = `${G.fmtNum(n.gold)} <span style="color:${b.net >= 0 ? '#9ad07a' : '#ff7a5a'}">(${b.net >= 0 ? '+' : ''}${b.net.toFixed(1)})</span>`;
   }
   {
     const avg = (() => { const ar = S.armies.filter(a => a.tag === S.player); return ar.length ? ar.reduce((t, a) => t + G.econ.ratio(a), 0) / ar.length : 1; })();
-    $('tb-prodtxt').innerHTML = `${n.civTotal || 0} atölye · ${n.milTotal || 0} silahhane · <span style="color:${avg > 0.9 ? '#9ad07a' : avg > 0.6 ? '#e0c060' : '#ff7a5a'}">teçhizat %${Math.round(avg * 100)}</span>`;
+    $('tb-prodtxt').innerHTML = `${n.civTotal || 0} · ${n.milTotal || 0} <span style="color:${avg > 0.9 ? '#9ad07a' : avg > 0.6 ? '#e0c060' : '#ff7a5a'}" title="Teçhizat">%${Math.round(avg * 100)}</span>`;
   }
-  $('tb-ships').textContent = `${G.navy.fleetsOf(S.player).reduce((t, f) => t + f.ships.length, 0)} gemi`;
+  $('tb-ships').textContent = `${G.navy.fleetsOf(S.player).reduce((t, f) => t + f.ships.length, 0)}`;
   if (G.focus.tree(S.player)) {
     const f = n.focus.cur && G.focus.get(S.player, n.focus.cur);
     $('tb-focus-name').textContent = f ? f.name : 'Odak seç';
@@ -385,7 +385,7 @@ U.showFocus = function () {
   const cur = n.focus.cur && G.focus.get(tag, n.focus.cur);
   $('focus-sub').textContent = cur
     ? `Sürüyor: ${cur.name} (${G.FOCUS_DAYS - n.focus.prog} gün kaldı)`
-    : 'Bir odak seçin. Her odak ' + G.FOCUS_DAYS + ' gün sürer. · Tekerlek: yakınlaştır · sağ tıkla basılı tutup sürükle';
+    : 'Bir odak seçin. Her odak ' + G.FOCUS_DAYS + ' gün sürer. · Tekerlek: yakınlaştır · sol tıkla basılı tutup sürükle';
   const W = 180, H = 178, PX = 30, PY = 26, NW = 150;
   const pos = f => ({ x: PX + f.x * W, y: PY + f.y * H });
   const maxX = Math.max(...tree.map(f => f.x)), maxY = Math.max(...tree.map(f => f.y));

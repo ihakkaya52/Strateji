@@ -167,19 +167,6 @@
       v.x = mx - (mx - v.x) * nz / v.z; v.y = my - (my - v.y) * nz / v.z; v.z = nz;
       clamp(); apply();
     }, { passive: false });
-    let drag = null;
-    box.addEventListener('mousedown', e => {
-      if (e.button !== 2) return;
-      drag = { x: e.clientX, y: e.clientY, vx: U.focusView.x, vy: U.focusView.y };
-      box.classList.add('dragging');
-      e.preventDefault();
-    });
-    window.addEventListener('mousemove', e => {
-      if (!drag) return;
-      U.focusView.x = drag.vx + e.clientX - drag.x; U.focusView.y = drag.vy + e.clientY - drag.y;
-      clamp(); apply();
-    });
-    window.addEventListener('mouseup', () => { if (drag) { drag = null; box.classList.remove('dragging'); } });
     box.addEventListener('contextmenu', e => e.preventDefault());
   };
 })();

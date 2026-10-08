@@ -15,21 +15,23 @@
     for (const a of G.selected) a.sel = false;
     G.selected.clear();
     G.selFleet = null;
-    U.refreshArmyPanel(); U.refreshOrdular();
+    U.refreshArmyPanel(true); U.refreshOrdular();
     G.mapDirty = true;
   };
   G.selectFleet = function (f) {
     for (const a of G.selected) a.sel = false;
     G.selected.clear();
     G.selFleet = f;
-    U.refreshArmyPanel(); U.refreshNavy();
+    if (U.closeLeftPanels) U.closeLeftPanels();
+    U.refreshArmyPanel(true); U.refreshNavy();
     G.mapDirty = true;
   };
   G.selectArmies = function (arr, add) {
     if (!add || G.selFleet) G.clearSelection();
     for (const a of arr) { if (a.fleet != null) continue; a.sel = true; G.selected.add(a); }
+    if (G.selected.size && U.closeLeftPanels) U.closeLeftPanels();
     U.refreshOrdular();
-    U.refreshArmyPanel();
+    U.refreshArmyPanel(true);
     G.mapDirty = true;
   };
 

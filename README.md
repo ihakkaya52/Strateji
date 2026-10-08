@@ -15,7 +15,8 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | Sağ tık | Seçili orduları yürüt / saldır; seçili filoyu denize, limana veya çıkarmaya gönder. Seçim yokken: ülkenin diplomasi sayfası |
 | Ctrl + sağ tık | Seçili ordular gemiyle gider: limana yürür, filoya biner, hedef kıyıya çıkarma yapar (karadan yol yoksa sağ tık yeterli) |
 | O | Alt ortadaki komuta çubuğunu küçült / büyüt |
-| Odak ağacı | Tekerlek: yakınlaştır / uzaklaştır · sağ tıkla basılı tutup sürükle |
+| Odak ağacı | Tekerlek: yakınlaştır / uzaklaştır · sol tıkla basılı tutup sürükle |
+| Üst çubuk | ❖ odak · ◉ hazine ve ekonomi · ♟ / ⚑ bütün ordular · ⚒ atölyeler ve silahhaneler · ⚓ donanma · ☠ savaş · ✉ olaylar · sağ üstte saat |
 | Donanma çubuğu | Sol tık: filoyu seç · gemi kartına tık: ayırmak için işaretle · sağ tık: kamera filoya kayar |
 | Komuta çubuğu | Sol tık: orduyu seç (kamera kıpırdamaz) · sağ tık: kamera yumuşakça orduya kayar · mareşal adına tık: üç ordusunu seç |
 | N | Donanma arayüzü |
@@ -24,7 +25,8 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | Fare tekerleği, Q / E | Yakınlaştır / uzaklaştır |
 | Boşluk | Duraklat / devam |
 | 1–5, + / - | Oyun hızı |
-| Esc | Seçimi bırak |
+| Esc | Her şeyi kapat, ana siyasi haritaya dön |
+| L | Olaylar sayfası |
 
 ## Şu an oyunda olanlar (1. sürüm)
 
@@ -146,6 +148,7 @@ js/geo.js             coğrafi harita, arazi türleri
 js/portraits.js       yordamsal hükümdar ve komutan portreleri
 js/music.js           yordamsal müzik ve ses efektleri
 js/ui_art.js          portreleri, müziği ve ses efektlerini arayüze bağlar
+js/ui_pages.js        üst çubuk sayfaları (ekonomi, ordular, atölyeler, olaylar), bildirimler, Esc
 css/ornate.css        süslemeler
 js/ai.js              yapay zekâ
 js/diplomacy.js       ilişkiler, elçiler, ittifak, garanti, geçiş hakkı, savaş gerekçesi

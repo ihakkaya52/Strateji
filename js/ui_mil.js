@@ -74,14 +74,11 @@
   U.marshalControls = function (sel) {
     const S = G.S, tag = S.player, me = S.nations[tag];
     const m = sel.length && sel[0].marshal != null && sel.every(a => a.marshal === sel[0].marshal) ? C.marshal(sel[0].marshal) : null;
-    if (!m) {
-      return sel.every(a => a.tag === tag) && sel.length <= C.MAX_ARMIES && sel.every(a => a.marshal == null)
-        ? '<div class="mc-box"><button data-mc="new">⚑ Seçili ordularla mareşal grubu kur</button></div>' : '';
-    }
+    if (!m) return '';
     const nbs = G.ai.neighbors()[tag] || new Set();
     const choices = [...new Set([...me.enemies, ...nbs])].filter(t => S.nations[t] && S.nations[t].alive && !G.sameRealm(t, tag));
     return `<div class="mc-box" style="--mc:${m.color}">
-      <div class="mc-title">Mareşal ${G.esc(m.leader.name)} <span class="muted">· ${C.armies(m).length}/3 ordu</span></div>
+      <div class="mc-title">Mareşalin emirleri</div>
       <div class="mc-row"><select data-mc="front"><option value="">Cephe yok</option>
         ${choices.map(t => `<option value="${t}" ${m.front === t ? 'selected' : ''}>${G.esc(S.nations[t].name)}${me.enemies.has(t) ? ' ⚔' : ''}</option>`).join('')}</select>
         <button data-mc="hold" class="${m.front && !m.attack ? 'on' : ''}" ${m.front ? '' : 'disabled'} title="Cephe boyunca savun">🛡 Savun</button>
@@ -92,7 +89,7 @@
   U.bindMarshalControls = function (el, sel) {
     const S = G.S, tag = S.player;
     const m = sel[0] && sel[0].marshal != null ? C.marshal(sel[0].marshal) : null;
-    const after = () => { G.command.update(); U.refreshOrdular(); U.refreshArmyPanel(); G.mapDirty = true; };
+    const after = () => { G.command.update(); U.refreshOrdular(); U.refreshArmyPanel(true); G.mapDirty = true; };
     el.querySelectorAll('[data-mc]').forEach(b => {
       const act = b.dataset.mc;
       if (act === 'front') { b.onchange = () => { m.front = b.value || null; if (!m.front) { m.attack = false; m.target = null; } after(); }; return; }
@@ -132,69 +129,145 @@
     U.refreshOrdular(); G.mapDirty = true;
   };
 
-  // ------------------------------------------------------------ seçili ordular paneli
-  U.refreshArmyPanel = function () {
+  // ------------------------------------------------------------ seçili ordu kutusu (ekranın solu)
+  // Üstte bağlı olduğu mareşal, sonra komutan, bileşim (piyade / okçu / süvari), emirler ve eylemler.
+  U.armyAssignOpen = false;
+  const statusOf = a => {
+    const S = G.S, P = S.provinces;
+    if (a.fleet != null) return ['⛵', 'Gemide'];
+    if (a.retreating) return ['↩', 'Bozgun, geri çekiliyor'];
+    if (a.encircled) return ['⚠', 'Kuşatıldı! İkmal yolu kesik'];
+    if (a.transport != null && N.fleet(a.transport)) return ['⚓', 'Gemiye binmeyi bekliyor'];
+    if (a.attacking != null) return ['⚔', `Saldırıyor: ${P[a.attacking].name}`];
+    if (a.besieging && G.atWar(a.tag, P[a.prov].ctrl)) return ['♜', `Kuşatıyor: ${P[a.prov].name}`];
+    if (a.path.length) return ['➜', `Yürüyor: ${P[a.path[a.path.length - 1]].name}`];
+    return ['⛺', `Bekliyor: ${P[a.prov].name}`];
+  };
+  const compOf = arr => {
+    const c = { piyade: 0, okcu: 0, suvari: 0 };
+    for (const a of arr) { const k = G.composition(a); c.piyade += k.piyade; c.okcu += k.okcu; c.suvari += k.suvari; }
+    return c;
+  };
+
+  U.refreshArmyPanel = function (force) {
     const el = $('armypanel');
     if (G.selFleet) { U.refreshFleetPanel(); return; }
     const sel = [...G.selected];
-    if (!sel.length) { el.classList.add('hidden'); return; }
+    if (!sel.length) { el.classList.add('hidden'); U.armyAssignOpen = false; return; }
+    // fare kutunun üzerindeyken ya da bir seçim kutusu açıkken kendiliğinden yenileme (açık menüyü kapatmasın)
+    if (!force && !el.classList.contains('hidden') && (el.matches(':hover') || el.contains(document.activeElement) && document.activeElement.tagName === 'SELECT')) return;
     el.classList.remove('hidden');
-    const S = G.S, P = S.provinces;
-    const mine = sel.every(a => a.tag === S.player);
-    const total = sel.reduce((s, a) => s + a.men, 0);
-    const prov = sel[0].prov;
-    const samePlace = sel.every(a => a.prov === prov);
-    const docked = samePlace && mine ? S.fleets.filter(f => f.tag === S.player && f.docked === prov) : [];
-    const marshals = C.of(S.player).filter(m => C.armies(m).length < C.MAX_ARMIES || sel.some(a => a.marshal === m.id));
-    el.innerHTML = `<h3>${sel.length} ordu · ${G.fmtNum(total)} asker</h3>
-      <div class="muted" style="font-size:12px;margin-bottom:6px">Sağ tıkla hedef seç. Deniz aşırı kıyıya sağ tık (ya da Ctrl + sağ tık): ordu gemiye binip oraya çıkarma yapar.</div>
-      ${sel.map(a => {
-        const g = a.general, m = a.marshal != null ? C.marshal(a.marshal) : null;
-        const status = a.retreating ? 'Bozgun: geri çekiliyor' : a.encircled ? '<b style="color:#ff7a5a">Kuşatıldı!</b>'
-          : a.transport != null && N.fleet(a.transport) ? `Gemiye binmeyi bekliyor: ${G.esc(P[N.fleet(a.transport).plan ? N.fleet(a.transport).plan.port : a.prov].name)}`
-          : a.attacking != null ? `Saldırıyor: ${G.esc(P[a.attacking].name)}`
-          : a.besieging && G.atWar(a.tag, P[a.prov].ctrl) ? `Kuşatıyor: ${G.esc(P[a.prov].name)}`
-          : a.path.length ? `Yürüyor: ${G.esc(P[a.path[a.path.length - 1]].name)}`
-          : `Bekliyor: ${G.esc(P[a.prov].name)}`;
-        const bs = G.bolukler(a);
-        const byType = {};
-        for (const b of bs) byType[b.type] = (byType[b.type] || 0) + 1;
-        return `<div class="army-row">
-          <span class="nm">${G.esc(a.name)}</span><span>${G.fmtNum(a.men)} / ${G.fmtNum(a.maxMen)}</span>
-          <span style="grid-column:1/3;font-size:13px">Komutan: <b>${G.esc(g.name)}</b> <span style="color:var(--gold)">${stars(g.skill)}</span> ${traitHtml(g.trait)}
-            ${g.skill < 5 ? `<span class="muted"> · tecrübe ${Math.round((g.xp || 0) / (60 * g.skill) * 100)}%</span>` : ''}</span>
-          <span class="muted" style="grid-column:1/3">${m ? `Mareşal ${G.esc(m.leader.name)}` : 'Bağımsız ordu'} · ${status}</span>
-          <span style="grid-column:1/3;font-size:12px">Teçhizat: <b style="color:${G.econ.ratio(a) > 0.9 ? '#9ad07a' : G.econ.ratio(a) > 0.6 ? '#e0c060' : '#ff7a5a'}">%${Math.round(G.econ.ratio(a) * 100)}</b>
-            ${a.gear ? `<span class="muted">· ${G.econ.TYPES.filter(t => G.econ.need(a)[t] > 0).map(t => `${G.EQUIP[t].icon} ${G.fmtK(a.gear[t])}/${G.fmtK(G.econ.need(a)[t])}`).join(' ')}</span>` : ''}</span>
-          <details style="grid-column:1/3"><summary class="muted">${bs.length} bölük: ${Object.entries(byType).map(([k, v]) => `${v} ${k.toLowerCase()}`).join(', ')}</summary>
-            <div class="boluk-list">${bs.map(b => `<div><span>${G.esc(b.name)}</span><span class="muted">${G.esc(b.cmdr)}</span><span>${G.fmtNum(b.men)}</span></div>`).join('')}</div>
-          </details>
-          <div class="bars">
-            <div title="Örgütlenme"><div class="bar org"><div style="width:${a.org}%"></div></div></div>
-            <div title="Mevcut"><div class="bar str"><div style="width:${Math.min(100, a.men / a.maxMen * 100)}%"></div></div></div>
-          </div></div>`;
-      }).join('')}
-      ${mine ? U.marshalControls(sel) : ''}
-      ${mine ? `<div class="row-btns" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
-        <button id="btn-army-stop">Dur</button>
-        ${sel.length === 1 ? '<button id="btn-army-split" title="Orduyu ikiye böl; yeni yarıya yeni bir komutan atanır">Böl</button>' : ''}
-        ${sel.length > 1 && samePlace ? '<button id="btn-army-merge" title="Aynı eyaletteki orduları birleştir (komutan kapasitesi kadar)">Birleştir</button>' : ''}
-        ${marshals.length ? `<select id="sel-army-join"><option value="">Mareşale bağla…</option>
-          ${marshals.map(m => `<option value="${m.id}">${G.esc(m.leader.name)} (${C.armies(m).length}/3)</option>`).join('')}</select>` : ''}
-        ${sel.some(a => a.marshal != null) ? '<button id="btn-army-free">Mareşalden ayır</button>' : ''}
-        ${docked.map(f => `<button class="board" data-f="${f.id}" title="Boş yer: ${G.fmtNum(N.cap(f) - N.cargoMen(f))} asker">⛵ ${G.esc(f.name)} gemilerine bindir</button>`).join('')}
-        ${!docked.length ? '<button id="btn-army-board" title="Ordu en uygun limana yürür, boştaki bir filo oraya gelir ve ordu gemiye biner">⛵ Gemiye bindir</button>' : ''}
-        <button id="btn-army-desel">Seçimi bırak</button>
-      </div>` : ''}`;
+    el.classList.add('army');
+    const S = G.S, P = S.provinces, tag = S.player;
+    const mine = sel.every(a => a.tag === tag);
+    const total = sel.reduce((t, a) => t + a.men, 0), max = sel.reduce((t, a) => t + a.maxMen, 0);
+    const org = sel.reduce((t, a) => t + a.org * a.men, 0) / Math.max(1, total);
+    const gear = sel.reduce((t, a) => t + G.econ.ratio(a) * a.men, 0) / Math.max(1, total);
+    const comp = compOf(sel);
+    const one = sel.length === 1 ? sel[0] : null;
+    const prov = sel[0].prov, samePlace = sel.every(a => a.prov === prov && a.prov != null);
+    const docked = samePlace && mine ? S.fleets.filter(f => f.tag === tag && f.docked === prov) : [];
+    const mids = [...new Set(sel.map(a => a.marshal))];
+    const m = mids.length === 1 && mids[0] != null ? C.marshal(mids[0]) : null;
+    const nat = S.nations[sel[0].tag];
+
+    // 1) mareşal
+    let marshalHtml;
+    if (m) {
+      marshalHtml = `<div class="ap-marshal" style="--mc:${m.color}">
+        <div class="ap-k">Mareşal</div>
+        <div class="ap-mname">${G.esc(m.leader.name)} <span class="stars">${stars(m.leader.skill)}</span></div>
+        <div class="ap-sub">${traitHtml(m.leader.trait)} ${C.armies(m).length}/3 ordu${m.front ? ` · Cephe: ${G.esc(S.nations[m.front].name)}${m.attack ? ' ⚔' : ' 🛡'}` : ''}</div>
+      </div>`;
+    } else {
+      marshalHtml = `<div class="ap-marshal free"><div class="ap-k">Mareşal</div>
+        <div class="ap-mname">${mids.length > 1 ? 'Farklı mareşaller' : 'Bağımsız ordu'}</div></div>`;
+    }
+    // mareşale atama listesi
+    const assign = mine && U.armyAssignOpen ? `<div class="ap-assign">
+        ${C.of(tag).map(mm => {
+          const full = C.armies(mm).filter(x => !sel.includes(x)).length + sel.length > C.MAX_ARMIES;
+          return `<button data-assign="${mm.id}" style="--mc:${mm.color}" ${full ? 'disabled title="Bu mareşalin yeri yok (en fazla 3 ordu)"' : ''}>
+            <i></i>${G.esc(mm.leader.name)} <span class="muted">${C.armies(mm).length}/3</span></button>`;
+        }).join('')}
+        ${sel.length <= C.MAX_ARMIES ? '<button data-assign="new" class="newm">＋ Yeni mareşal kur</button>' : ''}
+      </div>` : '';
+
+    // 2) komutan(lar)
+    const cmdHtml = one ? (() => {
+      const g = one.general, [ic, st] = statusOf(one);
+      return `<div class="ap-cmd">
+        <div class="ap-k">${G.esc(one.name)}</div>
+        <div class="ap-gname">${G.esc(g.name)} <span class="stars">${stars(g.skill)}</span></div>
+        <div class="ap-sub">${traitHtml(g.trait)}${g.skill < 5 ? ` <span class="muted">tecrübe %${Math.round((g.xp || 0) / (60 * g.skill) * 100)}</span>` : ''}</div>
+        <div class="ap-status">${ic} ${G.esc(st)}</div></div>`;
+    })() : `<div class="ap-cmd"><div class="ap-k">${sel.length} ordu seçili</div>
+        ${sel.map(a => `<div class="ap-mini" data-only="${a.id}"><span>${G.esc(a.name)}</span><span class="muted">${G.esc(a.general.name)}</span><b>${G.fmtK(a.men)}</b><span>${statusOf(a)[0]}</span></div>`).join('')}</div>`;
+
+    // 3) güç ve bileşim
+    const statHtml = `<div class="ap-stats">
+        <div class="ap-big"><b>${G.fmtNum(total)}</b><span class="muted"> / ${G.fmtNum(max)} asker</span></div>
+        <div class="ap-bars">
+          <div title="Örgütlenme (moral)"><span>Örgütlenme</span><div class="bar org"><div style="width:${org}%"></div></div><em>%${Math.round(org)}</em></div>
+          <div title="Mevcut"><span>Mevcut</span><div class="bar str"><div style="width:${Math.min(100, total / Math.max(1, max) * 100)}%"></div></div><em>%${Math.round(total / Math.max(1, max) * 100)}</em></div>
+          <div title="Teçhizat"><span>Teçhizat</span><div class="bar gear"><div style="width:${gear * 100}%"></div></div><em>%${Math.round(gear * 100)}</em></div>
+        </div>
+        <div class="ap-comp">
+          <div><i>🛡</i><b>${G.fmtNum(comp.piyade)}</b><span>Piyade</span></div>
+          <div><i>🏹</i><b>${G.fmtNum(comp.okcu)}</b><span>Okçu</span></div>
+          <div><i>🐎</i><b>${G.fmtNum(comp.suvari)}</b><span>Süvari</span></div>
+        </div>
+        ${one ? `<details class="ap-boluk"><summary>${G.bolukler(one).length} bölük ve komutanları</summary>
+          <div class="boluk-list">${G.bolukler(one).map(b => `<div><span>${G.esc(b.name)}</span><span class="muted">${G.esc(b.cmdr)}</span><span>${G.fmtNum(b.men)}</span></div>`).join('')}</div></details>` : ''}
+      </div>`;
+
+    el.innerHTML = `<div class="ap-head" style="--nc:${nat.color}"><span class="flag" style="background:${nat.color}"></span>
+        <span>${one ? G.esc(one.name) : `${sel.length} ordu`}</span><button class="x" id="btn-army-desel" title="Seçimi bırak (Esc)">✕</button></div>
+      ${marshalHtml}
+      ${mine ? `<div class="ap-row"><button id="btn-assign" class="${U.armyAssignOpen ? 'on' : ''}">⚑ Mareşale ata</button>
+        ${sel.some(a => a.marshal != null) ? '<button id="btn-army-free">Mareşalden ayır</button>' : ''}</div>` : ''}
+      ${assign}
+      ${cmdHtml}
+      ${statHtml}
+      ${mine && m ? U.marshalControls(sel) : ''}
+      ${mine ? `<div class="ap-actions">
+        <button id="btn-army-stop" title="Yürüyüşü ve saldırıyı durdur">✋ Dur</button>
+        ${one ? '<button id="btn-army-split" title="Orduyu ikiye böl; yeni yarıya yeni komutan atanır">✂ Böl</button>' : ''}
+        ${sel.length > 1 && samePlace ? '<button id="btn-army-merge" title="Aynı eyaletteki orduları birleştir">⊕ Birleştir</button>' : ''}
+        ${docked.map(f => `<button class="board" data-f="${f.id}" title="Boş yer: ${G.fmtNum(N.cap(f) - N.cargoMen(f))} asker">⛵ ${G.esc(f.name)}'na bindir</button>`).join('')}
+        ${!docked.length ? '<button id="btn-army-board" title="Ordu en uygun limana yürür, boştaki bir filo gelir ve ordu biner">⛵ Gemiye bindir</button>' : ''}
+      </div>
+      <div class="ap-hint">Sağ tık: hedefe yürü / saldır · deniz aşırı kıyıya sağ tık ya da Ctrl + sağ tık: gemiyle çıkarma</div>` : ''}`;
+
+    $('btn-army-desel').onclick = () => G.clearSelection();
     if (!mine) return;
     U.bindMarshalControls(el, sel);
-    const done = () => { U.refreshArmyPanel(); U.refreshOrdular(); G.mapDirty = true; };
-    $('btn-army-stop').onclick = () => { for (const a of G.selected) { if (a.retreating) continue; a.path = []; a.attacking = null; a.besieging = false; } done(); };
+    const done = () => { U.refreshArmyPanel(true); U.refreshOrdular(); G.mapDirty = true; };
+    for (const r of el.querySelectorAll('[data-only]')) r.onclick = () => G.selectArmies([S.armies.find(a => a.id === +r.dataset.only)], false);
+    $('btn-assign').onclick = () => { U.armyAssignOpen = !U.armyAssignOpen; done(); };
+    for (const b of el.querySelectorAll('[data-assign]')) {
+      b.onclick = () => {
+        if (b.dataset.assign === 'new') C.createMarshal(tag, sel);
+        else {
+          const mm = C.marshal(+b.dataset.assign);
+          for (const a of sel) a.marshal = null;
+          let left = 0;
+          for (const a of sel) if (!C.attach(a, mm)) left++;
+          if (left) U.addLog(G.fmtDate(S.time, false), `Bir mareşal en fazla 3 ordu yönetebilir; ${left} ordu bağlanamadı.`, 'war');
+        }
+        U.armyAssignOpen = false;
+        G.command.update();
+        done();
+      };
+    }
+    const fr = $('btn-army-free');
+    if (fr) fr.onclick = () => { for (const a of sel) a.marshal = null; done(); };
+    $('btn-army-stop').onclick = () => { for (const a of sel) { if (a.retreating) continue; a.path = []; a.attacking = null; a.besieging = false; } done(); };
     const sp = $('btn-army-split');
     if (sp) sp.onclick = () => {
-      const a = sel[0], b = C.split(a);
-      if (!b) U.addLog(G.fmtDate(S.time, false), 'Bölmek için ordu en az 4.000 asker olmalı, savaşta ya da gemide olmamalı.', 'war');
-      else G.selectArmies([a, b], false);
+      const a = sel[0], b2 = C.split(a);
+      if (!b2) U.addLog(G.fmtDate(S.time, false), 'Bölmek için ordu en az 4.000 asker olmalı, savaşta ya da gemide olmamalı.', 'war');
+      else G.selectArmies([a, b2], false);
       done();
     };
     const mg = $('btn-army-merge');
@@ -204,33 +277,22 @@
       G.selectArmies(sel.filter(a => S.armies.includes(a)), false);
       done();
     };
-    const join = $('sel-army-join');
-    if (join) join.onchange = () => {
-      const m = C.marshal(+join.value);
-      let left = 0;
-      for (const a of G.selected) if (!C.attach(a, m)) left++;
-      if (left) U.addLog(G.fmtDate(S.time, false), `Bir mareşal en fazla 3 ordu yönetebilir; ${left} ordu bağlanamadı.`, 'war');
-      done();
-    };
-    const fr = $('btn-army-free');
-    if (fr) fr.onclick = () => { for (const a of G.selected) a.marshal = null; done(); };
     for (const b of el.querySelectorAll('.board')) {
       b.onclick = () => {
         const f = N.fleet(+b.dataset.f);
-        const err = N.embark(f, [...G.selected]);
+        const err = N.embark(f, sel);
         if (err) U.addLog(G.fmtDate(S.time, false), err, 'war');
         G.selectFleet(f);
       };
     }
     const bd = $('btn-army-board');
     if (bd) bd.onclick = () => {
-      for (const a of G.selected) a.transport = null;
-      const r = N.planTransport([...G.selected], null);
+      for (const a of sel) a.transport = null;
+      const r = N.planTransport(sel, null);
       if (typeof r === 'string') U.addLog(G.fmtDate(S.time, false), r, 'war');
       else U.addLog(G.fmtDate(S.time, false), `${r.n} ordu ${S.provinces[r.port].name} limanına yürüyor; ${r.fleet.name} orada onları gemilere bindirecek.`, 'good');
       done();
     };
-    $('btn-army-desel').onclick = () => G.clearSelection();
   };
 
   // ------------------------------------------------------------ filo paneli (haritada seçili filo)
