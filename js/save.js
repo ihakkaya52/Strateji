@@ -145,6 +145,7 @@ G.save = {};
     G.cul.init();
     G.explore.init();
     G.explore.invalidate();
+    G.tech.init();
     // arayüz durumunu sıfırla
     const U = G.ui;
     G.selected = new Set(); G.selFleet = null;

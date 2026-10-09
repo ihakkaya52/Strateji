@@ -191,8 +191,8 @@ M.mute = function (hex) {
 
 M.provColor = function (p) {
   const S = G.S;
-  if (p.kind === 'waste') return '#5b5242';
   if (S && M.mode === 'culture' && p.cul) return M.mute(G.cul.get(p.cul).color);
+  if (p.kind === 'waste' && !p.owner) return S && M.mode === 'religion' && p.relig ? M.mute(G.RELIGIONS[p.relig].color) : '#6a5e48';
   if (!p.owner) {
     // keşfedilmiş ama sahipsiz topraklar: yerlilerin diyarı
     if (p.kind === 'wild') return M.mode === 'religion' && p.relig ? M.mute(G.RELIGIONS[p.relig].color) : '#a2967a';
@@ -203,7 +203,7 @@ M.provColor = function (p) {
   return M.mute(n.color);
 };
 // Oyuncunun haritasında görünmeyen (keşfedilmemiş) il
-M.hidden = p => p.kind === 'wild' && !p.owner && !(G.S && G.explore.known(p));
+M.hidden = p => (p.kind === 'wild' || (p.kind === 'waste' && G.S)) && !p.owner && !(G.S && G.explore.known(p));
 
 // Parşömen dokusu (bir kez üretilir)
 M.paper = function () {
@@ -408,6 +408,7 @@ M.draw = function () {
   }
 
   M.drawUnexplored(sc);
+  if (S) M.drawHiddenFog(P, v, v2, sc);
 
   // kıyı: eski haritalardaki gibi yumuşak, katmanlı su çizgisi
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -862,6 +863,28 @@ M.drawUnexplored = function (sc) {
   ctx.lineWidth = 0.9 / sc;
   ctx.stroke(M.unkPath);
   ctx.setLineDash([]);
+};
+
+// Keşfedilmemiş ıssız topraklar da aynı sisle örtülür
+M.drawHiddenFog = function (P, v, v2, sc) {
+  const ctx = M.ctx, list = [];
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i];
+    if (p.kind !== 'waste' || !M.hidden(p)) continue;
+    const b = M.bbox[i];
+    if (b[2] < v.x || b[0] > v2.x || b[3] < v.y || b[1] > v2.y) continue;
+    list.push(i);
+  }
+  if (!list.length) return;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(160, 190, 180, 0.08)'; ctx.lineWidth = 8 / sc;
+  for (const i of list) ctx.stroke(M.paths[i]);
+  ctx.fillStyle = '#857a64'; ctx.strokeStyle = '#857a64'; ctx.lineWidth = 1.2 / sc;
+  for (const i of list) { ctx.fill(M.paths[i]); ctx.stroke(M.paths[i]); }
+  const pat = M.hatch('rgba(60,48,32,0.16)');
+  pat.setTransform(new DOMMatrix([1.4 / sc, 0, 0, 1.4 / sc, 0, 0]));
+  ctx.fillStyle = pat;
+  for (const i of list) ctx.fill(M.paths[i]);
 };
 
 M.drawUnexploredNames = function () {

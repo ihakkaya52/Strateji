@@ -233,7 +233,8 @@ EC.budget = function (n, provs, armies) {
   }
   let army = 0;
   for (const a of armies || S.armies) if (a.tag === n.tag) army += a.men / 1000 * 0.2;
-  tax *= G.rulerMod ? G.rulerMod(n.tag, 'adm') : 1;
+  tax *= (G.rulerMod ? G.rulerMod(n.tag, 'adm') : 1) * (n.taxMult ?? 1);
+  trade *= n.tradeMult ?? 1; farms *= n.farmMult ?? 1; mines *= n.mineMult ?? 1;
   const income = tax + trade + mines + farms;
   const expense = army + garrison;
   return { tax, trade, mines, farms, army, garrison, income, expense, net: income - expense };
@@ -300,7 +301,7 @@ EC.queue = function (tag, pid, kind) {
 EC.dailyNation = function (n, armies) {
   const S = G.S, P = S.provinces;
   // inşaat: yalnızca inşaata ayrılmış atölyeler çalışır
-  let points = n.buildCiv * EC.CIV_POINTS;
+  let points = n.buildCiv * EC.CIV_POINTS * (n.buildMult ?? 1);
   for (const b of n.build.slice()) {
     const p = P[b.prov];
     if (p.owner !== n.tag) { n.build.splice(n.build.indexOf(b), 1); continue; }
@@ -342,7 +343,7 @@ EC.daily = function () {
     const n = S.nations[p.ctrl];
     if (!n) continue;
     if (p.owner === p.ctrl && p.mil) {
-      const bonus = 1 + (n.ironBonus || 0);
+      const bonus = (1 + (n.ironBonus || 0)) * (n.prodMult ?? 1);
       for (const t of EC.TYPES) {
         const k = p.milLines[t];
         if (!k) continue;

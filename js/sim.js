@@ -336,7 +336,7 @@ G.stepFortSiege = function (p, tag, arr) {
   const S = G.S, SG = G.SIEGE;
   if (p.walls == null) p.walls = 100;
   if (!p.siege || p.siege.by !== tag || !p.siege.fort) {
-    const food = SG.FOOD_BASE + SG.FOOD_PER_LEVEL * p.fort;
+    const food = Math.round((SG.FOOD_BASE + SG.FOOD_PER_LEVEL * p.fort) * ((S.nations[p.ctrl] || {}).foodMult ?? 1));
     p.siege = { by: tag, fort: true, food, foodMax: food, start: S.hour, assault: null, cas: 0, gcas: 0 };
     if (tag === S.player || p.ctrl === S.player) {
       G.log(`${p.name} kalesi kuşatıldı (${S.nations[tag].name}). Surlar %${Math.round(p.walls)}, garnizon ${G.fmtNum(p.garrison)}.`, tag === S.player ? 'good' : 'war', [tag, p.ctrl]);
@@ -385,7 +385,7 @@ G.stepFortSiege = function (p, tag, arr) {
   }
   if (!blockade) return;
   // mancınıklar surları döver
-  p.walls = Math.max(0, p.walls - G.siegePower(arr) * SG.WALL_DMG / p.fort);
+  p.walls = Math.max(0, p.walls - G.siegePower(arr) * SG.WALL_DMG / p.fort / ((S.nations[p.ctrl] || {}).wallMult ?? 1));
   // erzak tükenir, sonra açlık başlar
   sg.food = Math.max(0, sg.food - 1 / 24);
   if (sg.food <= 0 && p.garrison > 0) {
@@ -494,6 +494,7 @@ G.daily = function () {
     }
   }
   G.econ.daily();
+  G.tech.dailyTick();
   // eğitim kuyrukları
   for (const n of Object.values(S.nations)) {
     if (!n.alive || !n.queue.length) continue;
@@ -551,6 +552,7 @@ G.monthly = function () {
   G.rel.monthly();
   G.cul.monthly();
   G.explore.monthly();
+  G.tech.monthly();
   G.ai.monthly();
   G.dip.monthly();
 };

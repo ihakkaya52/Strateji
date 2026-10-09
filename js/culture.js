@@ -56,6 +56,8 @@ G.cul = {};
     eston: ['Eston', 'fin_ugor', ['h3', LB, K, W, '', '']],
     karel: ['Karel', 'fin_ugor', ['nordic', GR, R, '', '', '']],
     macar: ['Macar', 'fin_ugor', ['bars', R, W, '', '', '']],
+    sami: ['Sami', 'fin_ugor', ['nordic', B, R, '', 'sun', Y]],
+    samoyed: ['Samoyed', 'fin_ugor', ['h2', W, LB, '', 'star', R]],
     rum: ['Rum', 'yunan', ['plain', '#7a1f2a', '', '', 'eagle', Y]],
     gurcu: ['Gürcü', 'kafkas', ['cross', W, R, '', '', '']],
     ermeni: ['Ermeni', 'kafkas', ['h3', R, B, '#e0902a', '', '']],
@@ -76,6 +78,7 @@ G.cul = {};
     mogol: ['Moğol', 'mogol', ['plain', '#3a5aa0', '', '', 'sun', Y]],
     hitay: ['Hitay', 'mogol', ['plain', '#4a6a8a', '', '', 'sun', W]],
     curcen: ['Cürçen', 'mogol', ['plain', W, '', '', 'mountain', K]],
+    evenk: ['Evenk', 'mogol', ['h2', LB, W, '', 'sun', R]],
     fars_x: null,
     endulus: ['Endülüslü', 'arap', ['plain', W, '', '', 'cstar', GR]],
     misir: ['Mısırlı', 'arap', ['plain', GR, '', '', 'crescent', W]],
@@ -264,14 +267,44 @@ G.cul = {};
   C.ASSIM_NEED = 100;
   C.ASSIM_GOLD = 2;
 
+  // Issız toprakların halkı: en yakın yerleşik komşunun halkı ve dini; uzak kuzeyde Sami, Samoyed, Evenk
+  C.assignWaste = function () {
+    const S = G.S, P = S.provinces;
+    const from = new Int32Array(P.length).fill(-1);
+    let q = [];
+    for (const p of P) if (p.owner && p.kind !== 'waste') { from[p.id] = p.id; q.push(p.id); }
+    while (q.length) {
+      const next = [];
+      for (const id of q) for (const nb of P[id].nb) if (from[nb] < 0 && P[nb].kind === 'waste') { from[nb] = from[id]; next.push(nb); }
+      q = next;
+    }
+    for (const p of P) {
+      if (p.kind !== 'waste' || p.cul != null) continue;
+      const lat = G.unprojLat(p.y), lon = p.x, src = from[p.id] >= 0 ? P[from[p.id]] : null;
+      const sn = src && S.nations[src.owner];
+      let cul = src ? src.cul : null, relig = src ? src.relig || (sn && sn.religion) : 'tengri';
+      if (lat > 63 && lon < 45) { cul = 'sami'; relig = 'pagan_fin'; }
+      else if (lat > 56 && lon >= 45 && lon < 100) { cul = 'samoyed'; relig = 'tengri'; }
+      else if (lat > 49 && lon >= 100) { cul = 'evenk'; relig = 'tengri'; }
+      p.cul = cul || 'samoyed';
+      p.relig = relig || 'tengri';
+    }
+  };
+
   C.init = function () {
     const S = G.S;
+    let waste = false;
     for (const p of S.provinces) {
+      if (p.kind === 'waste' && p.cul == null) { waste = true; continue; }
       if (p.cul === undefined || (p.cul === null && p.owner)) p.cul = C.provinceCulture(p);
       if (p.kind === 'wild') {
         p.relig ??= WILD_RELIG[p.cul] || 'pagan_afrika';
         p.natives ??= Math.round((p.terrain === 'col' ? 300 : p.terrain === 'orman' ? 1800 : 1200) * (0.6 + G.rng() * 0.8));
       }
+    }
+    if (waste) {
+      C.assignWaste();
+      for (const p of S.provinces) if (p.kind === 'waste') p.natives ??= Math.round((p.terrain === 'col' || p.terrain === 'tundra' ? 180 : 450) * (0.6 + G.rng() * 0.8));
     }
     for (const n of Object.values(S.nations)) {
       n.culture ||= NATION[n.tag] || (S.provinces[n.capital] && S.provinces[n.capital].cul) || 'fransiz';

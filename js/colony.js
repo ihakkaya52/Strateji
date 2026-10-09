@@ -11,7 +11,9 @@ G.explore = {};
   X.SETTLERS = 1000;          // bu kadar yerleşimci olunca il ülkeye katılır
   X.LOST = 0.08;              // kâşifin kaybolma olasılığı
 
-  X.isWild = p => p.kind === 'wild' && !p.owner;
+  // Keşfedilip yerleşilebilecek topraklar: bilinmeyen diyarlar ve ıssız çöl / bozkır / tundra
+  const OPEN = p => p.kind === 'wild' || p.kind === 'waste';
+  X.isOpen = p => OPEN(p) && !p.owner;
 
   X.init = function () {
     const S = G.S, P = S.provinces;
@@ -20,17 +22,18 @@ G.explore = {};
     for (const n of Object.values(S.nations)) {
       n.explorers ??= n.major ? 2 : 1;
       n.colonists ??= n.major ? 2 : 1;
-      if (!(n.explored instanceof Set)) {
-        // komşu yabani topraklar baştan biliniyor
-        n.explored = new Set(n.explored || []);
-        for (const p of P) if (p.owner === n.tag) for (const id of p.nb) if (P[id].kind === 'wild') n.explored.add(id);
-      }
+      if (!(n.explored instanceof Set)) n.explored = new Set(n.explored || []);
+    }
+    // komşu yabani ve ıssız topraklar baştan biliniyor (eski kayıtlarda bir kez eklenir)
+    if (!S.openV2) {
+      S.openV2 = true;
+      for (const p of P) if (p.owner && S.nations[p.owner]) for (const id of p.nb) if (OPEN(P[id])) S.nations[p.owner].explored.add(id);
     }
   };
 
   // Oyuncu bu ili haritada görüyor mu?
   X.known = function (p) {
-    if (p.kind !== 'wild' || p.owner) return true;
+    if (!OPEN(p) || p.owner) return true;
     const S = G.S;
     if (!S) return false;
     const n = S.nations[S.player];
@@ -43,7 +46,7 @@ G.explore = {};
   // Kâşifin gidebileceği il: bilinmeyen, ama bildiğimiz bir yere komşu ya da kıyıdan ulaşılabilir
   X.canExplore = function (tag, p) {
     const S = G.S, n = S.nations[tag];
-    if (p.kind !== 'wild' || p.owner) return [false, 'Burası zaten bilinen bir yer.'];
+    if (!OPEN(p) || p.owner) return [false, 'Burası zaten bilinen bir yer.'];
     if (n.explored.has(p.id)) return [false, 'Burası keşfedildi.'];
     if (S.expeditions.some(e => e.tag === tag && e.to === p.id)) return [false, 'Kâşifimiz zaten yolda.'];
     const busy = S.expeditions.filter(e => e.tag === tag).length;
@@ -58,7 +61,7 @@ G.explore = {};
     let best = null;
     for (const id of p.nb) {
       const q = P[id];
-      if (q.owner === tag || (q.kind === 'wild' && n.explored.has(id))) {
+      if (q.owner === tag || (OPEN(q) && n.explored.has(id))) {
         // keşfedilmiş yabani topraktan geçiliyorsa yol bizim en yakın ilimizden başlar
         const from = q.owner === tag ? q : X.nearestOwn(tag, q, false);
         if (!from) continue;
@@ -73,9 +76,11 @@ G.explore = {};
     const d = G.distKm(q, p);
     return d <= X.RANGE(tag) ? { from: q.id, d, land: false } : null;
   };
+  let coastCache = null;
   X.nearestOwn = function (tag, p, coast) {
     let best = null, bd = Infinity;
-    for (const q of G.S.provinces) {
+    const list = coast && coastCache && coastCache.tag === tag ? coastCache.list : G.S.provinces;
+    for (const q of list) {
       if (q.owner !== tag || q.ctrl !== tag || (coast && !coastal(q))) continue;
       const d = G.distKm(p, q);
       if (d < bd) { bd = d; best = q; }
@@ -101,8 +106,8 @@ G.explore = {};
     for (let k = 0; k <= radius; k++) {
       const next = [];
       for (const id of ring) {
-        if (P[id].kind === 'wild') n.explored.add(id);
-        if (k < radius) for (const nb of P[id].nb) if (!seen.has(nb) && P[nb].kind === 'wild') { seen.add(nb); next.push(nb); }
+        if (OPEN(P[id])) n.explored.add(id);
+        if (k < radius) for (const nb of P[id].nb) if (!seen.has(nb) && OPEN(P[nb])) { seen.add(nb); next.push(nb); }
       }
       ring = next;
     }
@@ -112,7 +117,7 @@ G.explore = {};
   // ------------------------------------------------------------ yerleşim
   X.canColonize = function (tag, p) {
     const S = G.S, n = S.nations[tag];
-    if (p.kind !== 'wild' || p.owner) return [false, 'Burası sahipli.'];
+    if (!OPEN(p) || p.owner) return [false, 'Burası sahipli.'];
     if (!n.explored.has(p.id)) return [false, 'Önce bu toprakları keşfetmeliyiz.'];
     if (p.colony) return [false, p.colony.tag === tag ? 'Yerleşimimiz burada büyüyor.' : `${S.nations[p.colony.tag] ? S.nations[p.colony.tag].name : 'Başka bir ülke'} burada yerleşim kuruyor.`];
     const mine = S.provinces.filter(q => q.colony && q.colony.tag === tag).length;
@@ -131,7 +136,7 @@ G.explore = {};
   };
   X.growth = function (tag, p) {
     const n = G.S.nations[tag];
-    const t = { col: 0.55, orman: 0.7, dag: 0.6, tepe: 0.85, bataklik: 0.6 }[p.terrain] || 1;
+    const t = { col: 0.5, orman: 0.7, dag: 0.6, tepe: 0.85, bataklik: 0.6, tundra: 0.4, tayga: 0.6, bozkir: 0.9 }[p.terrain] || 1;
     return 90 * t * (n.rulerSk ? 1 + 0.08 * (n.rulerSk.adm - 3) : 1);
   };
   X.colonize = function (tag, pid) {
@@ -153,6 +158,8 @@ G.explore = {};
     if (coastal(p) && G.rng() < 0.25) return 'balik';
     if (p.terrain === 'col') return G.rng() < 0.4 ? 'tuz' : 'kurk';
     if (p.terrain === 'orman') return 'kereste';
+    if (p.terrain === 'tundra' || p.terrain === 'tayga') return G.rng() < 0.6 ? 'kurk' : 'kereste';
+    if (p.terrain === 'bozkir') return G.rng() < 0.6 ? 'at' : 'kurk';
     return G.rng() < 0.6 ? 'tahil' : 'kurk';
   };
 
@@ -187,7 +194,7 @@ G.explore = {};
         if (e.tag === S.player) G.log(`${p.name} yönüne giden kâşifimizden bir daha haber alınamadı.`, 'war', [e.tag]);
         continue;
       }
-      X.reveal(e.tag, e.to, p.terrain === 'orman' || p.terrain === 'dag' ? 1 : 2);
+      X.reveal(e.tag, e.to, p.terrain === 'orman' || p.terrain === 'dag' ? 1 : ['col', 'tundra', 'bozkir'].includes(p.terrain) ? 3 : 2);
       if (e.tag === S.player) {
         const C = G.cul.get(p.cul);
         G.log(`Kâşifimiz ${p.name} topraklarına ulaştı: ${C.name} halkı yaşıyor, ${G.terrainOf(p).name.toLowerCase()}. Yeni topraklar haritaya işlendi.`, 'good', [e.tag]);
@@ -227,10 +234,13 @@ G.explore = {};
         const pick = c.find(id => X.canExplore(n.tag, P[id])[0]);
         if (pick != null) X.sendExplorer(n.tag, pick);
       }
-      if (n.gold > 160 && G.rng() < 0.05) {
-        const c = [...n.explored].filter(id => P[id].kind === 'wild' && !P[id].owner && !P[id].colony);
+      if (n.gold > 160 && G.rng() < 0.035) {
+        const c = [...n.explored].filter(id => OPEN(P[id]) && !P[id].owner && !P[id].colony);
         const ok = c.filter(id => X.canColonize(n.tag, P[id])[0]);
-        if (ok.length) X.colonize(n.tag, G.pick(ok));
+        // ıssız çöl ve tundraya isteksiz
+        const good = ok.filter(id => P[id].kind === 'wild' || !['col', 'tundra'].includes(P[id].terrain));
+        const pick = good.length ? G.pick(good) : ok.length && G.rng() < 0.2 ? G.pick(ok) : null;
+        if (pick != null) X.colonize(n.tag, pick);
       }
     }
   };
@@ -238,7 +248,7 @@ G.explore = {};
   X.frontierOf = function (tag) {
     const S = G.S, P = S.provinces, n = S.nations[tag], out = new Set();
     for (const p of P) {
-      if (p.owner === tag || (p.kind === 'wild' && n.explored.has(p.id))) for (const id of p.nb) if (P[id].kind === 'wild' && !P[id].owner) out.add(id);
+      if (p.owner === tag || (OPEN(p) && n.explored.has(p.id))) for (const id of p.nb) if (OPEN(P[id]) && !P[id].owner) out.add(id);
     }
     return [...out];
   };
@@ -246,15 +256,17 @@ G.explore = {};
   // Keşif kipinde haritada gösterilecek hedefler (oyuncu için, günde bir hesaplanır)
   let cache = null;
   X.targets = function () {
-    const S = G.S, key = Math.floor(S.hour / DAY) + '|' + S.expeditions.length + '|' + S.nations[S.player].explored.size + '|' + S.nations[S.player].gold;
+    const S = G.S, key = S.time.y * 12 + S.time.m + '|' + S.expeditions.length + '|' + S.nations[S.player].explored.size + '|' + S.provinces.filter(p => p.colony).length + '|' + (S.nations[S.player].gold > X.COLONY_GOLD);
     if (cache && cache.key === key) return cache;
     const tag = S.player, P = S.provinces, n = S.nations[tag];
     const explore = [], colonize = [];
+    coastCache = { tag, list: P.filter(q => q.owner === tag && q.ctrl === tag && coastal(q)) };
     for (const p of P) {
-      if (p.kind !== 'wild' || p.owner) continue;
+      if (!OPEN(p) || p.owner) continue;
       if (!n.explored.has(p.id)) { if (X.route(tag, p)) explore.push(p.id); }
       else if (!p.colony && X.colonyReach(tag, p)) colonize.push(p.id);
     }
+    coastCache = null;
     cache = { key, explore, colonize };
     return cache;
   };

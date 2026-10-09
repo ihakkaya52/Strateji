@@ -160,13 +160,7 @@
     const S = G.S, p = S.provinces[U.provId], me = S.player;
     const mine = p.owner === me && p.ctrl === me;
     const queued = mine ? S.nations[me].build.filter(b => b.prov === p.id) : [];
-    if (p.kind === 'waste') {
-      el.innerHTML = `<div class="pp-head"><h2>${G.esc(p.name)}</h2><button class="pp-close">✕</button></div>
-        <div class="pp-body"><p class="muted">Issız, geçilemez topraklar. Burada ordu yürüyemez.</p></div>`;
-      el.querySelector('.pp-close').onclick = U.closePanel;
-      return;
-    }
-    if (p.kind === 'wild' && !p.owner) { U.refreshWild(p); return; }
+    if ((p.kind === 'wild' || p.kind === 'waste') && !p.owner) { U.refreshWild(p); return; }
     if (mine) EC.fixProvince(p);
     const tabs = [['genel', 'Genel'], ['kale', '♜ Kale'], ['silah', '⚔ Silahhane'], ['atolye', '⚒ Atölye'], ['maden', '⛏ Maden'], ['tarim', '🌾 Tarım']];
     const res = p.res ? G.RESOURCES[p.res] : null;
@@ -345,7 +339,7 @@
         act = `<div class="row-btns"><button data-x="colony" ${ok ? '' : 'disabled'} title="${G.esc(why)}">⚑ Yerleşim kur</button></div><div class="muted small">${G.esc(why)}</div>`;
       }
       body = `<table>
-          <tr><td>Durum</td><td>Sahipsiz · yerlilerin toprağı</td></tr>
+          <tr><td>Durum</td><td>${p.kind === 'waste' ? 'Issız topraklar · göçebe ve dağınık obalar' : 'Sahipsiz · yerlilerin toprağı'}</td></tr>
           <tr><td>Yerliler</td><td>${C.flagHtml(p.cul)} ${G.esc(K.name)} · ${G.fmtNum(p.natives || 0)} kişi</td></tr>
           <tr><td>İnanç</td><td>${G.esc((G.RELIGIONS[p.relig] || { name: '—' }).name)}</td></tr>
           <tr><td>Arazi</td><td>${G.esc(T.name)}</td></tr>

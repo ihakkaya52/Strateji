@@ -126,11 +126,17 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   İl panelinden "Asimile et" (memur başına ayda 2 altın; büyük güçlerin 2, diğerlerinin 1 memuru var). Asimile olmuş
   illerde isyan çıkmaz. Politika: Hoşgörü (huzursuzluk yok, asimilasyon yavaş, istikrar +4), Ilımlı, Zorla asimilasyon
   (çok hızlı ama huzursuzluk, istikrar −6). "Halklar ve Kültür" sayfası bütün halkları ve bayraklarını listeler.
-- **Keşif ve yerleşim:** Afrika'nın güneyi, Madagaskar ve Avustralya keşfedilmemiş: sağ alttaki 🧭 Keşif kipinde
+- **Keşif ve yerleşim:** Afrika'nın güneyi, Madagaskar, Avustralya ve ıssız topraklar (Büyük Sahra, Arabistan çölleri,
+  Orta Asya bozkır ve çölleri, Sibirya, Tibet) keşfedilmemiş; yalnızca komşu olunan yerler baştan bilinir: sağ alttaki 🧭 Keşif kipinde
   haritada ? olan yerlere kâşif gönderin (25 altın; bildiğiniz bir yere komşu ya da kıyınızdan deniz menzilinde olmalı).
   Kâşif varınca çevresi haritaya işlenir; orada yaşayan yerli halk, inancı ve arazi görünür. Yeşil çizgili yerlere
   yerleşim kurun (60 altın + ayda 1 altın); 1.000 yerleşimciye ulaşınca il ülkenize katılır. Kalabalık yerliler
   baskın yapabilir ve il katıldığında kendi kültürünü korur. Yapay zekâ da komşu topraklara yayılır.
+- **Teknoloji:** Dört dal yan yana (⚔ Askerî, 🧭 Ulaşım, ♜ Savunma, ⚖ Ekonomi), 57 buluş, 950'den 1240'a yıllara
+  göre dizili (üzengi, kompozit yay, mancınık, arbalet, pusula, Rum ateşi, kâğıt, üniversiteler, bankacılık…). Üst
+  çubuktaki ⚗ (T) düğmesi. Büyük güçlerin 3, diğerlerinin 2 araştırma yeri var. Zamanının ötesindeki buluşlar katlanarak
+  uzun sürer (1040'ta 1200 yılı buluşu ~9 yıl), geride kalınanlar yarı sürede öğrenilir. Ülkeler kültürlerine göre
+  farklı bilgi düzeyiyle başlar (Song ve Bizans önde).
 - **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
   yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
 - **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,
@@ -159,7 +165,6 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 ## Yol haritası
 
 2. Odak ağaçları: büyük güçlere özel ağaçlar, diğerlerine standart ağaç (İngiltere'ninki hazır)
-3. Araştırma: döneme uygun teknolojiler (üzengi, kompozit yay, zincir zırh, Rum ateşi...)
 5. Daha fazla tarihî ve kurgusal olay (Malazgirt, Viking akınları, Arapların Anadolu seferleri...)
 6. Diplomasi: ittifaklar, diğer vasallar (Fransa ve Kutsal Roma dükalıkları), deniz geçişleri
 7. Ticaret yolları
@@ -177,6 +182,8 @@ js/dynasty.js         hükümdarlar, varisler, naiplik, taht kavgası, hanedan e
 js/religion.js        din, misyonerler, dinî birlik, Haçlı Seferi ve Cihat
 js/culture.js         kültürler, kültür grupları, bayraklar, asimilasyon politikası ve memurları
 js/colony.js          keşif (kâşifler) ve yerleşimler
+js/tech.js            teknoloji dalları, buluşlar ve araştırma
+js/ui_tech.js         teknoloji penceresi
 js/stability.js       istikrar, huzursuzluk, asimilasyon ve isyanlar
 js/save.js            kayıt / yükleme
 js/ui_save.js         oyun menüsü ve kayıtlı oyunlar

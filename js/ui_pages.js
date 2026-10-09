@@ -62,7 +62,7 @@
     if (U.page === page && !$('pagewin').classList.contains('hidden')) { U.closePage(); return; }
     U.page = page;
     if (page === 'olaylar') { U.unread = 0; $('tb-ev-count').classList.add('hidden'); }
-    for (const id of ['prodwin', 'navywin', 'focuswin', 'warpanel']) $(id).classList.add('hidden');
+    for (const id of ['prodwin', 'navywin', 'focuswin', 'warpanel', 'techwin']) $(id).classList.add('hidden');
     if (U.dipTag && U.closeDiplomacy) U.closeDiplomacy();
     $('pagewin').classList.remove('hidden');
     U.renderPage();
@@ -172,7 +172,7 @@
     for (const c of Object.values(C.LIST)) if (count[c.id]) (groups[c.group] ||= []).push(c);
     const gallery = Object.entries(groups).map(([g, list]) => `<div class="cg-group"><h4>${G.esc(C.GROUPS[g].name)}</h4><div class="cg-list">${list.map(c =>
       `<div class="cg-item" title="${G.esc(c.name)} · ${count[c.id]} il"><span class="cg-flag">${C.flagSvg(c.id, 45, 30)}</span><span>${G.esc(c.name)}</span></div>`).join('')}</div></div>`).join('');
-    const unk = S.provinces.filter(p => p.kind === 'wild' && !p.owner);
+    const unk = S.provinces.filter(p => (p.kind === 'wild' || p.kind === 'waste') && !p.owner);
     return `<div class="hn-top">
         <div class="cul-big">${C.flagSvg(n.culture, 96, 64)}</div>
         <div class="hn-main">
@@ -367,7 +367,7 @@
   // ------------------------------------------------------------ Esc: her şeyi kapat, ana siyasi haritaya dön
   U.escapeAll = function () {
     if (U.targetOrdu) U.endTargetMode();
-    for (const id of ['dipwin', 'prodwin', 'navywin', 'focuswin', 'warpanel', 'battlepanel', 'pagewin', 'mus-pop', 'peacewin', 'gamemenu']) { const e = $(id); if (e) e.classList.add('hidden'); }
+    for (const id of ['dipwin', 'prodwin', 'navywin', 'focuswin', 'techwin', 'warpanel', 'battlepanel', 'pagewin', 'mus-pop', 'peacewin', 'gamemenu']) { const e = $(id); if (e) e.classList.add('hidden'); }
     U.page = null; U.battleKey = null; U.dipTag = null;
     G.clearSelection();
     U.closePanel();

@@ -84,6 +84,7 @@ G.initState = function (playerTag) {
   G.rel.init();
   G.cul.init();
   G.explore.init();
+  G.tech.init();
   return S;
 };
 

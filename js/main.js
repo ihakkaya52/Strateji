@@ -118,7 +118,7 @@
     const nations = G.S ? G.S.nations : window.WORLD.nations;
     if (G.S && M.hidden(p)) { U.tooltip(x, y, '<b>Bilinmeyen Topraklar</b><br><span class="muted">Keşfetmek için tıklayın</span>'); return; }
     let html = `<b>${G.esc(p.name)}</b>`;
-    if (p.kind === 'wild' && !p.owner) {
+    if ((p.kind === 'wild' || p.kind === 'waste') && G.S && !p.owner) {
       html += `<br>${G.cul.flagHtml(p.cul)} ${G.esc(G.cul.get(p.cul).name)} yerlileri` + (p.colony ? `<br>⚑ ${G.esc(G.S.nations[p.colony.tag].name)} yerleşimi · %${Math.round(p.colony.settlers / G.explore.SETTLERS * 100)}` : '');
       U.tooltip(x, y, html); return;
     }
@@ -217,8 +217,7 @@
       if (G.orderMove(a, pid)) ok++; else { fail++; a.transport = old; }
     }
     if (fail && !ok) {
-      const why = p.kind === 'waste' ? 'Issız topraklardan geçilemez.'
-        : p.kind === 'wild' && !p.owner ? 'Ordular keşfedilmemiş ya da sahipsiz topraklara giremez; önce yerleşim kurun.'
+      const why = (p.kind === 'wild' || p.kind === 'waste') && !p.owner ? 'Ordular keşfedilmemiş ya da sahipsiz topraklara giremez; önce yerleşim kurun.'
         : !G.canEnter(S.player, p) ? `${S.nations[p.owner].name} topraklarına girmek için savaşta olmalısınız.`
         : 'Oraya ulaşan bir yol yok.';
       U.addLog(G.fmtDate(S.time, false), why, 'war');
