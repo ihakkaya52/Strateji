@@ -547,6 +547,7 @@ G.monthly = function () {
   G.econ.monthly();
   G.stab.monthly();
   G.dyn.monthly();
+  G.rel.monthly();
   G.ai.monthly();
   G.dip.monthly();
 };

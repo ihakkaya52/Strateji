@@ -193,7 +193,7 @@ M.provColor = function (p) {
   const S = G.S;
   if (p.kind === 'waste' || !p.owner) return '#5b5242';
   const n = S ? S.nations[p.owner] : window.WORLD.nations[p.owner];
-  if (M.mode === 'religion') return M.mute((G.RELIGIONS[n.religion] || { color: '#888888' }).color);
+  if (M.mode === 'religion') return M.mute((G.RELIGIONS[p.relig || n.religion] || { color: '#888888' }).color);
   return M.mute(n.color);
 };
 

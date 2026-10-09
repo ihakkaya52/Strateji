@@ -81,6 +81,7 @@ G.initState = function (playerTag) {
   G.navy.init();
   G.stab.init();
   G.dyn.init();
+  G.rel.init();
   return S;
 };
 

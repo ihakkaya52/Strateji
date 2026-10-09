@@ -92,6 +92,10 @@
             ok ? (n.religion !== mn.religion && D.isNeighbor(me, tag) ? 'Kutsal savaş: daha kısa sürer. İlişki −40.' : 'İlişki −40. Hedef ülke bunu öğrenir.')
               : busy || (mn.overlord ? 'Vasallar savaş hazırlığı yapamaz.' : D.allied(me, tag) ? 'Müttefikimiz.' : 'Kendi diyarınız.'));
         } else extra.push('<div class="dip-war ok">✔ Savaş gerekçemiz hazır.</div>');
+        if (G.rel.holyKind(me) && G.rel.family(n.religion) !== G.rel.family(mn.religion)) {
+          const [hok, hwhy] = G.rel.canCall(me, tag);
+          btn('holy', G.rel.holyKind(me) === 'hacli' ? '✝' : '☪', `${G.rel.kindName(G.rel.holyKind(me))} ilan et`, hok, hwhy, 'danger wide');
+        }
         const [ok, why] = D.canDeclare(me, tag);
         const helpers = D.defenders(tag).filter(t => !G.sameRealm(t, me));
         btn('war', '⚔', 'Savaş ilan et', ok, ok ? (helpers.length ? `Yanında savaşacaklar: ${helpers.map(t => S.nations[t].name).join(', ')}` : 'Yalnız kalacaklar.') : why, 'danger wide');
@@ -194,6 +198,13 @@
         break;
       }
       case 'peace_table': U.showPeace(tag); return;
+      case 'holy': {
+        const [ok, why] = G.rel.canCall(me, tag);
+        if (!ok) { log(why, 'war'); break; }
+        const h = G.rel.call(me, tag);
+        U.showEvent(G.rel.kindName(h.kind), `${G.rel.kindName(h.kind)} ilan ettik! Hedef: ${S.provinces[h.goal].name}. Sancağımız altında toplananlar: ${h.members.map(t => S.nations[t].name).join(', ')}.`, [{ text: h.kind === 'hacli' ? 'Deus vult!' : 'Allahu ekber!' }]);
+        break;
+      }
       case 'marry': {
         const [ok, why] = G.dyn.canMarry(me, tag);
         if (ok) { G.dyn.marry(me, tag); U.showEvent('Hanedan Evliliği', `${n.name} sarayıyla evlilik bağı kuruldu. Artık akrabayız; varissiz kalırsak tahtımız akrabalarımıza geçebilir, onlarınki de bize.`, [{ text: 'Mutluluklar dileriz' }]); }

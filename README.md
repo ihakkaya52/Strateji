@@ -111,6 +111,14 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   odaklardaki tarihî isimler veliaht olur. Çocuk hükümdarda naiplik; varissiz ölümde taht kavgası ve taht davacısı isyanı,
   ya da hanedan evliliği yoluyla kişisel birlik. Üst çubukta ülke adına tıklayınca "Hükümdar ve Hanedan" sayfası açılır.
 - **Hanedan evlilikleri:** Diplomasi sayfasından aynı dinden (Hristiyanlar kendi aralarında) ülkelerle; ilişki +25.
+- **Din ve misyonerler:** Her ilin kendi dini var (din haritası artık illerin dinini gösterir). Başka dinden ilinize
+  il panelinden misyoner gönderin (ayda 2 altın, yaklaşık bir yılda din değişir; büyük güçlerin 2, diğerlerinin 1
+  misyoneri var). Dinî birlik %70'in altına düşerse istikrar azalır.
+- **Haçlı Seferi ve Cihat:** Hristiyan ve Müslüman ülkeler, başka dinden bir ülkeye diplomasi sayfasından kutsal sefer
+  ilan edebilir (200 altın, istikrar en az 40, 10 yılda bir). Aynı dinden ülkeler katılır, orduları hedefe en yakın
+  dindaş toprakta toplanır ve sefer boyunca dindaş topraklardan geçebilir. Hedef Kudüs ya da Mekke; alınırsa bütün
+  katılımcıların istikrarı artar, 5 yılda alınamazsa sefer dağılır. 1095'te Kudüs hâlâ Müslümanların elindeyse Papa
+  Clermont'ta Haçlı Seferi çağrısı yapar.
 - **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
   yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
 - **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,
@@ -156,6 +164,7 @@ js/util.js            sabitler ve yardımcılar
 js/state.js           oyun durumu, ülkeler, ordular, savaş / barış
 js/sim.js             zaman, hareket, muharebe, kuşatma, insan gücü
 js/dynasty.js         hükümdarlar, varisler, naiplik, taht kavgası, hanedan evlilikleri, kişisel birlik
+js/religion.js        din, misyonerler, dinî birlik, Haçlı Seferi ve Cihat
 js/stability.js       istikrar, huzursuzluk, asimilasyon ve isyanlar
 js/save.js            kayıt / yükleme
 js/ui_save.js         oyun menüsü ve kayıtlı oyunlar

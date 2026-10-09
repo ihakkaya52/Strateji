@@ -112,7 +112,7 @@
           </table>
         </div>
       </div>
-      <div class="pg-grid3" style="margin-top:12px">
+      <div class="pg-grid3 g4" style="margin-top:12px">
         <div class="pg-card"><h3>Veliaht</h3>
           ${n.heir ? `<p><b>${G.esc(n.heir.name)}</b>, ${S.time.y - n.heir.born} yaşında</p>
             <p class="muted small">⚖ ${n.heir.sk.adm} · 🕊 ${n.heir.sk.dip} · ⚔ ${n.heir.sk.mil}${S.time.y - n.heir.born < 16 ? ' · hükümdar şimdi ölürse naiplik başlar' : ''}</p>`
@@ -122,6 +122,12 @@
           ${n.marriages && n.marriages.size ? [...n.marriages].filter(t => S.nations[t]).map(t => `<div class="pg-row" data-dip-open="${t}">${U.flag(t)} ${G.esc(S.nations[t].name)} <span class="muted">· ${G.esc(S.nations[t].ruler)}</span></div>`).join('')
             : '<p class="muted">Hiçbir hanedanla akraba değiliz.</p>'}
           <p class="muted small">Aynı dinden bir ülkeye sağ tıklayıp diplomasi sayfasından "Hanedan evliliği" yapabilirsiniz (ilişki en az 25). Akrabalar arasında ilişki +25'tir.</p>
+        </div>
+        <div class="pg-card"><h3>Din</h3>
+          <p><span class="rl-dot" style="background:${(G.RELIGIONS[n.religion] || {}).color}"></span> ${G.esc((G.RELIGIONS[n.religion] || { name: n.religion }).name)} · dinî birlik <b>%${Math.round(G.rel.unity(tag) * 100)}</b></p>
+          <p>✝ Misyonerler: ${(n.missions || []).length} / ${n.missionaries} görevde${(n.missions || []).length ? ': ' + n.missions.map(m => `<span class="link" data-prov="${m.prov}">${G.esc(S.provinces[m.prov].name)}</span> %${Math.round(m.prog)}`).join(', ') : ''}</p>
+          <p class="muted small">Başka dinden bir ilinize tıklayıp il panelinden misyoner gönderin. Dinî birlik %70'in altına düşerse istikrar azalır.</p>
+          ${G.rel.activeOf(tag) ? `<p class="bad">${G.rel.kindName(G.rel.activeOf(tag).kind)} sürüyor: hedef ${G.esc(S.provinces[G.rel.activeOf(tag).goal].name)}</p>` : ''}
         </div>
         <div class="pg-card"><h3>Önceki hükümdarlar</h3>
           ${(n.pastRulers || []).length ? `<table class="pg-tab">${n.pastRulers.map(r => `<tr><td>${G.esc(r.name)}</td><td class="num muted">${r.from}–${r.to}</td></tr>`).join('')}</table>` : '<p class="muted">Henüz yok.</p>'}

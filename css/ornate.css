@@ -425,3 +425,8 @@ button.big { font-size: 15px; padding: 7px 18px; border-color: var(--gold); colo
 .hn-portrait svg { width: 100%; height: auto; display: block; }
 .hn-main { flex: 1; }
 .hn-name { font-family: var(--title); font-size: 24px; color: #f2e2b8; }
+.rl-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #000; vertical-align: middle; }
+.rl-prog { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center; margin-top: 4px; font-size: 12px; }
+.rl-prog .bar { margin: 0; }
+.pg-grid3.g4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1100px) { .pg-grid3.g4 { grid-template-columns: 1fr 1fr; } }

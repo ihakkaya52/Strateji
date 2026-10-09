@@ -188,6 +188,7 @@
         <tr><td>Binalar</td><td>⚒ ${p.civ} · ⚔ ${p.mil} · ♜ ${p.fort} · ⛏ ${p.mine} · 🌾 ${p.farm}</td></tr>
       </table>
       ${U.siegeHtml(p)}
+      ${U.religionHtml(p)}
       ${U.portSection(p)}
       ${armies.length ? `<h3>Ordular</h3>${armies.map(a => `<div>${U.flag(a.tag)} ${G.esc(a.name)} · ${G.esc(a.general.name)} · ${G.fmtK(a.men)}</div>`).join('')}` : ''}
       ${queued.length ? `<h3>İnşaatta</h3><div class="muted">${queued.map(b => EC.BUILD[b.kind].name).join(', ')}</div>` : ''}`;
@@ -272,6 +273,10 @@
       if (b.dataset.tab) U.provTab = b.dataset.tab;
       else if (b.dataset.build) { if (!EC.queue(me, p.id, b.dataset.build)) U.addLog(G.fmtDate(S.time, false), 'İnşaat başlatılamadı.', 'war'); }
       else if (b.dataset.gar != null) p.garTarget = +b.dataset.gar;
+      else if (b.dataset.mission) {
+        if (b.dataset.mission === 'go') { if (!G.rel.sendMission(me, p.id)) U.addLog(G.fmtDate(S.time, false), G.rel.canMission(me, p)[1], 'war'); }
+        else G.rel.recall(me, p.id);
+      }
       else if (b.dataset.assault) { if (!G.startAssault(p)) U.addLog(G.fmtDate(S.time, false), 'Hücum için ordularınızın örgütlenmesi en az %30 olmalı.', 'war'); }
       else if (b.dataset.transfer) {
         const a = G.armiesIn(p.id).find(x => x.tag === me && x.attacking == null && x.men > 2000);
@@ -283,6 +288,25 @@
       EC.totals(n);
       U.refreshProvince(); U.refreshProduction(); U.refreshTop(); G.mapDirty = true;
     };
+  };
+
+  // İlin dini ve misyoner
+  U.religionHtml = function (p) {
+    const S = G.S, me = S.player, n = S.nations[me];
+    if (!p.owner || !p.relig) return '';
+    const R = G.RELIGIONS[p.relig] || { name: p.relig, color: '#888' };
+    const mine = p.owner === me;
+    const m = mine ? (n.missions || []).find(x => x.prov === p.id) : null;
+    let act = '';
+    if (mine && p.relig !== n.religion) {
+      if (m) act = `<div class="rl-prog"><span>✝ Misyonerimiz çalışıyor</span><div class="bar"><div style="width:${m.prog / G.rel.CONVERT_NEED * 100}%"></div></div>
+          <button data-mission="stop">Geri çağır</button></div>`;
+      else {
+        const [ok, why] = G.rel.canMission(me, p);
+        act = `<div class="row-btns"><button data-mission="go" ${ok ? '' : 'disabled'} title="${G.esc(why)}">✝ Misyoner gönder</button><span class="muted small">${G.esc(why)}</span></div>`;
+      }
+    }
+    return `<h3>Din</h3><div><span class="rl-dot" style="background:${R.color}"></span> ${G.esc(R.name)}${p.owner && S.nations[p.owner] && p.relig !== S.nations[p.owner].religion ? ' <span class="bad">(devletin dininden farklı)</span>' : ''}</div>${act}`;
   };
 
   // Kuşatma durumu: kalesiz yerde ilerleme çubuğu, kalede surlar / erzak / garnizon ve hücum
