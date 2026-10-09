@@ -192,7 +192,7 @@ M.mute = function (hex) {
     const n = parseInt(hex.slice(1), 16);
     let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
     const grey = (r + g + b) / 3;
-    const sat = 0.78, mix = 0.24, [pr, pg, pb] = M.PARCHMENT;
+    const sat = 0.92, mix = 0.14, [pr, pg, pb] = M.PARCHMENT;
     r = (grey + (r - grey) * sat) * (1 - mix) + pr * mix;
     g = (grey + (g - grey) * sat) * (1 - mix) + pg * mix;
     b = (grey + (b - grey) * sat) * (1 - mix) + pb * mix;
@@ -389,7 +389,7 @@ M.draw = function () {
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const grd = ctx.createLinearGradient(0, 0, 0, M.h);
-  grd.addColorStop(0, '#30474a'); grd.addColorStop(1, '#25393c');
+  grd.addColorStop(0, '#a9bab4'); grd.addColorStop(1, '#94a8a2');   // suluboya deniz
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, M.w, M.h);
 
@@ -468,11 +468,11 @@ M.drawBase = function () {
       }
     }
     ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(150,190,180,0.07)';
+    ctx.strokeStyle = 'rgba(60,85,88,0.07)';
     ctx.lineWidth = 5 / sc;
     ctx.stroke(M.seaEdgePath);
     ctx.setLineDash([0.5 / sc, 4 / sc]);
-    ctx.strokeStyle = 'rgba(205,228,218,0.32)';
+    ctx.strokeStyle = 'rgba(50,75,78,0.32)';
     ctx.lineWidth = 1.3 / sc;
     ctx.stroke(M.seaEdgePath);
     ctx.setLineDash([]);
@@ -483,10 +483,10 @@ M.drawBase = function () {
 
   // kıyı: eski haritalardaki gibi yumuşak, katmanlı su çizgisi
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  ctx.strokeStyle = 'rgba(160, 190, 180, 0.10)';
+  ctx.strokeStyle = 'rgba(70, 98, 102, 0.13)';
   ctx.lineWidth = 9 / sc;
   for (const i of vis) ctx.stroke(M.paths[i]);
-  ctx.strokeStyle = 'rgba(170, 200, 190, 0.16)';
+  ctx.strokeStyle = 'rgba(55, 82, 86, 0.30)';
   ctx.lineWidth = 3.5 / sc;
   for (const i of vis) ctx.stroke(M.paths[i]);
 
@@ -606,9 +606,9 @@ M.drawLabels = function (vis, P) {
     ctx.rotate(L.ang);
     ctx.font = `600 ${fs | 0}px ${G.FONT_TITLE}`;
     if ('letterSpacing' in ctx) ctx.letterSpacing = `${(fs / 5).toFixed(1)}px`;
-    ctx.shadowColor = 'rgba(20,12,4,0.55)';
+    ctx.shadowColor = 'rgba(250,242,222,0.6)';
     ctx.shadowBlur = fs / 4;
-    ctx.fillStyle = `rgba(250,240,215,${fs > 18 ? 0.42 : 0.55})`;
+    ctx.fillStyle = `rgba(42,28,14,${fs > 18 ? 0.5 : 0.62})`;   // mürekkep
     ctx.fillText(L.name, 0, 0);
     ctx.shadowBlur = 0;
     if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
@@ -924,7 +924,7 @@ M.drawUnexplored = function (sc) {
     ctx.fillRect(M.seaX1 - 2, -300, 182 - M.seaX1, 600);
   }
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = 'rgba(160, 190, 180, 0.08)';
+  ctx.strokeStyle = 'rgba(70, 98, 102, 0.12)';
   ctx.lineWidth = 8 / sc;
   ctx.stroke(M.unkCoast);
   ctx.fillStyle = '#857a64';
@@ -984,7 +984,7 @@ M.drawSeaNames = function () {
   const S = G.S, ctx = M.ctx, sc = M.cam.scale;
   if (sc < 11 || sc > 90) return;
   ctx.font = `italic ${sc > 40 ? 14 : 12}px ${G.FONT_BODY}`;
-  ctx.fillStyle = 'rgba(205,228,222,0.38)';
+  ctx.fillStyle = 'rgba(38,60,64,0.55)';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if ('letterSpacing' in ctx) ctx.letterSpacing = '1px';
   for (const z of S.seas) {

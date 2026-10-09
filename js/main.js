@@ -2,6 +2,8 @@
 'use strict';
 
 (function () {
+  // senaryodaki vasallıklar ve harita paleti (bütün dosyalar yüklendikten sonra: majörler belli olsun)
+  G.vassal.setupScenario();
   const M = G.map, U = G.ui;
   const canvas = document.getElementById('map');
   const MS_PER_HOUR = [0, 260, 110, 45, 16, 4];

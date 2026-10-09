@@ -111,23 +111,33 @@ G.vassal = {};
     const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
     return '#' + [r, g, b].map(v => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
   };
+  // Mürekkep ve suluboya paleti: soluk, parşömene oturan tonlar. Majörler koyu, minörler açık,
+  // vasallar efendilerinin neredeyse aynı rengi (bir ton açığı).
+  V.WATERCOLOR = { HRE: '#c4a24e', FRA: '#5c7fb2', BYZ: '#94669e', FAT: '#6f9e62', BUY: '#b8705c', LIA: '#7a8fa3', SEL: '#4e9e94', ENG: '#c0706a',
+    KIE: '#c08a50', SNG: '#cfae4e', GAZ: '#a3845a', HUN: '#94a85a', POL: '#c06a80', DEN: '#a85050', PAP: '#ece4cc', ABB: '#5a5650', NOR: '#8a5a6a' };
+  V.MAJOR_L = 0.36;
   V.shade = (lordColor, i) => {
-    const [h, s2] = hsl(lordColor);
-    const L = [0.62, 0.50, 0.72, 0.56, 0.67, 0.45, 0.77, 0.53, 0.69, 0.59, 0.48, 0.74];
-    const H = [0, 10, -8, -16, 14, 4, -4, 18, -12, 8, -20, 12];
-    return hex(h + H[i % 12], G.clamp(s2 * 0.85, 0.25, 0.7), L[i % 12]);
+    const [h, s2, l] = hsl(lordColor);
+    return hex(h + (i % 2 ? 3 : -3), s2 * 0.95, Math.min(0.8, l + 0.08 + (i % 3) * 0.015));
   };
   V.recolor = function (W) {
+    // 1) suluboya tabanı: ton korunur, doygunluk düşer; majörler koyu, minörler açık
+    for (const [t, n] of Object.entries(W.nations)) {
+      const [h, s2, l] = hsl(V.WATERCOLOR[t] || n.color);
+      if (n.major) n.color = hex(h, G.clamp(s2 * 0.9, 0.3, 0.5), V.MAJOR_L);
+      else if (V.WATERCOLOR[t]) n.color = hex(h, G.clamp(s2 * 0.85, 0.08, 0.4), G.clamp(l, 0.5, 0.86));
+      else n.color = hex(h, G.clamp(s2 * 0.7, 0.2, 0.34), G.clamp(l + 0.06, 0.52, 0.64));
+    }
+    // 2) vasallar efendinin bir ton açığı
     const by = {};
     for (const [v, l] of Object.entries(W.vassals || {})) if (W.nations[v] && W.nations[l]) (by[l] ||= []).push(v);
     for (const [lord, list] of Object.entries(by)) {
-      const [h, s2, l] = hsl(W.nations[lord].color);
-      W.nations[lord].color = hex(h, Math.min(0.75, s2 * 1.1 + 0.05), Math.min(l, 0.34));
-      // komşu vasallar birbirinden ayırt edilsin diye sıra coğrafi (batıdan doğuya)
       const cx = t => { const ps = W.provinces.filter(p => p.owner === t); return ps.reduce((a, p) => a + p.x + p.y * 0.3, 0) / (ps.length || 1); };
       list.sort((a, b) => cx(a) - cx(b)).forEach((v, i) => { W.nations[v].color = V.shade(W.nations[lord].color, i); });
     }
-    V.separate(W, new Set([...Object.keys(by), ...Object.keys(W.vassals || {})]));
+    // 3) komşusuna fazla benzeyen bağımsız minörler ayrıştırılır
+    const majors = Object.keys(W.nations).filter(t => W.nations[t].major);
+    V.separate(W, new Set([...Object.keys(by), ...Object.keys(W.vassals || {}), ...majors]));
   };
   // Komşusuna (özellikle bir efendinin vasal tonlarına) çok benzeyen bağımsız ülkelere ayırt edici bir renk
   const rgb = h => { const v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; };
@@ -144,10 +154,10 @@ G.vassal = {};
     for (const t of free) {
       const others = [...nb[t]].map(o => W.nations[o] && W.nations[o].color).filter(Boolean);
       const worst = c => Math.min(...others.map(o => dist(c, o)));
-      if (worst(W.nations[t].color) >= 95) continue;
+      if (worst(W.nations[t].color) >= 70) continue;
       const [h0] = hsl(W.nations[t].color);
       let best = null;
-      for (let h = 0; h < 360; h += 12) for (const l of [0.4, 0.5, 0.6]) for (const sat of [0.35, 0.5]) {
+      for (let h = 0; h < 360; h += 12) for (const l of [0.52, 0.58, 0.64]) for (const sat of [0.22, 0.32]) {
         const c = hex(h, sat, l);
         const sc = worst(c) - Math.min(Math.abs(h - h0), 360 - Math.abs(h - h0)) * 0.15;
         if (!best || sc > best.s) best = { s: sc, c };
@@ -501,5 +511,4 @@ G.vassal = {};
       if (V.SCEN_VASSALS[n.tag] && V.SCEN_VASSALS[n.tag][0] === n.overlord) n.vkind ||= V.SCEN_VASSALS[n.tag][1];
     }
   };
-  V.setupScenario();
 })();
