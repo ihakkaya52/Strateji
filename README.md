@@ -31,8 +31,8 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 
 ## Başlangıç ekranı ve tarihî krallıklar
 
-- Başlangıç ekranında yalnızca kendine özel tarihî odak ağacı olan krallıklar var: şimdilik **Büyük Selçuklu** ve
-  **İngiltere**. Diğer bütün krallıklar "Haritadan başka bir krallık seç" ile oynanabilir (ortak odak ağacı).
+- Başlangıç ekranında yalnızca kendine özel tarihî odak ağacı olan krallıklar var: **Büyük Selçuklu**, **İngiltere**,
+  **Bizans**, **Fâtımî Halifeliği** ve **Abbâsî Halifeliği** (konusu: Abbâsîlerin yükselişi). Diğer bütün krallıklar "Haritadan başka bir krallık seç" ile oynanabilir (ortak odak ağacı).
 - Bir krallığa tıklayınca menü sola kayar, sağda profili açılır: hükümdar ve becerileri, özellikleri, veliaht, din,
   kültür, başkent, geçmiş, tarihî hedefler, alternatif yollar, rakipler ve dostlar. Çift tıklama ya da sağ alttaki
   **Başla** düğmesi oyunu başlatır.
@@ -42,6 +42,8 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   birbirini dışlayan alternatif tarihler vardır (Alp Arslan mı Kutalmış mı, Edward mı Godwin mi Magnus mu, Harold mı
   William mı Hardrada mı); biri seçilince öbürü kapanır. Bazı odaklar hükümdarı değiştirir, istila orduları çıkarır,
   vasal kurar ya da toprak katar.
+- Ağaçlar birbirine bağlıdır: Malazgirt, Besâsîrî fitnesi, Tuğrul Bey'in Bağdat'a girişi gibi olaylar karşı tarafın
+  oyuncusuna da duyurulur; kendi ordusunu kuran bir Abbâsî halifesi Selçuklu himayesini reddeder.
 
 ## Şu an oyunda olanlar (1. sürüm)
 

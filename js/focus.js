@@ -173,6 +173,8 @@ G.focus.daily = function () {
         G.ui.showEvent(f.event || `Odak tamamlandı: ${f.name}`, `${f.desc}\n\n${f.effectText}`, [{ text: f.ok || 'Devam' }]);
       } else {
         G.log(`${n.name} "${f.name}" odağını tamamladı.`, 'info', [tag]);
+        // karşı tarafın oyuncusu bu tarihî olaydan haberdar edilir
+        if (f.notify && f.notify[S.player]) G.ui.showEvent(f.name, `${n.name}: ${f.notify[S.player]}`, [{ text: 'Anlaşıldı' }]);
       }
     }
   }

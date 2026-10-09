@@ -17,6 +17,7 @@ G.dyn = {};
     GAZ: { born: 998, dies: 1041, dyn: 'Gazneli', next: ['Mevdud', 'II. Mesud', 'Abdürreşid', 'Ferruhzad', 'İbrahim', 'III. Mesud'] },
     SNG: { born: 1010, dies: 1063, dyn: 'Zhao', next: ['Yingzong', 'Shenzong', 'Zhezong', 'Huizong'] },
     LIA: { born: 1016, dies: 1055, dyn: 'Yelü', next: ['Daozong', 'Tianzuo'] },
+    ABB: { born: 1001, dies: 1075, dyn: 'Abbâsî', next: ['el-Muktedî', 'el-Müstazhir', 'el-Müsterşid', 'er-Râşid', 'el-Muktefî'] },
     ENG: { born: 1018, dies: 1042, dyn: 'Wessex', next: ['Günah Çıkaran Edward', 'II. Harold', 'I. William'] },
   };
   DY.HIST = HIST;
@@ -58,7 +59,9 @@ G.dyn = {};
     const pr = G.PROFILES && G.PROFILES[n.tag];
     if (pr) {
       if (pr.ruler && pr.ruler.sk) n.rulerSk = { ...pr.ruler.sk };
-      if (pr.heir) n.heir = { name: pr.heir.name, born: pr.heir.born, sk: { ...pr.heir.sk }, hist: true, idx: 0 };
+      if (pr.heir) n.heir = { name: pr.heir.name, born: pr.heir.born, sk: { ...pr.heir.sk }, hist: pr.heir.hist ?? true, idx: 0 };
+      else if (pr.heir === null) n.heir = null;
+      if (pr.regency) n.regency = G.S.hour + pr.regency * YEAR;
     }
     n.marriages ||= new Set();
     n.pastRulers ||= [];

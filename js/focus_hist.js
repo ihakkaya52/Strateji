@@ -7,23 +7,24 @@
   const alive = t => !!(G.S.nations[t] && G.S.nations[t].alive);
   const nm = t => (G.S && G.S.nations[t] ? G.S.nations[t].name : (window.WORLD.nations[t] || { name: t }).name);
   const byName = name => G.S.provinces.find(p => p.name === name);
-  const pct = v => `%${Math.round(v * 100)}`;
+  const pct = v => `%${Math.round(Math.abs(v) * 100)}`;
+  const sg = v => (v < 0 ? '−' : '+');
 
   // ------------------------------------------------------------ etki yapı taşları: {text, fn}
   const E = {
-    mp: v => ({ text: `+${G.fmtNum(v)} insan gücü`, fn: n => { n.manpower += v; } }),
-    mpm: v => ({ text: `Aylık insan gücü +${pct(v)}`, fn: n => { n.mpMult += v; } }),
-    atk: v => ({ text: `Saldırı +${pct(v)}`, fn: n => { n.atkMult += v; } }),
-    def: v => ({ text: `Savunma +${pct(v)}`, fn: n => { n.defMult += v; } }),
-    siege: v => ({ text: `Kuşatma +${pct(v)}`, fn: n => { n.siegeMult += v; } }),
-    speed: v => ({ text: `Ordu hızı +${pct(v)}`, fn: n => { n.speedMult += v; } }),
-    org: v => ({ text: `Örgütlenme +${pct(v)}`, fn: n => { n.orgMult += v; } }),
-    naval: v => ({ text: `Deniz gücü +${pct(v)}`, fn: n => { n.navalMult += v; } }),
-    tax: v => ({ text: `Vergi +${pct(v)}`, fn: n => { n.taxMult = (n.taxMult ?? 1) + v; } }),
-    trade: v => ({ text: `Ticaret geliri +${pct(v)}`, fn: n => { n.tradeMult = (n.tradeMult ?? 1) + v; } }),
-    research: v => ({ text: `Araştırma hızı +${pct(v)}`, fn: n => { n.researchMult = (n.researchMult ?? 1) + v; } }),
+    mp: v => ({ text: `${sg(v)}${G.fmtNum(Math.abs(v))} insan gücü`, fn: n => { n.manpower += v; } }),
+    mpm: v => ({ text: `Aylık insan gücü ${sg(v)}${pct(v)}`, fn: n => { n.mpMult += v; } }),
+    atk: v => ({ text: `Saldırı ${sg(v)}${pct(v)}`, fn: n => { n.atkMult += v; } }),
+    def: v => ({ text: `Savunma ${sg(v)}${pct(v)}`, fn: n => { n.defMult += v; } }),
+    siege: v => ({ text: `Kuşatma ${sg(v)}${pct(v)}`, fn: n => { n.siegeMult += v; } }),
+    speed: v => ({ text: `Ordu hızı ${sg(v)}${pct(v)}`, fn: n => { n.speedMult += v; } }),
+    org: v => ({ text: `Örgütlenme ${sg(v)}${pct(v)}`, fn: n => { n.orgMult += v; } }),
+    naval: v => ({ text: `Deniz gücü ${sg(v)}${pct(v)}`, fn: n => { n.navalMult += v; } }),
+    tax: v => ({ text: `Vergi ${sg(v)}${pct(v)}`, fn: n => { n.taxMult = (n.taxMult ?? 1) + v; } }),
+    trade: v => ({ text: `Ticaret geliri ${sg(v)}${pct(v)}`, fn: n => { n.tradeMult = (n.tradeMult ?? 1) + v; } }),
+    research: v => ({ text: `Araştırma hızı ${sg(v)}${pct(v)}`, fn: n => { n.researchMult = (n.researchMult ?? 1) + v; } }),
     stab: v => ({ text: `İstikrar ${v > 0 ? '+' : ''}${v}`, fn: n => { n.stabBonus = (n.stabBonus || 0) + v; n.stability = G.clamp((n.stability ?? 60) + v, 0, 100); } }),
-    gold: v => ({ text: `+${G.fmtNum(v)} altın`, fn: n => { n.gold += v; } }),
+    gold: v => ({ text: `${sg(v)}${G.fmtNum(Math.abs(v))} altın`, fn: n => { n.gold += v; } }),
     cap: v => ({ text: `Ordu kapasitesi +${G.fmtK(v)}`, fn: n => { n.capBonus += v; for (const a of G.S.armies) if (a.tag === n.tag) a.maxMen += v; } }),
     armies: (k, name) => ({ text: `${k} yeni ordu: ${name}`, fn: n => G.focus.spawnArmies(n, k, name) }),
     envoy: () => ({ text: '+1 elçi', fn: n => { n.envoys++; } }),
@@ -55,7 +56,7 @@
         if (opt.dyn) n.dynasty = opt.dyn;
         const h = G.dyn.HIST[n.tag], i = h ? h.next.indexOf(name) : -1;
         if (opt.next) { n.histNext = opt.next; n.histIdx = 0; } else if (i >= 0) { n.histNext = null; n.histIdx = i + 1; }
-        if (!n.heir || n.heir.name === name || n.heir.hist) n.heir = G.dyn.makeHeir(n, 0, 14);
+        if (!n.heir || n.heir.name === name || n.heir.hist || n.heir.born <= n.rulerBorn) n.heir = G.dyn.makeHeir(n, 0, 14);
         G.labelsDirty = true;
         if (G.ui.refreshTop && n.tag === S.player) setTimeout(() => G.ui.refreshTop(), 0);
       },
@@ -74,6 +75,8 @@
     vassal: tag => ({ text: `${nm(tag)} vasalımız olur`, fn: n => {
       const v = G.S.nations[tag];
       if (!v || !v.alive || G.atWar(n.tag, tag)) return;
+      // kendi ordusunu kurmuş bir halife himayeyi reddeder: yalnızca savaş gerekçesi doğar
+      if (v.focus && ['abb_ordu', 'abb_direnis'].some(id => v.focus.done.has(id))) { n.claims.add(tag); G.log(`${v.name} ${n.name} himayesini reddetti!`, 'war', [n.tag, tag]); return; }
       v.overlord = n.tag; G.labelsDirty = true;
       G.log(`${v.name} artık ${n.name} himayesinde.`, 'good', [n.tag, tag]);
     } }),
@@ -403,6 +406,9 @@
   G.SPECIAL_TAGS = ['SEL', 'ENG'];
   // İngiltere de majör krallık
   if (window.WORLD.nations.ENG) { window.WORLD.nations.ENG.major = true; window.WORLD.nations.ENG.ruler = 'Hardeknud'; }
+
+  // diğer dosyalardaki ağaçlar için yapı taşları
+  G.focusKit = { E, F, mutex, finish, byName, nm, alive };
 
   // ================================================================ ulus profilleri (başlangıç ekranı)
   G.PROFILES = {
