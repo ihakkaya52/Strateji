@@ -162,32 +162,41 @@
     const queued = mine ? S.nations[me].build.filter(b => b.prov === p.id) : [];
     if ((p.kind === 'wild' || p.kind === 'waste') && !p.owner) { U.refreshWild(p); return; }
     if (mine) EC.fixProvince(p);
-    const tabs = [['genel', 'Genel'], ['kale', '♜ Kale'], ['silah', '⚔ Silahhane'], ['atolye', '⚒ Atölye'], ['maden', '⛏ Maden'], ['tarim', '🌾 Tarım']];
+    const tabs = [['genel', '◈ Genel'], ['kale', '♜ Kale'], ['silah', '⚔ Silah'], ['atolye', '⚒ Atölye'], ['maden', '⛏ Maden'], ['tarim', '🌾 Tarım']];
     const res = p.res ? G.RESOURCES[p.res] : null;
     let body = '';
     const tab = U.provTab;
 
     if (tab === 'genel') {
       const armies = G.armiesIn(p.id);
-      body = `<table>
-        <tr><td>Tür</td><td>${G.KIND_NAMES[p.kind]}${EC.isCapital(p) ? ' (başkent)' : ''}${p.home ? ` · ${G.esc(p.home)} bölgesi` : ''}</td></tr>
-        <tr><td>Sahibi</td><td>${U.nlink(p.owner)}</td></tr>
-        ${p.ctrl !== p.owner ? `<tr><td>İşgalci</td><td>${U.nlink(p.ctrl)}</td></tr>` : ''}
-        <tr><td>Kaynak</td><td>${res ? `${res.icon} ${G.esc(res.name)}` : '—'}</td></tr>
-        ${p.owner && p.unrest != null ? `<tr><td>Huzursuzluk</td><td><div class="bar unrest" title="${G.stab.factors(p).map(f => `${f[0]}: ${f[1] > 0 ? '+' : ''}${Math.round(f[1] * 10) / 10}`).join('\n')}"><div style="width:${p.unrest}%"></div></div>
-          <span class="${p.unrest > 50 ? 'bad' : 'muted'}">%${Math.round(p.unrest)} · ayda ${G.stab.trend(p) >= 0 ? '+' : ''}${Math.round(G.stab.trend(p) * 10) / 10}</span></td></tr>
-        <tr><td>Asıl sahibi</td><td>${p.core === p.owner ? '<span class="muted">bu ülke</span>' : U.nlink(p.core)}${p.relig ? ` · ${G.esc((G.RELIGIONS[p.relig] || { name: p.relig }).name)}` : ''}</td></tr>` : ''}
-        <tr><td>Arazi</td><td>${G.esc(G.terrainOf(p).name)} <span class="muted">· savunma ${G.terrainOf(p).def >= 1 ? '+' : ''}%${Math.round((G.terrainOf(p).def - 1) * 100)} · hareket %${Math.round(G.terrainOf(p).move * 100)}</span></td></tr>
-        <tr><td>Alan</td><td>${G.fmtNum(p.area)} km²</td></tr>
-        <tr><td>Aylık insan gücü</td><td>${G.fmtNum((p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140) * (1 + p.farm * 0.25 * (p.res === 'tahil' ? 1.5 : 1)))}</td></tr>
-        <tr><td>Binalar</td><td>⚒ ${p.civ} · ⚔ ${p.mil} · ♜ ${p.fort} · ⛏ ${p.mine} · 🌾 ${p.farm}</td></tr>
-      </table>
-      ${U.siegeHtml(p)}
-      ${U.cultureHtml(p)}
-      ${U.religionHtml(p)}
-      ${U.portSection(p)}
-      ${armies.length ? `<h3>Ordular</h3>${armies.map(a => `<div>${U.flag(a.tag)} ${G.esc(a.name)} · ${G.esc(a.general.name)} · ${G.fmtK(a.men)}</div>`).join('')}` : ''}
-      ${queued.length ? `<h3>İnşaatta</h3><div class="muted">${queued.map(b => EC.BUILD[b.kind].name).join(', ')}</div>` : ''}`;
+      const own = S.nations[p.owner];
+      const tr = p.owner && p.unrest != null ? G.stab.trend(p) : 0;
+      const tax = own ? (EC.isCapital(p) ? 3 : p.kind === 'city' ? 1 : 0.3) * G.unrestMult(p) * G.rulerMod(p.owner, 'adm') * (own.taxMult ?? 1) : 0;
+      const mpw = (p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140) * (1 + p.farm * 0.25 * (p.res === 'tahil' ? 1.5 : 1)) * G.unrestMult(p);
+      const T = G.terrainOf(p);
+      const unrestTip = p.unrest != null ? G.stab.factors(p).map(f => `${f[0]}: ${f[1] > 0 ? '+' : ''}${Math.round(f[1] * 10) / 10}`).join('\n') : '';
+      const uCls = p.unrest > 60 ? 'bad' : p.unrest > 30 ? 'warn' : 'ok';
+      body = `<div class="pv-stats">
+          <div class="pv-tile ${uCls}" title="${G.esc(unrestTip)}"><span class="pv-k">Huzursuzluk</span>
+            <b>%${Math.round(p.unrest || 0)}</b><div class="bar unrest"><div style="width:${p.unrest || 0}%"></div></div>
+            <span class="pv-s">ayda ${tr >= 0 ? '+' : ''}${Math.round(tr * 10) / 10}</span></div>
+          <div class="pv-tile"><span class="pv-k">Vergi</span><b>${g1(tax)}</b><span class="pv-s">altın / ay</span></div>
+          <div class="pv-tile"><span class="pv-k">İnsan gücü</span><b>${G.fmtNum(Math.round(mpw))}</b><span class="pv-s">asker / ay</span></div>
+          <div class="pv-tile"><span class="pv-k">Kale</span><b>${p.fort ? '♜'.repeat(p.fort) : '—'}</b><span class="pv-s">${p.fort ? `${G.fmtK(p.garrison)} garnizon` : 'kalesiz'}</span></div>
+        </div>
+        <div class="pv-id">${U.cultureHtml(p)}${U.religionHtml(p)}</div>
+        <div class="pv-facts">
+          <div><span>Asıl sahibi</span><b>${p.core === p.owner ? 'bu ülke' : U.nlink(p.core)}</b></div>
+          <div><span>Kaynak</span><b>${res ? `${res.icon} ${G.esc(res.name)}` : '—'}</b></div>
+          <div title="Savunma ${T.def >= 1 ? '+' : ''}%${Math.round((T.def - 1) * 100)} · hareket %${Math.round(T.move * 100)}"><span>Arazi</span><b>${G.esc(T.name)} <i>${T.def >= 1 ? '+' : ''}%${Math.round((T.def - 1) * 100)} savunma</i></b></div>
+          <div><span>Alan</span><b>${G.fmtNum(p.area)} km²</b></div>
+          <div class="wide"><span>Binalar</span><b class="pv-bld"><i title="Atölye">⚒ ${p.civ}</i><i title="Silahhane">⚔ ${p.mil}</i><i title="Kale">♜ ${p.fort}</i><i title="Maden">⛏ ${p.mine}</i><i title="Çiftlik">🌾 ${p.farm}</i></b></div>
+        </div>
+        ${U.siegeHtml(p)}
+        ${U.portSection(p)}
+        ${armies.length ? `<h3>Ordular</h3><div class="pv-armies">${armies.map(a => `<div>${U.flag(a.tag)} <b>${G.esc(a.name)}</b><span class="muted">${G.esc(a.general.name)}</span><span>${G.fmtK(a.men)}</span></div>`).join('')}</div>` : ''}
+        ${queued.length ? `<h3>İnşaatta</h3><div class="muted">${queued.map(b => EC.BUILD[b.kind].name).join(', ')}</div>` : ''}
+        ${U.massacreHtml(p)}`;
     } else if (tab === 'kale') {
       const max = EC.maxGarrison(p), target = EC.garrisonTarget(p);
       const myArmy = mine ? G.armiesIn(p.id).find(a => a.tag === me && a.attacking == null && a.men > 2000) : null;
@@ -254,11 +263,13 @@
         ${mine ? `<div class="row-btns">${buildBtn(p, 'farm', p.farm ? 'Çiftlikleri genişlet' : 'Çiftlik kur')}</div>` : ''}`;
     }
 
-    el.innerHTML = `<div class="pp-head">
-        <h2>${EC.isCapital(p) ? '★ ' : ''}${G.esc(p.name)}</h2>
-        <span class="muted">${U.flag(p.owner)} ${G.esc(S.nations[p.owner] ? S.nations[p.owner].name : '')}</span>
-        <button class="pp-close">✕</button></div>
-      <div class="pp-tabs">${tabs.map(([k, l]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('')}</div>
+    const ownN = S.nations[p.owner];
+    el.innerHTML = `<div class="pv-head">
+        <div class="pv-title"><h2>${EC.isCapital(p) ? '<span class="pv-star">★</span>' : ''}${G.esc(p.name)}</h2>
+          <div class="pv-sub">${G.KIND_NAMES[p.kind]}${EC.isCapital(p) ? ' · başkent' : ''}${p.home ? ` · ${G.esc(p.home)} bölgesi` : ''}</div></div>
+        <div class="pv-owner">${ownN ? U.nlink(p.owner) : ''}${p.ctrl !== p.owner && S.nations[p.ctrl] ? `<span class="pv-occ">İşgal: ${G.esc(S.nations[p.ctrl].name)}</span>` : ''}</div>
+        <button class="pp-close" title="Kapat">✕</button></div>
+      <div class="pp-tabs pv-tabs">${tabs.map(([k, l]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('')}</div>
       <div class="pp-body">${body}</div>`;
     el.querySelector('.pp-close').onclick = U.closePanel;
     U.bindPortSection(p);
@@ -300,26 +311,34 @@
   U.cultureHtml = function (p) {
     const S = G.S, me = S.player, n = S.nations[me], C = G.cul;
     if (!p.owner || !p.cul) return '';
-    const K = C.get(p.cul), own = S.nations[p.owner], mine = p.owner === me;
-    const state = !own ? '' : p.cul === own.culture ? '<span class="good">asimile · isyan çıkmaz</span>'
-      : C.accepted(p.owner, p.cul) ? '<span class="muted">akraba halk (kabul edilmiş)</span>' : '<span class="bad">yabancı halk</span>';
+    const own = S.nations[p.owner], mine = p.owner === me;
+    const [chip, cls] = !own ? ['', ''] : p.cul === own.culture ? ['asimile · isyan çıkmaz', 'ok']
+      : C.accepted(p.owner, p.cul) ? ['akraba halk', 'mid'] : ['yabancı halk', 'bad'];
     let act = '';
     if (mine && p.cul !== n.culture) {
       const m = n.assims.find(x => x.prov === p.id);
-      if (m) act = `<div class="rl-prog"><span>⚖ Asimilasyon sürüyor</span><div class="bar"><div style="width:${m.prog / C.ASSIM_NEED * 100}%"></div></div>
-          <button data-assim="stop">Durdur</button></div>`;
+      if (m) act = `<div class="pv-prog"><div class="bar"><div style="width:${m.prog / C.ASSIM_NEED * 100}%"></div></div><button data-assim="stop" title="Durdur">✕</button></div><div class="pv-note">Asimilasyon sürüyor</div>`;
       else {
         const [ok, why] = C.canAssim(me, p);
-        act = `<div class="row-btns"><button data-assim="go" ${ok ? '' : 'disabled'} title="${G.esc(why)}">⚖ Asimile et</button><span class="muted small">${G.esc(why)}</span></div>`;
+        act = `<button class="pv-act" data-assim="go" ${ok ? '' : 'disabled'} title="${G.esc(why)}">⚖ Asimile et</button><div class="pv-note">${G.esc(why)}</div>`;
       }
     }
-    let ms = '';
-    if (mine && G.massacre && (p.cul !== n.culture || !G.rel.sameFamily(p.relig, n.religion))) {
-      const [okM, whyM] = G.massacre.can(me, p);
-      ms = `<div class="row-btns"><button class="danger" data-massacre="1" ${okM ? '' : 'disabled'} title="${G.esc(okM ? 'Bütün halkı kılıçtan geçir. Bedeli çok ağır.' : whyM)}">☠ Katliam</button>${okM ? '' : `<span class="muted small">${G.esc(whyM)}</span>`}</div>`;
-    }
-    return `<h3>Halk</h3><div class="cul-row">${C.flagHtml(p.cul)} <b>${G.esc(C.fullName(p.cul))}</b></div>
-      <div class="small">${state}${p.massacred ? ' · <span class="bad">katliamdan sonra ıssız</span>' : ''}</div>${act}${ms}`;
+    return `<div class="pv-card"><div class="pv-ck">Halk</div>
+      <div class="pv-cv">${C.flagHtml(p.cul)}<b>${G.esc(C.get(p.cul).name)}</b></div>
+      <div class="pv-cg">${G.esc(C.GROUPS[C.get(p.cul).group] ? C.GROUPS[C.get(p.cul).group].name : '')} kültür grubu</div>
+      ${chip ? `<span class="pv-chip ${cls}">${chip}</span>` : ''}${p.massacred ? '<span class="pv-chip bad">katliamdan sonra ıssız</span>' : ''}
+      ${act}</div>`;
+  };
+
+  // Ağır kararlar: panelin en altında, ayrı bir bölüm
+  U.massacreHtml = function (p) {
+    const S = G.S, me = S.player, n = S.nations[me];
+    if (!G.massacre || p.owner !== me || p.ctrl !== me) return '';
+    if (p.cul === n.culture && G.rel.sameFamily(p.relig, n.religion)) return '';
+    const [ok, why] = G.massacre.can(me, p);
+    return `<div class="pv-danger"><div class="pv-dk">Ağır kararlar</div>
+      <div class="pv-drow"><button class="danger" data-massacre="1" ${ok ? '' : 'disabled'} title="${G.esc(ok ? 'Bütün halkı kılıçtan geçir. Bedeli çok ağır.' : why)}">☠ Katliam</button>
+      <span class="muted small">${G.esc(ok ? 'Bütün halk öldürülür, yerine kendi halkımız yerleşir. Bedeli çok ağırdır.' : why)}</span></div></div>`;
   };
 
   // Keşfedilmemiş / sahipsiz topraklar: kâşif ve yerleşim
@@ -380,21 +399,24 @@
     const S = G.S, me = S.player, n = S.nations[me];
     if (!p.owner || !p.relig) return '';
     const R = G.RELIGIONS[p.relig] || { name: p.relig, color: '#888' };
-    const mine = p.owner === me;
-    const m = mine ? (n.missions || []).find(x => x.prov === p.id) : null;
+    const own = S.nations[p.owner], mine = p.owner === me;
+    const [chip, cls] = !own ? ['', ''] : p.relig === own.religion ? ['devletin dini', 'ok']
+      : G.rel.sameFamily(p.relig, own.religion) ? ['başka mezhep · sorun çıkarmaz', 'mid'] : ['başka din · isyan edebilir', 'bad'];
     let act = '';
     if (mine && p.relig !== n.religion) {
-      if (m) act = `<div class="rl-prog"><span>${G.rel.sameFamily(p.relig, n.religion) ? '📜 Öğreticilerimiz çalışıyor' : '✝ Misyonerimiz çalışıyor'}</span><div class="bar"><div style="width:${m.prog / G.rel.CONVERT_NEED * 100}%"></div></div>
-          <button data-mission="stop">Geri çağır</button></div>`;
+      const teach = G.rel.sameFamily(p.relig, n.religion);
+      const m = (n.missions || []).find(x => x.prov === p.id);
+      if (m) act = `<div class="pv-prog"><div class="bar"><div style="width:${m.prog / G.rel.CONVERT_NEED * 100}%"></div></div><button data-mission="stop" title="Geri çağır">✕</button></div><div class="pv-note">${teach ? 'Öğreticilerimiz çalışıyor' : 'Misyonerimiz çalışıyor'}</div>`;
       else {
         const [ok, why] = G.rel.canMission(me, p);
-        const teach = G.rel.sameFamily(p.relig, n.religion);
-        act = `<div class="row-btns"><button data-mission="go" ${ok ? '' : 'disabled'} title="${G.esc(why)}">${teach ? '📜 Mezhep öğretisi gönder' : '✝ Misyoner gönder'}</button><span class="muted small">${G.esc(why)}</span></div>`;
+        act = `<button class="pv-act" data-mission="go" ${ok ? '' : 'disabled'} title="${G.esc(why)}">${teach ? '📜 Mezhep öğretisi' : '✝ Misyoner gönder'}</button><div class="pv-note">${G.esc(why)}</div>`;
       }
     }
-    const on = p.owner && S.nations[p.owner];
-    const diff = on && p.relig !== on.religion ? (G.rel.sameFamily(p.relig, on.religion) ? ' <span class="muted">(aynı din, başka mezhep: sorun çıkarmaz)</span>' : ' <span class="bad">(başka din: isyan edebilir)</span>') : '';
-    return `<h3>Din</h3><div><span class="rl-dot" style="background:${R.color}"></span> ${G.esc(G.rel.fullName(p.relig))}${diff}</div>${act}`;
+    return `<div class="pv-card"><div class="pv-ck">İnanç</div>
+      <div class="pv-cv"><span class="rl-dot" style="background:${R.color}"></span><b>${G.esc(R.name)}</b></div>
+      <div class="pv-cg">${G.esc(G.rel.familyName(p.relig))}</div>
+      ${chip ? `<span class="pv-chip ${cls}">${chip}</span>` : ''}
+      ${act}</div>`;
   };
 
   // Kuşatma durumu: kalesiz yerde ilerleme çubuğu, kalede surlar / erzak / garnizon ve hücum
