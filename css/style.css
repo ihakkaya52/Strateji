@@ -613,4 +613,4 @@ button.danger { border-color: #c0443a; color: #ffc8b8; background: linear-gradie
 .flvl { color: var(--gold); font-size: 11px; letter-spacing: -1px; }
 .fcap { color: #ffd760; font-size: 11px; }
 .fname { font-family: var(--title); font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#cmdbar.navy { max-height: 178px; }
+#cmdbar.navy { max-height: none; }

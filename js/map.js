@@ -857,7 +857,7 @@ M.drawUnexplored = function (sc) {
     const g = ctx.createLinearGradient(0, M.fogY - 3, 0, M.fogY + 14);
     g.addColorStop(0, 'rgba(12,18,18,0)'); g.addColorStop(1, 'rgba(12,18,18,0.32)');
     ctx.fillStyle = g;
-    ctx.fillRect(-200, M.fogY - 3, 400, 80);
+    ctx.fillRect(-600, M.fogY - 3, 1200, 200);
   }
   // bilinmeyen batı okyanusu: Atlantik'in ötesi sise gömülür
   if (!M.seaX0) M.seaX0 = Math.min(...M.seaBbox.map(b => b[0]));
@@ -865,7 +865,15 @@ M.drawUnexplored = function (sc) {
     const g = ctx.createLinearGradient(M.seaX0 + 2, 0, M.seaX0 - 14, 0);
     g.addColorStop(0, 'rgba(12,18,18,0)'); g.addColorStop(1, 'rgba(12,18,18,0.32)');
     ctx.fillStyle = g;
-    ctx.fillRect(-200, -120, M.seaX0 + 202, 260);
+    ctx.fillRect(-600, -300, M.seaX0 + 600, 600);
+  }
+  // doğuda da Pasifik'in bilinmeyeni
+  if (!M.seaX1) M.seaX1 = Math.max(...M.seaBbox.map(b => b[2]));
+  if (isFinite(M.seaX1)) {
+    const g = ctx.createLinearGradient(M.seaX1 - 2, 0, M.seaX1 + 14, 0);
+    g.addColorStop(0, 'rgba(12,18,18,0)'); g.addColorStop(1, 'rgba(12,18,18,0.32)');
+    ctx.fillStyle = g;
+    ctx.fillRect(M.seaX1 - 2, -300, 600 - M.seaX1, 600);
   }
   ctx.lineJoin = 'round';
   ctx.strokeStyle = 'rgba(160, 190, 180, 0.08)';

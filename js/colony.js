@@ -12,7 +12,9 @@ G.explore = {};
   X.LOST = 0.08;              // kâşifin kaybolma olasılığı
 
   // Keşfedilip yerleşilebilecek topraklar: bilinmeyen diyarlar ve ıssız çöl / bozkır / tundra
-  const OPEN = p => p.kind === 'wild' || p.kind === 'waste';
+  // Avustralya, Amerika gibi şimdilik keşfe kapalı: sis altında kalır
+  X.locked = p => p.kind === 'wild' && !p.owner && p.x > 100;
+  const OPEN = p => (p.kind === 'wild' || p.kind === 'waste') && !X.locked(p);
   X.isOpen = p => OPEN(p) && !p.owner;
 
   X.init = function () {
@@ -24,6 +26,10 @@ G.explore = {};
       n.colonists ??= n.major ? 2 : 1;
       if (!(n.explored instanceof Set)) n.explored = new Set(n.explored || []);
     }
+    // kapalı topraklar: eski kayıtlardaki keşif ve yerleşimler silinir
+    for (const n of Object.values(S.nations)) for (const id of [...n.explored]) if (X.locked(P[id])) n.explored.delete(id);
+    for (const p of P) if (p.colony && X.locked(p)) p.colony = null;
+    S.expeditions = S.expeditions.filter(e => !X.locked(P[e.to]));
     // komşu yabani ve ıssız topraklar baştan biliniyor (eski kayıtlarda bir kez eklenir)
     if (!S.openV2) {
       S.openV2 = true;
@@ -33,6 +39,7 @@ G.explore = {};
 
   // Oyuncu bu ili haritada görüyor mu?
   X.known = function (p) {
+    if (X.locked(p)) return false;
     if (!OPEN(p) || p.owner) return true;
     const S = G.S;
     if (!S) return false;
@@ -46,6 +53,7 @@ G.explore = {};
   // Kâşifin gidebileceği il: bilinmeyen, ama bildiğimiz bir yere komşu ya da kıyıdan ulaşılabilir
   X.canExplore = function (tag, p) {
     const S = G.S, n = S.nations[tag];
+    if (X.locked(p)) return [false, 'Bu kıyılar şimdilik keşfe kapalı: hiçbir gemi oraya ulaşamıyor.'];
     if (!OPEN(p) || p.owner) return [false, 'Burası zaten bilinen bir yer.'];
     if (n.explored.has(p.id)) return [false, 'Burası keşfedildi.'];
     if (S.expeditions.some(e => e.tag === tag && e.to === p.id)) return [false, 'Kâşifimiz zaten yolda.'];

@@ -35,6 +35,8 @@ LON0, LAT0, LON1, LAT1 = -26.0, -46.0, 150.0, 72.0
 SEA_LAT0 = -46.0       # deniz bölgeleri bu enlemin kuzeyinde
 # Amerika kıtası: haritada keşfedilmemiş kara olarak durur (henüz il yok)
 AMERICAS_BOX = (-180.0, -56.0, -26.0, 72.0)
+# Avustralya'nın doğusu, Yeni Gine'nin ucu ve Yeni Zelanda: o da keşfe kapalı kara
+OCEANIA_BOX = (150.0, -56.0, 180.0, -0.5)
 AFRICA_MIN_LAT = 10.0  # Afrika'nın bu enlemin güneyi keşfedilmemiş topraktır
 # Keşfedilmemiş bölgeler (boylam/enlem kutuları): kara burada çizilir ama eyalet yoktur
 UNEXPLORED_BOXES = [
@@ -165,13 +167,14 @@ def load_land():
 
 def load_americas():
     """Amerika kıtası (ve Grönland): yalnızca keşfedilmemiş kara olarak çizilir."""
-    clip = box(*AMERICAS_BOX)
+    clips = [box(*AMERICAS_BOX), box(*OCEANIA_BOX)]
     parts = []
     with open(os.path.join(CACHE, "ne_50m_land.geojson")) as fh:
         for f in json.load(fh)["features"]:
             g = shape(f["geometry"])
-            if g.intersects(clip):
-                parts.append(g.intersection(clip))
+            for clip in clips:
+                if g.intersects(clip):
+                    parts.append(g.intersection(clip))
     g = proj_geom(unary_union(parts)).simplify(0.06, preserve_topology=True)
     return MultiPolygon(polys(g, 0.15))
 
@@ -423,7 +426,8 @@ def main():
     americas = load_americas()
     ux0, uy0, ux1, uy1 = unary_union([unexplored, americas]).bounds
     unk = []
-    for p in list(unexplored.geoms) + list(americas.geoms):
+    drawn = unary_union([unexplored, americas])   # tek parça çizilsin: 150. boylamda dikiş kalmasın
+    for p in getattr(drawn, "geoms", [drawn]):
         p = p.simplify(0.04, preserve_topology=True)
         unk.append([round(v, 2) for xy in list(p.exterior.coords)[:-1] for v in xy])
         for h in p.interiors:

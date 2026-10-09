@@ -126,7 +126,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   İl panelinden "Asimile et" (memur başına ayda 2 altın; büyük güçlerin 2, diğerlerinin 1 memuru var). Asimile olmuş
   illerde isyan çıkmaz. Politika: Hoşgörü (huzursuzluk yok, asimilasyon yavaş, istikrar +4), Ilımlı, Zorla asimilasyon
   (çok hızlı ama huzursuzluk, istikrar −6). "Halklar ve Kültür" sayfası bütün halkları ve bayraklarını listeler.
-- **Keşif ve yerleşim:** Afrika'nın güneyi, Madagaskar, Avustralya ve ıssız topraklar (Büyük Sahra, Arabistan çölleri,
+- **Keşif ve yerleşim:** Afrika'nın güneyi, Madagaskar ve ıssız topraklar (Büyük Sahra, Arabistan çölleri,
   Orta Asya bozkır ve çölleri, Sibirya, Tibet) keşfedilmemiş; yalnızca komşu olunan yerler baştan bilinir: sağ alttaki 🧭 Keşif kipinde
   haritada ? olan yerlere kâşif gönderin (25 altın; bildiğiniz bir yere komşu ya da kıyınızdan deniz menzilinde olmalı).
   Kâşif varınca çevresi haritaya işlenir; orada yaşayan yerli halk, inancı ve arazi görünür. Yeşil çizgili yerlere
@@ -144,7 +144,8 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   Sağ alttaki ⚖ Ticaret kipi yolları haritada akan çizgiler, kervanlar ve gemilerle gösterir.
 - **Denizler:** Deniz bölgeleri Afrika'nın güneyine, Madagaskar'a ve Avustralya'ya uzanır (145 bölge); sınırları
   akıntı gibi kıvrımlı, noktalı çizgilerle çizilir ve kıyıları kesmez.
-- **Amerika:** Kıta haritada keşfedilmemiş kara olarak duruyor; henüz ili ve ülkesi yok.
+- **Amerika ve Avustralya:** İkisi de haritada tam (Yeni Zelanda dahil) ama şimdilik keşfe kapalı keşfedilmemiş kara
+  olarak duruyor; kâşif ve yerleşimci gönderilemez.
 - **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
   yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
 - **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,

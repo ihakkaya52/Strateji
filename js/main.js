@@ -116,7 +116,7 @@
     const P = G.S ? G.S.provinces : window.WORLD.provinces;
     const p = P[pid];
     const nations = G.S ? G.S.nations : window.WORLD.nations;
-    if (G.S && M.hidden(p)) { U.tooltip(x, y, '<b>Bilinmeyen Topraklar</b><br><span class="muted">Keşfetmek için tıklayın</span>'); return; }
+    if (G.S && M.hidden(p)) { U.tooltip(x, y, `<b>Bilinmeyen Topraklar</b><br><span class="muted">${G.explore.locked(p) ? 'Şimdilik keşfe kapalı' : 'Keşfetmek için tıklayın'}</span>`); return; }
     let html = `<b>${G.esc(p.name)}</b>`;
     if ((p.kind === 'wild' || p.kind === 'waste') && G.S && !p.owner) {
       html += `<br>${G.cul.flagHtml(p.cul)} ${G.esc(G.cul.get(p.cul).name)} yerlileri` + (p.colony ? `<br>⚑ ${G.esc(G.S.nations[p.colony.tag].name)} yerleşimi · %${Math.round(p.colony.settlers / G.explore.SETTLERS * 100)}` : '');
