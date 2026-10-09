@@ -233,6 +233,7 @@ EC.budget = function (n, provs, armies) {
   }
   let army = 0;
   for (const a of armies || S.armies) if (a.tag === n.tag) army += a.men / 1000 * 0.2;
+  tax *= G.rulerMod ? G.rulerMod(n.tag, 'adm') : 1;
   const income = tax + trade + mines + farms;
   const expense = army + garrison;
   return { tax, trade, mines, farms, army, garrison, income, expense, net: income - expense };

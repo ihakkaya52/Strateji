@@ -133,6 +133,7 @@ G.save = {};
     for (const [t, arr] of Object.entries(obj.usedNames || {})) G.usedNames[t] = new Set(arr);
     G.rng = G.makeRng((Date.now() % 100000) + 7);
     G.stab.init();   // eski kayıtlarda iç düzen alanları yoksa doldur
+    G.dyn.init();
     // arayüz durumunu sıfırla
     const U = G.ui;
     G.selected = new Set(); G.selFleet = null;

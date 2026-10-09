@@ -106,6 +106,11 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   bir huzursuzluğu vardır (yabancı toprak, farklı din ve kültür, yeni fetih; garnizon, ordu ve başkent yatıştırır).
   Huzursuz il daha az vergi ve asker verir; %100'e ulaşınca isyan çıkar: komşu huzursuz illerle birlikte ayaklanır,
   yok olmuş eski sahibi varsa o ülke yeniden doğar. 25 yıl elde tutulan il asıl toprak olur.
+- **Hükümdar ve hanedan:** Hükümdarlar yaşlanır ve ölür; yönetim, diplomasi ve askerlik becerileri vergiyi, istikrarı,
+  elçileri ve ordunun gücünü etkiler. Büyük güçlerde tarihî halefler sırayla gelir (V. Mihail, Alp Arslan, IV. Heinrich…),
+  odaklardaki tarihî isimler veliaht olur. Çocuk hükümdarda naiplik; varissiz ölümde taht kavgası ve taht davacısı isyanı,
+  ya da hanedan evliliği yoluyla kişisel birlik. Üst çubukta ülke adına tıklayınca "Hükümdar ve Hanedan" sayfası açılır.
+- **Hanedan evlilikleri:** Diplomasi sayfasından aynı dinden (Hristiyanlar kendi aralarında) ülkelerle; ilişki +25.
 - **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
   yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
 - **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,
@@ -150,6 +155,7 @@ js/data/world.js      üretilmiş harita verisi (elle düzenlenmez)
 js/util.js            sabitler ve yardımcılar
 js/state.js           oyun durumu, ülkeler, ordular, savaş / barış
 js/sim.js             zaman, hareket, muharebe, kuşatma, insan gücü
+js/dynasty.js         hükümdarlar, varisler, naiplik, taht kavgası, hanedan evlilikleri, kişisel birlik
 js/stability.js       istikrar, huzursuzluk, asimilasyon ve isyanlar
 js/save.js            kayıt / yükleme
 js/ui_save.js         oyun menüsü ve kayıtlı oyunlar

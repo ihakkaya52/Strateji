@@ -80,6 +80,7 @@ G.initState = function (playerTag) {
   G.econ.init();
   G.navy.init();
   G.stab.init();
+  G.dyn.init();
   return S;
 };
 
@@ -114,6 +115,7 @@ G.addNation = function (tag, def) {
     alive: true,
   };
   G.labelsDirty = true;
+  if (G.dyn && S.time) G.dyn.setup(S.nations[tag]);
   return S.nations[tag];
 };
 
@@ -347,7 +349,7 @@ G.makePeace = function (a, b, transfer, msg) {
   }
   G.evacuateArmies();
   G.labelsDirty = true; G.mapDirty = true;
-  G.log(msg || (transfer
+  if (msg !== '') G.log(msg || (transfer
     ? `${na.name} ile ${nb.name} barış imzaladı. ${moved} eyalet el değiştirdi.`
     : `${na.name} ile ${nb.name} beyaz barış yaptı.`), 'info', [a, b]);
   G.checkElimination();

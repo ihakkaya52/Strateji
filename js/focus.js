@@ -39,7 +39,7 @@ G.FOCUS_TREES = {
       id: 'eng_edward', icon: 'crown', x: 1, y: 2, req: ['eng_godwin'], name: 'Edward\'ı Sürgünden Çağır',
       desc: 'Æthelred\'in oğlu Edward, Normandiya\'daki sürgününden dönüyor. Eski Wessex hanedanı yeniden tahtta.',
       effectText: 'Hükümdar: Günah Çıkaran Edward · +6.000 insan gücü',
-      effect: n => { n.ruler = 'Günah Çıkaran Edward'; n.manpower += 6000; },
+      effect: n => { if (G.dyn) G.dyn.crown(n, 'Günah Çıkaran Edward'); else n.ruler = 'Günah Çıkaran Edward'; n.manpower += 6000; },
     },
     {
       id: 'eng_saxon', icon: 'dragon', x: 2, y: 2, req: ['eng_danegeld'], name: 'Sakson Ruhunu Uyandır',

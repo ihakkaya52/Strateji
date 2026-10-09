@@ -159,9 +159,9 @@ G.armyPower = function (a, att, ph, frac) {
   let v = a.men * frac / 1000 * (0.35 + 0.65 * a.org / 100) * G.econ.combatFactor(a) * G.phaseMult(a, ph);
   if (att) {
     // süvari, saldırıda hareket üstünlüğü sağlar; piyade savunmada sağlamdır
-    v *= (1 + 0.45 * a.cav) * n.atkMult * (1 + G.command.bonus(a, 'atk'));
+    v *= (1 + 0.45 * a.cav) * n.atkMult * (1 + G.command.bonus(a, 'atk')) * G.rulerMod(a.tag, 'mil');
     if (a.fleet != null) v *= (G.navy.fleet(a.fleet) || {}).harborWon ? 0.9 : 0.55;   // denizden çıkarma
-  } else v *= (1 + 0.2 * (1 - a.cav)) * n.defMult * (1 + G.command.bonus(a, 'def'));
+  } else v *= (1 + 0.2 * (1 - a.cav)) * n.defMult * (1 + G.command.bonus(a, 'def')) * G.rulerMod(a.tag, 'mil');
   return v;
 };
 
@@ -546,6 +546,7 @@ G.monthly = function () {
   }
   G.econ.monthly();
   G.stab.monthly();
+  G.dyn.monthly();
   G.ai.monthly();
   G.dip.monthly();
 };

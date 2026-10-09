@@ -51,7 +51,7 @@
         for (const t of list) if (alive(t)) G.dip.add(n.tag, t, v);
       },
     }),
-    ruler: name => ({ text: `Hükümdar: ${name}`, fn: n => { n.ruler = name; } }),
+    ruler: name => ({ text: `Hükümdar / veliaht: ${name}`, fn: n => { if (G.dyn) G.dyn.crown(n, name); else n.ruler = name; } }),
     gold: v => ({ text: `+${G.fmtNum(v)} altın`, fn: n => { n.gold = (n.gold || 0) + v; } }),
     tribute: v => ({ text: `Vasallardan haraç ${pct(v)}`, fn: n => { for (const v2 of G.vassalsOf(n.tag)) G.S.nations[v2].tribute = v; } }),
   };

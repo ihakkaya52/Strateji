@@ -39,6 +39,7 @@
   U.initGame = function () {
     baseInit();
     $('tb-gold').onclick = () => U.openPage('ekonomi');
+    $('tb-nation').onclick = () => U.openPage('hanedan');
     $('tb-mp').onclick = () => U.openPage('ordular');
     $('tb-ordular').onclick = () => U.openPage('ordular');
     $('tb-prod').onclick = () => U.openPage('atolyeler');
@@ -62,6 +63,7 @@
     U.page = page;
     if (page === 'olaylar') { U.unread = 0; $('tb-ev-count').classList.add('hidden'); }
     for (const id of ['prodwin', 'navywin', 'focuswin', 'warpanel']) $(id).classList.add('hidden');
+    if (U.dipTag && U.closeDiplomacy) U.closeDiplomacy();
     $('pagewin').classList.remove('hidden');
     U.renderPage();
   };
@@ -70,7 +72,7 @@
     $('pagewin').classList.add('hidden');
   };
 
-  const TITLES = { ekonomi: 'Hazine ve Ekonomi', ordular: 'Ordular', atolyeler: 'Atölyeler ve Silahhaneler', olaylar: 'Olaylar' };
+  const TITLES = { hanedan: 'Hükümdar ve Hanedan', ekonomi: 'Hazine ve Ekonomi', ordular: 'Ordular', atolyeler: 'Atölyeler ve Silahhaneler', olaylar: 'Olaylar' };
   U.renderPage = function () {
     const el = $('pagewin');
     if (!U.page || el.classList.contains('hidden') || !G.S) return;
@@ -90,6 +92,45 @@
   // ------------------------------------------------------------ sayfalar
   const PAGES = {};
   const BIND = {};
+
+  // Hükümdar ve hanedan
+  PAGES.hanedan = function () {
+    const S = G.S, tag = S.player, n = S.nations[tag];
+    const sk = n.rulerSk || { adm: 3, dip: 3, mil: 3 };
+    const eff = (k, l, txt) => `<tr><td>${l}</td><td class="num">${sk[k]} / 6</td><td class="muted">${txt}</td></tr>`;
+    const pct = v => `${v >= 1 ? '+' : ''}${Math.round((v - 1) * 100)}%`;
+    return `<div class="hn-top">
+        <div class="hn-portrait">${G.portrait ? G.portrait.ruler(tag) : ''}</div>
+        <div class="hn-main">
+          <div class="hn-name">${G.esc(n.ruler)}</div>
+          <div class="muted">${G.esc(n.name)} · ${G.esc(n.dynasty || '')} hanedanı · ${G.dyn.age(n)} yaşında · ${n.reignStart ? `${n.reignStart}'den beri` : '1040 öncesinden beri'} tahtta</div>
+          ${n.regency > S.hour ? `<div class="bad">Naiplik: hükümdar reşit olana dek ${Math.ceil((n.regency - S.hour) / 24 / 365)} yıl daha naipler yönetiyor.</div>` : ''}
+          <table class="pg-tab" style="margin-top:8px">
+            ${eff('adm', '⚖ Yönetim', `vergi ${pct(G.rulerMod(tag, 'adm'))}, istikrar ${sk.adm >= 3 ? '+' : ''}${(sk.adm - 3) * 3}`)}
+            ${eff('dip', '🕊 Diplomasi', `elçilerin etkisi ${pct(G.rulerMod(tag, 'dip'))}`)}
+            ${eff('mil', '⚔ Askerlik', `ordunun muharebe gücü ${pct(G.rulerMod(tag, 'mil'))}`)}
+          </table>
+        </div>
+      </div>
+      <div class="pg-grid3" style="margin-top:12px">
+        <div class="pg-card"><h3>Veliaht</h3>
+          ${n.heir ? `<p><b>${G.esc(n.heir.name)}</b>, ${S.time.y - n.heir.born} yaşında</p>
+            <p class="muted small">⚖ ${n.heir.sk.adm} · 🕊 ${n.heir.sk.dip} · ⚔ ${n.heir.sk.mil}${S.time.y - n.heir.born < 16 ? ' · hükümdar şimdi ölürse naiplik başlar' : ''}</p>`
+            : `<p class="bad">Tahtın varisi yok!</p><p class="muted small">Hükümdar varissiz ölürse taht kavgası çıkar, istikrar çöker ve bir taht davacısı ayaklanabilir. Güçlü bir akrabamız varsa taht ona geçebilir.</p>`}
+        </div>
+        <div class="pg-card"><h3>Hanedan evlilikleri</h3>
+          ${n.marriages && n.marriages.size ? [...n.marriages].filter(t => S.nations[t]).map(t => `<div class="pg-row" data-dip-open="${t}">${U.flag(t)} ${G.esc(S.nations[t].name)} <span class="muted">· ${G.esc(S.nations[t].ruler)}</span></div>`).join('')
+            : '<p class="muted">Hiçbir hanedanla akraba değiliz.</p>'}
+          <p class="muted small">Aynı dinden bir ülkeye sağ tıklayıp diplomasi sayfasından "Hanedan evliliği" yapabilirsiniz (ilişki en az 25). Akrabalar arasında ilişki +25'tir.</p>
+        </div>
+        <div class="pg-card"><h3>Önceki hükümdarlar</h3>
+          ${(n.pastRulers || []).length ? `<table class="pg-tab">${n.pastRulers.map(r => `<tr><td>${G.esc(r.name)}</td><td class="num muted">${r.from}–${r.to}</td></tr>`).join('')}</table>` : '<p class="muted">Henüz yok.</p>'}
+        </div>
+      </div>`;
+  };
+  BIND.hanedan = function (el) {
+    el.querySelectorAll('[data-dip-open]').forEach(r => r.onclick = () => { U.closePage(); U.showDiplomacy(r.dataset.dipOpen); });
+  };
 
   // Hazine ve ekonomi
   PAGES.ekonomi = function () {

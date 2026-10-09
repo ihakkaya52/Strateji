@@ -66,6 +66,8 @@ G.stab = {};
     }
     if (!n.enemies.size) f.push(['Barış', 8]);
     if (n.stabBonus) f.push(['Odaklar ve kararlar', n.stabBonus]);
+    if (n.rulerSk) f.push([`Hükümdarın yönetimi (${n.rulerSk.adm})`, (n.rulerSk.adm - 3) * 3]);
+    if (n.regency > G.S.hour) f.push(['Naiplik', -8]);
     return f;
   };
 
@@ -89,14 +91,38 @@ G.stab = {};
       }
       if (p.ctrl !== p.owner) continue;   // işgal altındaki ilde isyan olmaz
       p.unrest = G.clamp((p.unrest || 0) + ST.trend(p) + (G.rng() - 0.5), 0, 100);
-      if (p.unrest >= ST.REVOLT_AT && G.rng() < 0.35) risers.push(p);
+      if (p.unrest >= ST.REVOLT_AT && G.rng() < 0.25) risers.push(p);
     }
     for (const p of risers) if (p.unrest >= ST.REVOLT_AT && p.owner === p.ctrl) ST.revolt(p);
+    ST.rebelFate();
+  };
+
+  // İsyancıların sonu: ordusu kalmayan isyan söner (iller eski sahibine döner), üç yıl dayanan isyan bağımsızlığını kazanır
+  ST.rebelFate = function () {
+    const S = G.S;
+    for (const n of Object.values(S.nations)) {
+      if (!n.alive || !n.rebel) continue;
+      const lord = S.nations[n.rebelAgainst];
+      if (!lord || !lord.alive || !n.enemies.has(n.rebelAgainst)) { n.rebel = false; continue; }   // barış oldu: artık bağımsız
+      const months = (S.hour - (n.rebelSince || S.hour)) / 24 / 30;
+      const armies = S.armies.some(a => a.tag === n.tag);
+      if (!armies && months > 4) {
+        // isyan bastırıldı
+        for (const p of S.provinces) if (p.owner === n.tag) { p.owner = n.rebelAgainst; p.ctrl = n.rebelAgainst; p.siege = null; p.unrest = 30; p.lastOwner = p.owner; }
+        G.log(`${n.name} bastırıldı; topraklar yeniden ${lord.name}'a bağlandı.`, n.rebelAgainst === S.player ? 'good' : 'info', [n.tag, n.rebelAgainst]);
+        G.makePeace(n.rebelAgainst, n.tag, false, '');
+        G.checkElimination();
+        G.labelsDirty = true; G.mapDirty = true;
+      } else if (months > 36) {
+        n.rebel = false;
+        G.makePeace(n.tag, n.rebelAgainst, true, `${n.name} ${lord.name}'a karşı direnişini sürdürdü ve bağımsızlığını kabul ettirdi.`);
+      }
+    }
   };
 
   // ------------------------------------------------------------ isyan
   let rebelNo = 0;
-  ST.revolt = function (p) {
+  ST.revolt = function (p, customName) {
     const S = G.S, owner = p.owner, on = S.nations[owner];
     // aynı sahibin, aynı asıl sahipli ve huzursuz komşu illeri de katılır
     const group = [p], seen = new Set([p.id]);
@@ -108,6 +134,8 @@ G.stab = {};
       }
     }
     if (group.some(q => G.econ.isCapital(q)) && group.length === 1) { p.unrest = 70; return; }
+    // tek bir kırsal ilin ayaklanması ülke kuramaz: köylüler dağılır, il kısa süre verimsiz kalır
+    if (group.length === 1 && p.kind === 'rural' && !customName) { p.unrest = 75; return; }
     // eski sahibi yok olmuşsa yeniden doğar; yoksa yeni bir isyancı ülkesi kurulur
     let tag, def;
     const core = p.core && p.core !== owner ? p.core : null;
@@ -118,12 +146,12 @@ G.stab = {};
     } else {
       tag = 'R' + (++rebelNo) + '_' + S.hour;
       const base = p.home || p.name;
-      def = { name: `${base} İsyancıları`, color: '#7a2a24', major: false, ruler: G.nameFor(owner),
+      def = { name: customName || `${base} İsyancıları`, color: '#7a2a24', major: false, ruler: G.nameFor(owner),
         religion: p.relig || on.religion, group: groupOf(p.core) || on.group };
     }
     // ülkenin bu illerdeki orduları dışarı çekilir
     const n = G.addNation(tag, def);
-    n.rebel = true; n.stability = 50;
+    n.rebel = true; n.stability = 50; n.rebelAgainst = owner; n.rebelSince = S.hour;
     for (const q of group) { G.transferProvince(q.id, tag); q.unrest = 0; q.garrison = 0; q.lastOwner = tag; q.conquered = null; }
     n.capital = group[0].id;
     n.manpower = 6000 + group.length * 1500;

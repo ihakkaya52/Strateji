@@ -17,6 +17,7 @@ D.base = (a, b) => {
   if (!na || !nb) return 0;
   let v = na.religion === nb.religion ? 15 : -15;
   if (na.group === nb.group) v += 10;
+  if (na.marriages && na.marriages.has(b)) v += 25;
   return v;
 };
 D.raw = (a, b) => G.S.rel.get(key(a, b)) || 0;
@@ -30,6 +31,7 @@ D.modifiers = function (a, b) {
   const S = G.S, na = S.nations[a], nb = S.nations[b], out = [];
   out.push([na.religion === nb.religion ? 'Aynı din' : 'Farklı din', na.religion === nb.religion ? 15 : -15]);
   if (na.group === nb.group) out.push(['Aynı kültür grubu', 10]);
+  if (na.marriages && na.marriages.has(b)) out.push(['Hanedan evliliği', 25]);
   const r = Math.round(D.raw(a, b));
   if (r) out.push(['Diplomatik geçmiş (elçiler, savaşlar, antlaşmalar)', r]);
   return out;
@@ -147,7 +149,7 @@ D.daily = function () {
     for (const t of [...n.envoyTo]) {
       const nt = S.nations[t];
       if (!nt || !nt.alive || n.enemies.has(t)) { n.envoyTo.delete(t); continue; }
-      if (D.raw(n.tag, t) < D.ENVOY_CAP) D.add(n.tag, t, D.ENVOY_GAIN);
+      if (D.raw(n.tag, t) < D.ENVOY_CAP) D.add(n.tag, t, D.ENVOY_GAIN * G.rulerMod(n.tag, 'dip'));
     }
     if (n.justify && n.justify.done <= S.hour) {
       const t = n.justify.target;

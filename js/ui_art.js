@@ -5,6 +5,15 @@
   const U = G.ui;
   const $ = id => document.getElementById(id);
   const P = () => G.portrait;
+  // hükümdar portresi yaşına göre: genç, olgun, yaşlı
+  if (G.portrait) {
+    const baseRuler = G.portrait.ruler.bind(G.portrait);
+    G.portrait.ruler = (tag, extra) => {
+      const n = G.S && G.S.nations[tag];
+      const age = n && n.rulerBorn != null ? G.S.time.y - n.rulerBorn : null;
+      return baseRuler(tag, { ...(age == null ? {} : { age: age < 30 ? 'young' : age > 55 ? 'old' : 'adult' }), ...(extra || {}) });
+    };
+  }
   const MU = () => G.music;
 
   // ------------------------------------------------------------ menü: hükümdar portreleri
@@ -89,6 +98,12 @@
   U.refreshTop = function () {
     baseTop();
     U.musicMood(false);
+    // hükümdar değiştiyse üst çubuktaki portre de değişir
+    const S = G.S;
+    if (S && P()) {
+      const n = S.nations[S.player], key = n.ruler + '|' + (n.rulerBorn != null ? (S.time.y - n.rulerBorn < 30 ? 'y' : S.time.y - n.rulerBorn > 55 ? 'o' : 'a') : '');
+      if (U._topRuler !== key) { U._topRuler = key; const fl = $('tb-flag'); fl.innerHTML = P().ruler(S.player, { size: 26 }); fl.title = n.ruler; }
+    }
   };
 
   // ------------------------------------------------------------ ses efektleri
