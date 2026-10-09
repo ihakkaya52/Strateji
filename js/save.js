@@ -8,7 +8,7 @@ G.save = {};
   const INDEX = 'strateji_kayitlar';
   const VERSION = 1;
   // Haritadan gelen, oyunda hiç değişmeyen il alanları kayda yazılmaz
-  const STATIC_PROV = ['name', 'kind', 'x', 'y', 'area', 'nb', 'poly', 'sea', 'terrain', 'nbDist', 'home'];
+  const STATIC_PROV = ['name', 'x', 'y', 'area', 'nb', 'poly', 'sea', 'terrain', 'nbDist', 'home'];
 
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -125,6 +125,13 @@ G.save = {};
       const w = W.provinces[i];
       return { ...w, nbDist: w.nb.map(n => G.distKm(w, W.provinces[n])), ...p };
     });
+    // eski kayıtlarda sonradan eklenen (keşfedilmemiş) iller yoktur: haritadan tamamlanır
+    for (let i = st.provinces.length; i < W.provinces.length; i++) {
+      const w = W.provinces[i];
+      st.provinces.push({ ...w, ctrl: w.owner, siege: null, nbDist: w.nb.map(n => G.distKm(w, W.provinces[n])),
+        civ: 0, mil: 0, fort: 0, garrison: 0, garTarget: 1, mine: 0, farm: 0, res: null,
+        milLines: G.econ.blank(), milEff: { kilic: 0.6, yay: 0.6, zirh: 0.6, at: 0.6 }, civLines: { insaat: 0 } });
+    }
     st.seas = W.seas.map(z => ({ ...z, nbDist: z.nb.map(n => G.distKm(z, W.seas[n])) }));
     st.battles ||= new Map(); st.navalBattles ||= new Map(); st.rel ||= new Map(); st.firedEvents ||= new Set();
     st.paused = true;
@@ -135,6 +142,9 @@ G.save = {};
     G.stab.init();   // eski kayıtlarda iç düzen alanları yoksa doldur
     G.dyn.init();
     G.rel.init();
+    G.cul.init();
+    G.explore.init();
+    G.explore.invalidate();
     // arayüz durumunu sıfırla
     const U = G.ui;
     G.selected = new Set(); G.selFleet = null;

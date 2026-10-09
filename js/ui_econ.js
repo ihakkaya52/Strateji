@@ -166,6 +166,7 @@
       el.querySelector('.pp-close').onclick = U.closePanel;
       return;
     }
+    if (p.kind === 'wild' && !p.owner) { U.refreshWild(p); return; }
     if (mine) EC.fixProvince(p);
     const tabs = [['genel', 'Genel'], ['kale', '♜ Kale'], ['silah', '⚔ Silahhane'], ['atolye', '⚒ Atölye'], ['maden', '⛏ Maden'], ['tarim', '🌾 Tarım']];
     const res = p.res ? G.RESOURCES[p.res] : null;
@@ -188,6 +189,7 @@
         <tr><td>Binalar</td><td>⚒ ${p.civ} · ⚔ ${p.mil} · ♜ ${p.fort} · ⛏ ${p.mine} · 🌾 ${p.farm}</td></tr>
       </table>
       ${U.siegeHtml(p)}
+      ${U.cultureHtml(p)}
       ${U.religionHtml(p)}
       ${U.portSection(p)}
       ${armies.length ? `<h3>Ordular</h3>${armies.map(a => `<div>${U.flag(a.tag)} ${G.esc(a.name)} · ${G.esc(a.general.name)} · ${G.fmtK(a.men)}</div>`).join('')}` : ''}
@@ -277,6 +279,10 @@
         if (b.dataset.mission === 'go') { if (!G.rel.sendMission(me, p.id)) U.addLog(G.fmtDate(S.time, false), G.rel.canMission(me, p)[1], 'war'); }
         else G.rel.recall(me, p.id);
       }
+      else if (b.dataset.assim) {
+        if (b.dataset.assim === 'go') { if (!G.cul.sendAssim(me, p.id)) U.addLog(G.fmtDate(S.time, false), G.cul.canAssim(me, p)[1], 'war'); }
+        else G.cul.recall(me, p.id);
+      }
       else if (b.dataset.assault) { if (!G.startAssault(p)) U.addLog(G.fmtDate(S.time, false), 'Hücum için ordularınızın örgütlenmesi en az %30 olmalı.', 'war'); }
       else if (b.dataset.transfer) {
         const a = G.armiesIn(p.id).find(x => x.tag === me && x.attacking == null && x.men > 2000);
@@ -287,6 +293,80 @@
       else return;
       EC.totals(n);
       U.refreshProvince(); U.refreshProduction(); U.refreshTop(); G.mapDirty = true;
+    };
+  };
+
+  // İlin halkı: kültür, bayrak ve asimilasyon
+  U.cultureHtml = function (p) {
+    const S = G.S, me = S.player, n = S.nations[me], C = G.cul;
+    if (!p.owner || !p.cul) return '';
+    const K = C.get(p.cul), own = S.nations[p.owner], mine = p.owner === me;
+    const state = !own ? '' : p.cul === own.culture ? '<span class="good">asimile · isyan çıkmaz</span>'
+      : C.accepted(p.owner, p.cul) ? '<span class="muted">akraba halk (kabul edilmiş)</span>' : '<span class="bad">yabancı halk</span>';
+    let act = '';
+    if (mine && p.cul !== n.culture) {
+      const m = n.assims.find(x => x.prov === p.id);
+      if (m) act = `<div class="rl-prog"><span>⚖ Asimilasyon sürüyor</span><div class="bar"><div style="width:${m.prog / C.ASSIM_NEED * 100}%"></div></div>
+          <button data-assim="stop">Durdur</button></div>`;
+      else {
+        const [ok, why] = C.canAssim(me, p);
+        act = `<div class="row-btns"><button data-assim="go" ${ok ? '' : 'disabled'} title="${G.esc(why)}">⚖ Asimile et</button><span class="muted small">${G.esc(why)}</span></div>`;
+      }
+    }
+    return `<h3>Halk</h3><div class="cul-row">${C.flagHtml(p.cul)} <b>${G.esc(K.name)}</b> <span class="muted">· ${G.esc(C.GROUPS[K.group] ? C.GROUPS[K.group].name : '')} grubu</span></div>
+      <div class="small">${state}</div>${act}`;
+  };
+
+  // Keşfedilmemiş / sahipsiz topraklar: kâşif ve yerleşim
+  U.refreshWild = function (p) {
+    const el = $('provpanel'), S = G.S, me = S.player, X = G.explore, C = G.cul;
+    const known = X.known(p);
+    let body;
+    if (!known) {
+      const exp = S.expeditions.find(e => e.tag === me && e.to === p.id);
+      const [ok, why] = X.canExplore(me, p);
+      body = `<p class="muted">Haritacılarımız bu toprakları bilmiyor. Orada kimlerin yaşadığını, nasıl bir ülke olduğunu ancak bir kâşif öğrenebilir.</p>
+        ${exp ? `<div class="rl-prog"><span>🧭 Kâşifimiz yolda · ${Math.ceil((exp.arrive - S.hour) / 24)} gün</span>
+            <div class="bar"><div style="width:${G.clamp((S.hour - exp.start) / (exp.arrive - exp.start), 0, 1) * 100}%"></div></div></div>`
+          : `<div class="row-btns"><button data-x="explore" ${ok ? '' : 'disabled'} title="${G.esc(why)}">🧭 Kâşif gönder</button></div><div class="muted small">${G.esc(why)}</div>`}`;
+    } else {
+      const K = C.get(p.cul), T = G.terrainOf(p);
+      const c = p.colony;
+      let act;
+      if (c) {
+        const cn = S.nations[c.tag];
+        act = `<h3>Yerleşim</h3><div>${U.nlink(c.tag)} yerleşim kuruyor</div>
+          <div class="bar"><div style="width:${G.clamp(c.settlers / X.SETTLERS, 0, 1) * 100}%"></div></div>
+          <div class="muted small">${G.fmtNum(c.settlers)} / ${G.fmtNum(X.SETTLERS)} yerleşimci · ayda yaklaşık +${Math.round(X.growth(c.tag, p))}</div>
+          ${c.tag === me ? '<div class="row-btns"><button data-x="abandon">Yerleşimden vazgeç</button></div>' : ''}`;
+        void cn;
+      } else {
+        const [ok, why] = X.canColonize(me, p);
+        act = `<div class="row-btns"><button data-x="colony" ${ok ? '' : 'disabled'} title="${G.esc(why)}">⚑ Yerleşim kur</button></div><div class="muted small">${G.esc(why)}</div>`;
+      }
+      body = `<table>
+          <tr><td>Durum</td><td>Sahipsiz · yerlilerin toprağı</td></tr>
+          <tr><td>Yerliler</td><td>${C.flagHtml(p.cul)} ${G.esc(K.name)} · ${G.fmtNum(p.natives || 0)} kişi</td></tr>
+          <tr><td>İnanç</td><td>${G.esc((G.RELIGIONS[p.relig] || { name: '—' }).name)}</td></tr>
+          <tr><td>Arazi</td><td>${G.esc(T.name)}</td></tr>
+          <tr><td>Alan</td><td>${G.fmtNum(p.area)} km²</td></tr>
+        </table>
+        <div class="muted small">${(p.natives || 0) >= 1100 ? 'Yerliler kalabalık: il katıldığında kendi kültürünü ve inancını korur; yerleşime baskın yapabilirler.' : 'Yerliler az: yerleşimciler kendi kültürümüzü ve dinimizi getirir.'}</div>
+        ${act}`;
+    }
+    el.innerHTML = `<div class="pp-head"><h2>${known ? G.esc(p.name) : 'Bilinmeyen Topraklar'}</h2>
+        <span class="muted">${known ? 'Keşfedildi' : 'Terra incognita'}</span><button class="pp-close">✕</button></div>
+      <div class="pp-body">${body}</div>`;
+    el.querySelector('.pp-close').onclick = U.closePanel;
+    el.onclick = e => {
+      const b = e.target.closest('button[data-x]');
+      if (!b || b.disabled) return;
+      const k = b.dataset.x;
+      if (k === 'explore') { if (!X.sendExplorer(me, p.id)) U.addLog(G.fmtDate(S.time, false), X.canExplore(me, p)[1], 'war'); }
+      else if (k === 'colony') { if (!X.colonize(me, p.id)) U.addLog(G.fmtDate(S.time, false), X.canColonize(me, p)[1], 'war'); }
+      else if (k === 'abandon') X.abandon(p.id);
+      X.invalidate();
+      U.refreshProvince(); U.refreshTop(); U.refreshOrdular(); G.mapDirty = true;
     };
   };
 

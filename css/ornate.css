@@ -99,7 +99,7 @@
 .mus-title { font-family: var(--title); font-size: 12px; color: var(--gold); text-align: center; border-bottom: 1px solid #4a3f2b; padding-bottom: 4px; }
 
 /* ---------- sağ alt: 3 + 3 düğme ---------- */
-#mapmodes { display: grid; grid-template-columns: repeat(3, 96px); gap: 4px; align-items: stretch; }
+#mapmodes { display: grid; grid-template-columns: repeat(4, 80px); gap: 4px; align-items: stretch; }
 #mapmodes .mm-group, #barmodes { display: contents; }
 #mapmodes button, #barmodes button { width: 100%; min-width: 0; text-align: center; padding: 4px 6px; white-space: nowrap; }
 
@@ -428,5 +428,32 @@ button.big { font-size: 15px; padding: 7px 18px; border-color: var(--gold); colo
 .rl-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #000; vertical-align: middle; }
 .rl-prog { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center; margin-top: 4px; font-size: 12px; }
 .rl-prog .bar { margin: 0; }
-.pg-grid3.g4 { grid-template-columns: repeat(4, 1fr); }
+.pg-grid3.g4 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
 @media (max-width: 1100px) { .pg-grid3.g4 { grid-template-columns: 1fr 1fr; } }
+
+/* ---------------------------------------------------------------- kültür ve bayraklar */
+.cflag { display: inline-block; width: 21px; height: 14px; vertical-align: -2px; line-height: 0; box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.cflag svg { width: 100%; height: 100%; display: block; }
+.cflag.sm { width: 15px; height: 10px; vertical-align: -1px; }
+.cul-row { display: flex; align-items: center; gap: 6px; }
+.cul-big { flex: none; line-height: 0; box-shadow: 0 2px 8px rgba(0,0,0,.6); border: 2px solid #8a7240; align-self: flex-start; }
+.cp-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cp-card { display: flex; gap: 10px; align-items: flex-start; text-align: left; padding: 8px 10px; white-space: normal; }
+.cp-card.on { border-color: var(--gold); box-shadow: 0 0 8px rgba(232,200,105,.3); }
+.cp-ic { font-size: 22px; line-height: 1; }
+.cul-tab td { padding: 3px 6px; vertical-align: middle; }
+.pg-h { margin: 14px 0 6px; }
+.cg-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.cg-group { background: rgba(0,0,0,.18); border: 1px solid #3e3423; border-radius: 4px; padding: 6px 8px; }
+.cg-group h4 { margin: 0 0 6px; color: var(--gold); font-family: var(--title); font-weight: 600; letter-spacing: 1px; font-size: 13px; }
+.cg-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.cg-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; width: 58px; text-align: center; }
+.cg-flag { line-height: 0; box-shadow: 0 1px 3px rgba(0,0,0,.6); }
+/* keşif çubuğu */
+#cmdbar.kesif .xcard.idle { opacity: .7; border-style: dashed; }
+#cmdbar.kesif .xcard .gstat { white-space: normal; font-size: 10px; line-height: 1.2; }
+#cmdbar.kesif .gbar.xp > div { background: #7fb8d8; }
+#cmdbar.kesif .xbtn { padding: 0 4px; font-size: 10px; line-height: 14px; margin-left: auto; }
+#cmdbar.kesif .cflag-s { margin-left: auto; }
+#cmdbar.kesif .ftop { display: flex; align-items: center; }
+.pg-grid3 { align-items: start; }

@@ -19,6 +19,7 @@
     U.barMode = mode;
     for (const b of $('barmodes').children) b.classList.toggle('active', b.dataset.bar === mode);
     G.map.garrisonView = mode === 'garnizon';
+    G.map.exploreView = mode === 'kesif';
     $('cmdbar').classList.remove('collapsed');
     U.refreshOrdular();
     G.mapDirty = true;
@@ -31,7 +32,8 @@
     if (!el || !G.S) return;
     if (U.barMode === 'donanma') return U.refreshNavyBar();
     if (U.barMode === 'garnizon') return U.refreshGarrisonBar();
-    el.classList.remove('navy', 'garr');
+    if (U.barMode === 'kesif') return U.refreshExploreBar();
+    el.classList.remove('navy', 'garr', 'kesif');
     return karaRefresh();
   };
 
@@ -47,7 +49,7 @@
   // Gemi kartına sol tık o gemiyi ayırmak için işaretler; ayırma, limana dönüş ve indirme sağdaki filo panelindedir.
   U.refreshNavyBar = function () {
     const el = $('cmdbar'), S = G.S, tag = S.player;
-    el.classList.add('navy'); el.classList.remove('garr');
+    el.classList.add('navy'); el.classList.remove('garr', 'kesif');
     const fleets = N.fleetsOf(tag);
     for (const id of [...U.shipSel]) if (!fleets.some(f => f.ships.some(sh => sh.id === id))) U.shipSel.delete(id);
     const ship = sh => {
@@ -106,7 +108,7 @@
   // ------------------------------------------------------------ garnizon
   U.refreshGarrisonBar = function () {
     const el = $('cmdbar'), S = G.S, tag = S.player;
-    el.classList.add('garr'); el.classList.remove('navy');
+    el.classList.add('garr'); el.classList.remove('navy', 'kesif');
     const forts = S.provinces.filter(p => p.fort && p.ctrl === tag);
     forts.sort((a, b) => (!!b.siege - !!a.siege) || (EC.isCapital(b) - EC.isCapital(a)) || b.fort - a.fort || b.garrison - a.garrison);
     const tot = forts.reduce((s, p) => s + p.garrison, 0), max = forts.reduce((s, p) => s + EC.maxGarrison(p), 0);
@@ -135,6 +137,55 @@
       if (!c) return;
       const pid = +c.dataset.p;
       G.map.centerOn(pid, Math.max(G.map.cam.scale, 30));
+      U.showProvince(pid);
+      G.mapDirty = true;
+    };
+    el.onchange = null;
+  };
+
+  // ------------------------------------------------------------ keşif
+  // Kâşifler ve yerleşimci kafileleri; haritada ? işaretli yerlere kâşif, ⚑ işaretli yerlere yerleşim gönderilir
+  U.refreshExploreBar = function () {
+    const el = $('cmdbar'), S = G.S, tag = S.player, n = S.nations[tag], X = G.explore, P = S.provinces;
+    el.classList.add('garr', 'kesif'); el.classList.remove('navy');
+    const exps = S.expeditions.filter(e => e.tag === tag);
+    const cols = P.filter(p => p.colony && p.colony.tag === tag);
+    const t = X.targets();
+    const days = h => Math.max(0, Math.ceil(h / 24));
+    const cards = [];
+    for (const e of exps) {
+      const p = P[e.to];
+      cards.push(`<div class="fcard xcard" data-p="${e.to}" title="${G.esc(p.name)} yönüne giden kâşif">
+        <div class="ftop"><span class="flvl">${e.sea ? '⛵' : '🧭'}</span><button class="xbtn" data-recall="${e.id}" title="Geri çağır">✕</button></div>
+        <div class="fname">${G.esc(p.name)}</div>
+        <div class="gmen">${days(e.arrive - S.hour)} gün</div>
+        <div class="gbar xp"><div style="width:${G.clamp((S.hour - e.start) / (e.arrive - e.start), 0, 1) * 100}%"></div></div>
+        <div class="gstat">yolda</div></div>`);
+    }
+    for (let i = exps.length; i < n.explorers; i++) cards.push(`<div class="fcard xcard idle"><div class="ftop"><span class="flvl">🧭</span></div>
+      <div class="fname">Kâşif boşta</div><div class="gstat">${t.explore.length ? `Haritada <b>?</b> olan bir yere tıklayın` : 'Ulaşılabilecek bilinmeyen yer yok'}</div></div>`);
+    for (const p of cols) {
+      const c = p.colony;
+      cards.push(`<div class="fcard xcard col" data-p="${p.id}" title="${G.esc(p.name)} yerleşimi">
+        <div class="ftop"><span class="flvl">⚑</span><span class="cflag-s">${G.cul.flagHtml(p.cul)}</span></div>
+        <div class="fname">${G.esc(p.name)}</div>
+        <div class="gmen">${G.fmtNum(c.settlers)} / ${G.fmtNum(X.SETTLERS)}</div>
+        <div class="gbar str"><div style="width:${G.clamp(c.settlers / X.SETTLERS, 0, 1) * 100}%"></div></div>
+        <div class="gstat">${p.natives > 1500 ? '<b style="color:#ff9a6a">yerliler güçlü</b>' : 'yerleşimciler'}</div></div>`);
+    }
+    for (let i = cols.length; i < n.colonists; i++) cards.push(`<div class="fcard xcard idle"><div class="ftop"><span class="flvl">⚑</span></div>
+      <div class="fname">Yerleşimci kafilesi</div><div class="gstat">${t.colonize.length ? `Yeşil çizgili bir yere tıklayın` : 'Yerleşime uygun yer yok'}</div></div>`);
+    el.innerHTML = head(`Keşif · 🧭 ${exps.length}/${n.explorers} kâşif · ⚑ ${cols.length}/${n.colonists} yerleşim · ${t.explore.length} bilinmeyen yer, ${t.colonize.length} yerleşime uygun`) +
+      `<div class="cb-row">${cards.join('')}</div>`;
+    el.onclick = e => {
+      const btn = e.target.closest('[data-act]');
+      if (btn && btn.dataset.act === 'fold') { U.toggleOrdular(); return; }
+      const rc = e.target.closest('[data-recall]');
+      if (rc) { X.recall(+rc.dataset.recall); X.invalidate(); U.refreshOrdular(); G.mapDirty = true; return; }
+      const c = e.target.closest('.fcard[data-p]');
+      if (!c) return;
+      const pid = +c.dataset.p;
+      G.map.glide = { x: P[pid].x, y: P[pid].y, scale: Math.max(G.map.cam.scale, 14) };
       U.showProvince(pid);
       G.mapDirty = true;
     };

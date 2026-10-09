@@ -60,6 +60,7 @@ G.RELIGIONS = {
   pagan_fin: { name: 'Fin Paganizmi', color: '#4a8a8a' },
   pagan_afrika: { name: 'Afrika Yerli İnançları', color: '#9a7a3a' },
   bergvata: { name: 'Bergvâta İnancı', color: '#7a3a4a' },
+  ruya: { name: 'Rüya Zamanı', color: '#b0603a' },
 };
 
 // Kültür grubuna göre ordu yapısı: süvari oranı

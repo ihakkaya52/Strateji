@@ -78,6 +78,7 @@ G.tick = function () {
   }
   G.stepArmies();
   G.command.stepJoins();
+  G.explore.tick();
   G.navy.step();
   G.stepBattles();
   G.stepSieges();
@@ -548,6 +549,8 @@ G.monthly = function () {
   G.stab.monthly();
   G.dyn.monthly();
   G.rel.monthly();
+  G.cul.monthly();
+  G.explore.monthly();
   G.ai.monthly();
   G.dip.monthly();
 };

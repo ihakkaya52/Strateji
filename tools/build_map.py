@@ -46,6 +46,47 @@ UNEXPLORED_LABELS = [
     ("Terra Australis", 134.0, -24.0),
 ]
 
+# Keşfedilmemiş toprakların illeri: adları en yakın tarihî yer / bölgeden, yerli kültürü ile (boylam, enlem, ad, kültür)
+WILD_STEP = 2.5
+WILD_ANCHORS = [
+    # Batı Afrika
+    ("Sherbro", -12.5, 7.8, "mande"), ("Kong", -4.6, 8.9, "mande"), ("Begho", -2.4, 8.2, "akan"), ("Kumasi", -1.6, 6.7, "akan"),
+    ("Elmina", -1.35, 5.1, "akan"), ("Kru Kıyısı", -8.5, 5.5, "mande"), ("Oyo", 4.4, 8.9, "yoruba"), ("İfe", 4.56, 7.48, "yoruba"),
+    ("Benin", 5.6, 6.3, "edo"), ("Igbo-Ukwu", 7.0, 6.0, "igbo"), ("Nupe", 6.0, 9.4, "yoruba"), ("Jos", 8.9, 9.9, "hausa"),
+    ("Adamava", 13.3, 7.5, "sara"), ("Ubangi", 19.0, 5.5, "sara"), ("Şari", 17.5, 8.8, "sara"), ("Duala", 9.7, 4.05, "fang"),
+    ("Fang", 11.5, 2.5, "fang"), ("Ogowe", 11.0, -0.8, "fang"), ("Sanga", 16.0, 2.0, "mongo"),
+    # Orta Afrika
+    ("Mongo", 21.5, -1.0, "mongo"), ("İturi", 28.5, 1.5, "mongo"), ("Uele", 25.0, 3.5, "sara"), ("Loango", 11.85, -4.65, "kongo"),
+    ("Mbanza Kongo", 14.25, -6.27, "kongo"), ("Teke", 15.3, -2.5, "kongo"), ("Kuba", 22.0, -5.0, "luba"), ("Luba", 25.5, -7.5, "luba"),
+    ("Lunda", 22.5, -9.0, "luba"), ("Katanga", 27.0, -10.5, "luba"), ("Ndongo", 15.0, -9.3, "mbundu"), ("Benguela", 13.4, -12.6, "mbundu"),
+    ("Ovambo", 16.0, -17.8, "mbundu"), ("Lozi", 23.0, -15.5, "luba"),
+    # Doğu Afrika ve Habeş yaylası
+    ("Şewa", 39.0, 9.0, "habes"), ("Damot", 37.0, 9.5, "habes"), ("Harar", 42.1, 9.3, "somali"), ("Oromo", 38.5, 7.0, "oromo"),
+    ("Bale", 40.5, 6.8, "oromo"), ("Kaffa", 36.2, 7.3, "oromo"), ("Ogaden", 42.0, 6.5, "somali"), ("Kısmayu", 42.5, -0.4, "somali"),
+    ("Sudd", 30.5, 7.5, "nilotik"), ("Dinka", 28.0, 8.5, "nilotik"), ("Nuer", 32.0, 8.5, "nilotik"), ("Turkana", 35.8, 3.5, "nilotik"),
+    ("Masai", 36.5, -2.5, "nilotik"), ("Kitara", 31.3, 1.0, "kitara"), ("Ruanda", 29.9, -2.0, "kitara"), ("Kikuyu", 37.0, -0.5, "kitara"),
+    ("Malindi", 40.1, -3.2, "svahili"), ("Mombasa", 39.67, -4.05, "svahili"), ("Unguja", 39.3, -6.1, "svahili"),
+    ("Kilva", 39.5, -8.9, "svahili"), ("Mozambik", 40.7, -15.0, "svahili"), ("Sofala", 34.8, -20.2, "svahili"),
+    ("Unyamvezi", 32.8, -5.0, "nyamwezi"), ("Tanganika", 30.5, -7.5, "nyamwezi"), ("Ugogo", 35.5, -6.2, "nyamwezi"),
+    # Güney Afrika
+    ("Maravi", 34.0, -13.5, "maravi"), ("Nyasa", 35.0, -11.0, "maravi"), ("Zambezi", 28.0, -16.0, "sona"),
+    ("Büyük Zimbabve", 30.93, -20.27, "sona"), ("Mapungubwe", 29.4, -22.2, "sona"), ("Manyika", 32.7, -18.9, "sona"),
+    ("Tsvana", 25.0, -24.5, "sotho"), ("Soto", 28.0, -29.5, "sotho"), ("Nguni", 30.5, -27.5, "nguni"), ("Natal", 31.0, -29.8, "nguni"),
+    ("Kalahari", 21.5, -22.5, "khoisan"), ("Namib", 15.5, -22.5, "khoisan"), ("Nama", 18.0, -27.5, "khoisan"),
+    ("Ümit Burnu", 18.6, -33.9, "khoisan"), ("Karoo", 22.5, -32.0, "khoisan"), ("Kei", 27.5, -32.5, "nguni"),
+    # Madagaskar
+    ("Mahajanga", 46.3, -15.7, "malgas"), ("Imerina", 47.5, -18.9, "malgas"), ("Toliara", 43.7, -23.4, "malgas"),
+    ("Tamatave", 49.4, -18.1, "malgas"), ("Anosy", 46.9, -24.9, "malgas"), ("Antsiranana", 49.3, -12.3, "malgas"),
+    # Avustralya
+    ("Arnhem", 134.0, -12.5, "aborijin"), ("Kimberley", 126.0, -16.5, "aborijin"), ("Pilbara", 118.5, -21.5, "aborijin"),
+    ("Uluru", 131.0, -25.3, "aborijin"), ("Tanami", 130.0, -19.5, "aborijin"), ("Gibson", 124.5, -24.5, "aborijin"),
+    ("Nullarbor", 128.5, -30.5, "aborijin"), ("Kati Thanda", 137.3, -28.5, "aborijin"), ("Carpentaria", 140.5, -17.5, "aborijin"),
+    ("York Burnu", 142.5, -13.5, "aborijin"), ("Mitchell", 144.5, -21.0, "aborijin"), ("Darling", 145.0, -31.0, "aborijin"),
+    ("Murray", 141.0, -34.5, "aborijin"), ("Gadigal", 151.0, -33.8, "aborijin"), ("Turrbal", 153.0, -27.5, "aborijin"),
+    ("Yidinji", 145.7, -17.0, "aborijin"), ("Noongar", 115.9, -31.9, "aborijin"), ("Gutharraguda", 113.8, -25.8, "aborijin"),
+    ("Kaurna", 138.6, -34.9, "aborijin"), ("Simpson", 136.5, -24.5, "aborijin"), ("Barkly", 136.0, -19.0, "aborijin"),
+]
+
 FILLER_STEP = 1.9        # dolgu eyaletlerin ızgara aralığı (projeksiyon birimi)
 FILLER_MIN_DIST = 1.45   # şehre bu mesafeden yakın dolgu noktası atılır
 OWNER_MAX_DIST = 5.5     # dolgu eyalet en yakın şehre bundan uzaksa ıssız olur
@@ -324,6 +365,8 @@ def main():
         neighbors[byname[a]].add(byname[b])
         neighbors[byname[b]].add(byname[a])
 
+    build_wild(unexplored, full_land, seeds, geoms, keep, newid, neighbors, edges, warp)
+
     # --- çıktı ---
     provinces = []
     for i in keep:
@@ -341,7 +384,7 @@ def main():
         if not g.contains(Point(cx, cy)):
             big = max(getattr(g, "geoms", [g]), key=lambda p: p.area)
             rp = big.representative_point()
-            if s["kind"] in ("rural", "waste"):
+            if s["kind"] in ("rural", "waste", "wild"):
                 cx, cy = rp.x, rp.y
         # ortalama alan (km²) - yaklaşık
         lat = s["lat"]
@@ -353,6 +396,10 @@ def main():
         ))
         if s.get("home"):
             provinces[-1]["home"] = s["home"]
+        if s["kind"] == "wild":
+            provinces[-1]["cul"] = s["cul"]
+            if s["coast"]:
+                provinces[-1]["coast"] = 1
 
     nations = {}
     for tag, (name, color, major, ruler, religion, group) in NATIONS.items():
@@ -385,6 +432,131 @@ def main():
     for p in provinces:
         counts[p["kind"]] = counts.get(p["kind"], 0) + 1
     print(counts)
+
+
+def build_wild(unexplored, full_land, seeds, geoms, keep, newid, neighbors, edges, warp):
+    """Keşfedilmemiş topraklara iller: oyunda kâşiflerle açılır, koloni kurulabilir."""
+    import shapely
+    from shapely.strtree import STRtree
+    print("keşfedilmemiş iller...")
+    land_p = prep(unexplored)
+    full_p = prep(full_land)
+    rng = random.Random(77)
+    minx, miny, maxx, maxy = unexplored.bounds
+    pts = []
+    y = miny
+    row = 0
+    while y <= maxy:
+        x = minx + (WILD_STEP / 2 if row % 2 else 0)
+        while x <= maxx:
+            jx = x + rng.uniform(-0.3, 0.3) * WILD_STEP
+            jy = y + rng.uniform(-0.3, 0.3) * WILD_STEP
+            if land_p.contains(Point(jx, jy)):
+                pts.append((jx, jy))
+            x += WILD_STEP
+        y += WILD_STEP * 0.87
+        row += 1
+    # küçük adalara da birer nokta
+    for part in unexplored.geoms:
+        if part.area > 0.6 and not any(part.contains(Point(p)) for p in pts):
+            rp = part.representative_point()
+            pts.append((rp.x, rp.y))
+    anc = [(proj(lo, la), nm, cul) for (nm, lo, la, cul) in WILD_ANCHORS]
+    arr = np.array(pts)
+    pad = 30
+    frame = []
+    for t in np.linspace(minx - pad, maxx + pad, 30):
+        frame += [[t, miny - pad], [t, maxy + pad]]
+    for t in np.linspace(miny - pad, maxy + pad, 30):
+        frame += [[minx - pad, t], [maxx + pad, t]]
+    vor = Voronoi(np.vstack([arr, np.array(frame)]))
+    base = len(seeds)
+    first_id = len(keep)
+    wild_geoms = []
+    for i, (x, y) in enumerate(pts):
+        reg = vor.regions[vor.point_region[i]]
+        if -1 in reg or not reg:
+            wild_geoms.append(None)
+            continue
+        poly = shapely.transform(shapely.segmentize(Polygon(vor.vertices[reg]), WARP_SEGMENT), warp)
+        if not poly.is_valid:
+            poly = poly.buffer(0)
+        g = poly.intersection(unexplored)
+        parts = [p for p in getattr(g, "geoms", [g]) if isinstance(p, Polygon) and p.area > 1e-3]
+        wild_geoms.append(MultiPolygon(parts) if len(parts) > 1 else parts[0] if parts else None)
+    # adlar: en yakın tarihî yer; aynı yere düşen illere yön eklenir
+    groups = {}
+    for i, (x, y) in enumerate(pts):
+        if wild_geoms[i] is None:
+            continue
+        d, k = min((math.hypot(x - a[0][0], y - a[0][1]), k) for k, a in enumerate(anc))
+        groups.setdefault(k, []).append((d, i))
+    names = {}
+    for k, lst in groups.items():
+        lst.sort()
+        (ax, ay), nm, cul = anc[k]
+        used = set()
+        for j, (d, i) in enumerate(lst):
+            if j == 0:
+                n = nm
+            else:
+                n = "%s %s" % (nm, direction_name(pts[i][0] - ax, pts[i][1] - ay))
+                c = 2
+                base_n = n
+                while n in used:
+                    n = "%s %d" % (base_n, c)
+                    c += 1
+            used.add(n)
+            names[i] = (n, cul)
+    local = {}
+    for i, (x, y) in enumerate(pts):
+        g = wild_geoms[i]
+        if g is None:
+            continue
+        n, cul = names[i]
+        coast = not full_p.contains(g.buffer(0.12))
+        seeds.append(dict(name=n, owner=None, kind="wild", x=x, y=y, lon=x, lat=unproj_lat(y), cul=cul, coast=coast))
+        geoms.append(g)
+        idx = len(seeds) - 1
+        keep.append(idx)
+        newid[idx] = len(keep) - 1
+        neighbors[newid[idx]] = set()
+        local[i] = newid[idx]
+
+    def add_edge(a, b, shared):
+        lines = [ln for ln in getattr(shared, "geoms", [shared]) if isinstance(ln, LineString) and ln.length > 0.005]
+        if not lines or sum(l.length for l in lines) < 0.03:
+            return
+        neighbors[a].add(b)
+        neighbors[b].add(a)
+        ml = unary_union(lines)
+        try:
+            from shapely.ops import linemerge
+            ml = linemerge(ml)
+        except Exception:
+            pass
+        segs = []
+        for ln in getattr(ml, "geoms", [ml]):
+            ln = ln.simplify(SIMPLIFY)
+            segs.append([round(v, 2) for xy in ln.coords for v in xy])
+        edges.append([a, b, segs])
+    # yabani iller arası komşuluk
+    for (a, b) in vor.ridge_points:
+        if a in local and b in local:
+            ga, gb = wild_geoms[a], wild_geoms[b]
+            add_edge(local[a], local[b], ga.boundary.intersection(gb.buffer(0.003)))
+    # bilinen dünyayla sınır
+    main_ids = [k for k in range(first_id)]
+    main_geoms = [geoms[keep[k]] for k in main_ids]
+    tree = STRtree(main_geoms)
+    for i, wid in local.items():
+        g = wild_geoms[i]
+        for k in tree.query(g.buffer(0.01)):
+            mg = main_geoms[k]
+            if mg.distance(g) > 0.003:
+                continue
+            add_edge(main_ids[k], wid, mg.boundary.intersection(g.buffer(0.003)))
+    print("yabani il:", len(local))
 
 
 def build_seas(full_land, keep, newid, geoms, provinces):
@@ -510,6 +682,37 @@ RIVER_NAMES = {
 }
 
 
+def wild_terrain(lon, lat, share, near_river, rnd):
+    """Keşfedilmemiş toprakların arazisi: tropik ormanlar, savanlar, çöller."""
+    if share.get("dag", 0) > 0.3:
+        return "dag"
+    if share.get("bataklik", 0) > 0.3:
+        return "bataklik"
+    if lon > 100:   # Avustralya
+        if lat > -16:
+            return "orman" if rnd.random() < 0.45 else "ova"
+        if lon > 147.5 or (lon < 118 and lat < -30):
+            return "orman" if rnd.random() < 0.5 else "ova"
+        if share.get("col", 0) > 0.2 or (122 < lon < 142 and -31 < lat < -19):
+            return "col"
+        return "bozkir"
+    if lon > 43 and lat < -11:   # Madagaskar
+        return "orman" if lon > 47.5 else "ova"
+    if share.get("col", 0) > 0.3 and not near_river:
+        return "col"
+    if share.get("yayla", 0) > 0.4 or share.get("dag", 0) > 0.12:
+        return "tepe"
+    if (13 < lon < 28 and -29 < lat < -18) or (lon < 16 and lat < -16):
+        return "col"
+    if -5 < lat < 5 and 8 < lon < 31:
+        return "orman"
+    if lat > 3 and lon < 10:
+        return "orman" if lat < 7.5 else "ova"
+    if lat > 5:
+        return "ova" if rnd.random() < 0.6 else "bozkir"
+    return "ova" if rnd.random() < 0.55 else "bozkir"
+
+
 def build_geo(full_land, provinces, seeds, keep, newid, geoms):
     """Dağlar, çöller, yaylalar ve nehirler; eyaletlere arazi türü."""
     import random
@@ -615,6 +818,8 @@ def build_geo(full_land, provinces, seeds, keep, newid, geoms):
             t = "col"
         else:
             t = "ova"
+        if p["kind"] == "wild":
+            t = wild_terrain(lon, lat, share, near_river, rnd)
         if p["kind"] == "waste":
             nm = p["name"]
             t = "tundra" if any(k in nm for k in ("Sibirya", "Tundra", "Laponya")) else "orman" if "Orman" in nm or "Ezo" in nm \

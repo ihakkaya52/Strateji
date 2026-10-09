@@ -72,7 +72,7 @@
     $('pagewin').classList.add('hidden');
   };
 
-  const TITLES = { hanedan: 'Hükümdar ve Hanedan', ekonomi: 'Hazine ve Ekonomi', ordular: 'Ordular', atolyeler: 'Atölyeler ve Silahhaneler', olaylar: 'Olaylar' };
+  const TITLES = { hanedan: 'Hükümdar ve Hanedan', kultur: 'Halklar ve Kültür', ekonomi: 'Hazine ve Ekonomi', ordular: 'Ordular', atolyeler: 'Atölyeler ve Silahhaneler', olaylar: 'Olaylar' };
   U.renderPage = function () {
     const el = $('pagewin');
     if (!U.page || el.classList.contains('hidden') || !G.S) return;
@@ -129,6 +129,11 @@
           <p class="muted small">Başka dinden bir ilinize tıklayıp il panelinden misyoner gönderin. Dinî birlik %70'in altına düşerse istikrar azalır.</p>
           ${G.rel.activeOf(tag) ? `<p class="bad">${G.rel.kindName(G.rel.activeOf(tag).kind)} sürüyor: hedef ${G.esc(S.provinces[G.rel.activeOf(tag).goal].name)}</p>` : ''}
         </div>
+        <div class="pg-card"><h3>Halk</h3>
+          <p>${G.cul.flagHtml(n.culture)} <b>${G.esc(G.cul.get(n.culture).name)}</b> · kültürel birlik <b>%${Math.round(G.cul.unity(tag) * 100)}</b></p>
+          <p>Politika: ${G.cul.POLICIES[n.cultPolicy].icon} ${G.cul.POLICIES[n.cultPolicy].name}</p>
+          <button data-page="kultur">Halklar ve kültür sayfası</button>
+        </div>
         <div class="pg-card"><h3>Önceki hükümdarlar</h3>
           ${(n.pastRulers || []).length ? `<table class="pg-tab">${n.pastRulers.map(r => `<tr><td>${G.esc(r.name)}</td><td class="num muted">${r.from}–${r.to}</td></tr>`).join('')}</table>` : '<p class="muted">Henüz yok.</p>'}
         </div>
@@ -136,6 +141,72 @@
   };
   BIND.hanedan = function (el) {
     el.querySelectorAll('[data-dip-open]').forEach(r => r.onclick = () => { U.closePage(); U.showDiplomacy(r.dataset.dipOpen); });
+  };
+
+  // Halklar ve kültür: asimilasyon politikası, memurlar, ülkedeki halklar, bayraklar
+  PAGES.kultur = function () {
+    const S = G.S, tag = S.player, n = S.nations[tag], C = G.cul, X = G.explore;
+    const K = C.get(n.culture);
+    const peoples = new Map();
+    let tot = 0;
+    for (const p of S.provinces) {
+      if (p.owner !== tag || !p.cul) continue;
+      const w = G.provinceWeight(p);
+      tot += w;
+      const e = peoples.get(p.cul) || { n: 0, w: 0, best: null };
+      e.n++; e.w += w;
+      if (!e.best || G.provinceWeight(p) > G.provinceWeight(e.best)) e.best = p;
+      peoples.set(p.cul, e);
+    }
+    const rows = [...peoples.entries()].sort((a, b) => b[1].w - a[1].w).map(([cul, e]) => {
+      const st = cul === n.culture ? '<span class="good">ana halk</span>' : C.accepted(tag, cul) ? '<span class="muted">kabul edilmiş</span>' : '<span class="bad">yabancı</span>';
+      return `<tr><td>${C.flagHtml(cul)}</td><td><b>${G.esc(C.get(cul).name)}</b> <span class="muted small">${G.esc((C.GROUPS[C.get(cul).group] || {}).name || '')}</span></td>
+        <td class="num">${e.n} il</td><td class="num">%${Math.round(e.w / tot * 100)}</td><td>${st}</td>
+        <td>${cul !== n.culture ? `<span class="link" data-prov="${e.best.id}">${G.esc(e.best.name)}</span>` : ''}</td></tr>`;
+    }).join('');
+    const pol = Object.entries(C.POLICIES).map(([k, v]) => `<button class="cp-card ${n.cultPolicy === k ? 'on' : ''}" data-pol="${k}">
+        <div class="cp-ic">${v.icon}</div><div><b>${v.name}</b><div class="muted small">${v.desc}</div></div></button>`).join('');
+    const groups = {};
+    const count = {};
+    for (const p of S.provinces) if (p.cul && !G.map.hidden(p) && p.kind !== 'waste') count[p.cul] = (count[p.cul] || 0) + 1;
+    for (const c of Object.values(C.LIST)) if (count[c.id]) (groups[c.group] ||= []).push(c);
+    const gallery = Object.entries(groups).map(([g, list]) => `<div class="cg-group"><h4>${G.esc(C.GROUPS[g].name)}</h4><div class="cg-list">${list.map(c =>
+      `<div class="cg-item" title="${G.esc(c.name)} · ${count[c.id]} il"><span class="cg-flag">${C.flagSvg(c.id, 45, 30)}</span><span>${G.esc(c.name)}</span></div>`).join('')}</div></div>`).join('');
+    const unk = S.provinces.filter(p => p.kind === 'wild' && !p.owner);
+    return `<div class="hn-top">
+        <div class="cul-big">${C.flagSvg(n.culture, 96, 64)}</div>
+        <div class="hn-main">
+          <div class="hn-name">${G.esc(K.name)} halkı</div>
+          <div class="muted">${G.esc(C.GROUPS[K.group].name)} kültür grubu · aynı gruptaki halklar kabul edilmiş sayılır</div>
+          <p style="margin-top:6px">Kültürel birlik <b>%${Math.round(C.unity(tag) * 100)}</b> · ⚖ Asimilasyon memurları ${n.assims.length} / ${n.assimilators}
+            ${n.assims.length ? ': ' + n.assims.map(m => `<span class="link" data-prov="${m.prov}">${G.esc(S.provinces[m.prov].name)}</span> %${Math.round(m.prog)}`).join(', ') : ''}</p>
+          <p class="muted small">Asimile olmuş illerde (halkı ${G.esc(K.name)} olan) isyan çıkmaz. Yabancı bir ilinize tıklayıp il panelinden "Asimile et" deyin; memur başına ayda ${C.ASSIM_GOLD} altın.</p>
+        </div>
+      </div>
+      <h3 class="pg-h">Asimilasyon politikası</h3>
+      <div class="cp-row">${pol}</div>
+      <div class="muted small">Politika yılda bir kez değiştirilebilir.</div>
+      <div class="pg-grid3" style="grid-template-columns: 2fr 1fr; margin-top:12px">
+        <div class="pg-card"><h3>Ülkemizdeki halklar</h3><table class="pg-tab cul-tab">${rows}</table></div>
+        <div class="pg-card"><h3>🧭 Keşif ve yerleşim</h3>
+          <p>Kâşifler: ${S.expeditions.filter(e => e.tag === tag).length} / ${n.explorers} yolda</p>
+          <p>Yerleşimler: ${S.provinces.filter(p => p.colony && p.colony.tag === tag).length} / ${n.colonists}</p>
+          <p>Keşfettiğimiz bilinmeyen diyarlar: ${n.explored.size} / ${unk.length + S.provinces.filter(p => p.colonized).length}</p>
+          <p class="muted small">Sağ alttaki <b>🧭 Keşif</b> düğmesine basın: haritada <b>?</b> olan yerlere kâşif (${X.EXPLORE_GOLD} altın), yeşil çizgili yerlere yerleşim (${X.COLONY_GOLD} altın) gönderebilirsiniz. ${G.fmtNum(X.SETTLERS)} yerleşimciye ulaşan yerleşim ülkenize katılır.</p>
+          <button data-kesif="1">🧭 Keşif kipine geç</button>
+        </div>
+      </div>
+      <h3 class="pg-h">Bilinen dünyanın halkları ve bayrakları</h3>
+      <div class="cg-wrap">${gallery}</div>`;
+  };
+  BIND.kultur = function (el) {
+    el.querySelectorAll('[data-pol]').forEach(b => b.onclick = () => {
+      const [ok, why] = G.cul.setPolicy(G.S.player, b.dataset.pol);
+      if (!ok && why) U.toast ? U.toast(why) : U.addLog(G.fmtDate(G.S.time, false), why, 'war');
+      U.renderPage();
+    });
+    const k = el.querySelector('[data-kesif]');
+    if (k) k.onclick = () => { U.closePage(); U.setBarMode('kesif'); };
   };
 
   // Hazine ve ekonomi

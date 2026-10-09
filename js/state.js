@@ -82,6 +82,8 @@ G.initState = function (playerTag) {
   G.stab.init();
   G.dyn.init();
   G.rel.init();
+  G.cul.init();
+  G.explore.init();
   return S;
 };
 
@@ -138,7 +140,7 @@ G.realm = tag => {
 
 // Bir ülke bu eyalete girebilir mi? Kendi diyarı ve düşman toprağı serbest; diğer ülkelere geçiş hakkı yok.
 G.canEnter = (tag, p) => {
-  if (p.kind === 'waste') return false;
+  if (p.kind === 'waste' || !p.owner) return false;
   return p.ctrl === tag || p.owner === tag || G.atWar(tag, p.ctrl) || G.atWar(tag, p.owner) ||
     G.sameRealm(tag, p.ctrl) || (G.dip ? G.dip.hasAccess(tag, p.ctrl) : false);
 };

@@ -116,12 +116,18 @@
     const P = G.S ? G.S.provinces : window.WORLD.provinces;
     const p = P[pid];
     const nations = G.S ? G.S.nations : window.WORLD.nations;
+    if (G.S && M.hidden(p)) { U.tooltip(x, y, '<b>Bilinmeyen Topraklar</b><br><span class="muted">Keşfetmek için tıklayın</span>'); return; }
     let html = `<b>${G.esc(p.name)}</b>`;
+    if (p.kind === 'wild' && !p.owner) {
+      html += `<br>${G.cul.flagHtml(p.cul)} ${G.esc(G.cul.get(p.cul).name)} yerlileri` + (p.colony ? `<br>⚑ ${G.esc(G.S.nations[p.colony.tag].name)} yerleşimi · %${Math.round(p.colony.settlers / G.explore.SETTLERS * 100)}` : '');
+      U.tooltip(x, y, html); return;
+    }
     if (p.owner) {
       html += `<br>${U.flag(p.owner)} ${G.esc(nations[p.owner].name)}`;
       if (nations[p.owner].overlord) html += `<br><span class="muted">${G.esc(nations[nations[p.owner].overlord].name)} vasalı</span>`;
       if (G.S && p.ctrl !== p.owner) html += `<br><span style="color:#ff8a6a">İşgal: ${G.esc(nations[p.ctrl].name)}</span>`;
-      if (M.mode === 'religion') html += `<br>${G.RELIGIONS[nations[p.owner].religion].name}`;
+      if (M.mode === 'religion') html += `<br>${G.RELIGIONS[p.relig || nations[p.owner].religion].name}`;
+      if (M.mode === 'culture' && p.cul) html += `<br>${G.cul.flagHtml(p.cul)} ${G.esc(G.cul.get(p.cul).name)}${G.S && G.cul.assimilated(p) ? '' : G.S && !G.cul.accepted(p.owner, p.cul) ? ' <span style="color:#ff8a6a">(yabancı halk)</span>' : ''}`;
     } else html += '<br><span class="muted">Geçilemez</span>';
     U.tooltip(x, y, html);
   }
@@ -212,6 +218,7 @@
     }
     if (fail && !ok) {
       const why = p.kind === 'waste' ? 'Issız topraklardan geçilemez.'
+        : p.kind === 'wild' && !p.owner ? 'Ordular keşfedilmemiş ya da sahipsiz topraklara giremez; önce yerleşim kurun.'
         : !G.canEnter(S.player, p) ? `${S.nations[p.owner].name} topraklarına girmek için savaşta olmalısınız.`
         : 'Oraya ulaşan bir yol yok.';
       U.addLog(G.fmtDate(S.time, false), why, 'war');

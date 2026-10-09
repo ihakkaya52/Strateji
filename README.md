@@ -119,6 +119,18 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   dindaş toprakta toplanır ve sefer boyunca dindaş topraklardan geçebilir. Hedef Kudüs ya da Mekke; alınırsa bütün
   katılımcıların istikrarı artar, 5 yılda alınamazsa sefer dağılır. 1095'te Kudüs hâlâ Müslümanların elindeyse Papa
   Clermont'ta Haçlı Seferi çağrısı yapar.
+- **Kültürler ve bayraklar:** 120'yi aşkın halk (Rum, Oğuz, Fars, Alman, Oksitan, Bulgar, Ermeni, Svahili, Aborijin…),
+  31 kültür grubunda; her birinin kendi bayrağı var. Çok halklı devletlerde iller tarihî bölgelerine göre farklı halktan
+  (Bizans'ta Rum, Bulgar, Ermeni, Sırp ve İtalyan; Selçuklu'da Oğuz ve Fars…). Kültür haritası halkları bayraklarıyla gösterir.
+- **Asimilasyon:** Ana halkınızdan ve aynı kültür grubundan olanlar kabul edilmiş sayılır; yabancı halklar huzursuzlanır.
+  İl panelinden "Asimile et" (memur başına ayda 2 altın; büyük güçlerin 2, diğerlerinin 1 memuru var). Asimile olmuş
+  illerde isyan çıkmaz. Politika: Hoşgörü (huzursuzluk yok, asimilasyon yavaş, istikrar +4), Ilımlı, Zorla asimilasyon
+  (çok hızlı ama huzursuzluk, istikrar −6). "Halklar ve Kültür" sayfası bütün halkları ve bayraklarını listeler.
+- **Keşif ve yerleşim:** Afrika'nın güneyi, Madagaskar ve Avustralya keşfedilmemiş: sağ alttaki 🧭 Keşif kipinde
+  haritada ? olan yerlere kâşif gönderin (25 altın; bildiğiniz bir yere komşu ya da kıyınızdan deniz menzilinde olmalı).
+  Kâşif varınca çevresi haritaya işlenir; orada yaşayan yerli halk, inancı ve arazi görünür. Yeşil çizgili yerlere
+  yerleşim kurun (60 altın + ayda 1 altın); 1.000 yerleşimciye ulaşınca il ülkenize katılır. Kalabalık yerliler
+  baskın yapabilir ve il katıldığında kendi kültürünü korur. Yapay zekâ da komşu topraklara yayılır.
 - **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
   yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
 - **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,
@@ -131,7 +143,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Yapay zekâ:** Savaş ilan eder, cephe kurar, kuşatır, barış yapar ve asker toplar.
 - **Olaylar:** Macbeth'in tahta çıkışı (1040), Petar Delyan ayaklanması (1040), Normanların Melfi'yi alışı (1041),
   Büyük Ayrılık (1054).
-- **Harita modları:** Siyasi, din ve coğrafi. Coğrafi kip eski atlaslar gibi çizilir: boyalı arazi zemini, dağ, tepe,
+- **Harita modları:** Siyasi, din, kültür ve coğrafi. Coğrafi kip eski atlaslar gibi çizilir: boyalı arazi zemini, dağ, tepe,
   orman, tayga, çöl kumulu, bozkır otu ve bataklık simgeleri, nehirler ve Türkçe dağ / çöl / nehir adları
   (Natural Earth verisinden).
 - **Arazi:** Her eyaletin bir arazisi var (ova, orman, tayga, bozkır, çöl, tepe, dağ, bataklık, tundra). Dağ, orman ve
@@ -148,11 +160,9 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 
 2. Odak ağaçları: büyük güçlere özel ağaçlar, diğerlerine standart ağaç (İngiltere'ninki hazır)
 3. Araştırma: döneme uygun teknolojiler (üzengi, kompozit yay, zincir zırh, Rum ateşi...)
-4. Din ve misyonerlik
 5. Daha fazla tarihî ve kurgusal olay (Malazgirt, Viking akınları, Arapların Anadolu seferleri...)
 6. Diplomasi: ittifaklar, diğer vasallar (Fransa ve Kutsal Roma dükalıkları), deniz geçişleri
-7. Kayıt / yükleme
-8. Amerika ve Avustralya
+7. Ticaret yolları
 
 ## Proje yapısı
 
@@ -165,6 +175,8 @@ js/state.js           oyun durumu, ülkeler, ordular, savaş / barış
 js/sim.js             zaman, hareket, muharebe, kuşatma, insan gücü
 js/dynasty.js         hükümdarlar, varisler, naiplik, taht kavgası, hanedan evlilikleri, kişisel birlik
 js/religion.js        din, misyonerler, dinî birlik, Haçlı Seferi ve Cihat
+js/culture.js         kültürler, kültür grupları, bayraklar, asimilasyon politikası ve memurları
+js/colony.js          keşif (kâşifler) ve yerleşimler
 js/stability.js       istikrar, huzursuzluk, asimilasyon ve isyanlar
 js/save.js            kayıt / yükleme
 js/ui_save.js         oyun menüsü ve kayıtlı oyunlar

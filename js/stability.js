@@ -29,7 +29,7 @@ G.stab = {};
     const f = [];
     if (p.core && p.core !== p.owner) f.push(['Yabancı toprak (asıl sahibi başkası)', 2]);
     if (p.relig && p.relig !== n.religion) f.push([`Farklı din (${(G.RELIGIONS[p.relig] || { name: p.relig }).name})`, 2]);
-    if (p.core && groupOf(p.core) && groupOf(p.core) !== n.group) f.push(['Farklı kültür', 1]);
+    if (!G.cul && p.core && groupOf(p.core) && groupOf(p.core) !== n.group) f.push(['Farklı kültür', 1]);
     if (p.conquered && S.hour - p.conquered < 5 * YEAR) f.push(['Yeni fethedildi', 1.5]);
     const st = (n.stability ?? 60);
     if (st < 50) f.push(['Düşük istikrar', (50 - st) / 12]);
@@ -91,7 +91,7 @@ G.stab = {};
       }
       if (p.ctrl !== p.owner) continue;   // işgal altındaki ilde isyan olmaz
       p.unrest = G.clamp((p.unrest || 0) + ST.trend(p) + (G.rng() - 0.5), 0, 100);
-      if (p.unrest >= ST.REVOLT_AT && G.rng() < 0.25) risers.push(p);
+      if (p.unrest >= ST.REVOLT_AT && !(G.cul && G.cul.assimilated(p)) && G.rng() < 0.25) risers.push(p);   // asimile olmuş halk ayaklanmaz
     }
     for (const p of risers) if (p.unrest >= ST.REVOLT_AT && p.owner === p.ctrl) ST.revolt(p);
     ST.rebelFate();
@@ -129,7 +129,7 @@ G.stab = {};
     for (let i = 0; i < group.length && group.length < 7; i++) {
       for (const nb of group[i].nb) {
         const q = S.provinces[nb];
-        if (seen.has(nb) || q.owner !== owner || q.ctrl !== owner || q.core !== p.core || q.unrest < 60 || G.econ.isCapital(q)) continue;
+        if (seen.has(nb) || q.owner !== owner || q.ctrl !== owner || q.core !== p.core || q.unrest < 60 || G.econ.isCapital(q) || (G.cul && G.cul.assimilated(q))) continue;
         seen.add(nb); group.push(q);
       }
     }
