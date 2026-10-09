@@ -553,11 +553,11 @@ M.drawBase = function () {
     ctx.setLineDash([]);
   } else {
   // devletler arası: en kalın (gölge + koyu mürekkep)
-  ctx.strokeStyle = 'rgba(30,20,10,0.18)';
-  ctx.lineWidth = bw * 3.6 / sc;
+  ctx.strokeStyle = 'rgba(30,20,10,0.12)';
+  ctx.lineWidth = bw * 3.4 / sc;
   ctx.stroke(M.outerBorders);
-  ctx.strokeStyle = 'rgba(35,24,12,0.62)';
-  ctx.lineWidth = bw * 1.3 / sc;
+  ctx.strokeStyle = 'rgba(35,24,12,0.5)';
+  ctx.lineWidth = bw * 1.15 / sc;
   ctx.stroke(M.outerBorders);
   }
   // efendi ile vasalı arası: orta kalınlıkta düz mürekkep
@@ -566,8 +566,8 @@ M.drawBase = function () {
     ctx.lineWidth = bw * 2.2 / sc;
     ctx.stroke(M.realmBorders);
   }
-  ctx.strokeStyle = 'rgba(35,24,12,0.48)';
-  ctx.lineWidth = bw * 0.75 / sc;
+  ctx.strokeStyle = 'rgba(35,24,12,0.4)';
+  ctx.lineWidth = bw * 0.7 / sc;
   ctx.stroke(M.realmBorders);
   if (S) M.drawFronts(sc);
 
@@ -614,9 +614,17 @@ M.drawLabels = function (vis, P) {
     ctx.rotate(L.ang);
     ctx.font = `600 ${fs | 0}px ${G.FONT_TITLE}`;
     if ('letterSpacing' in ctx) ctx.letterSpacing = `${(fs / 5).toFixed(1)}px`;
+    // din ve kültür kiplerinde canlı renklerin üstünde adlar daha belirgin: açık hale + koyu mürekkep
+    const strong = M.mode === 'religion' || M.mode === 'culture';
+    if (strong) {
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(250,242,222,0.55)';
+      ctx.lineWidth = Math.max(2, fs / 7);
+      ctx.strokeText(L.name, 0, 0);
+    }
     ctx.shadowColor = 'rgba(250,242,222,0.6)';
     ctx.shadowBlur = fs / 4;
-    ctx.fillStyle = `rgba(42,28,14,${fs > 18 ? 0.5 : 0.62})`;   // mürekkep
+    ctx.fillStyle = `rgba(42,28,14,${strong ? 0.85 : fs > 18 ? 0.5 : 0.62})`;   // mürekkep
     ctx.fillText(L.name, 0, 0);
     ctx.shadowBlur = 0;
     if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
