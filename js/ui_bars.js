@@ -20,6 +20,7 @@
     for (const b of $('barmodes').children) b.classList.toggle('active', b.dataset.bar === mode);
     G.map.garrisonView = mode === 'garnizon';
     G.map.exploreView = mode === 'kesif';
+    G.map.tradeView = mode === 'ticaret';
     $('cmdbar').classList.remove('collapsed');
     U.refreshOrdular();
     G.mapDirty = true;
@@ -33,7 +34,8 @@
     if (U.barMode === 'donanma') return U.refreshNavyBar();
     if (U.barMode === 'garnizon') return U.refreshGarrisonBar();
     if (U.barMode === 'kesif') return U.refreshExploreBar();
-    el.classList.remove('navy', 'garr', 'kesif');
+    if (U.barMode === 'ticaret') return U.refreshTradeBar();
+    el.classList.remove('navy', 'garr', 'kesif', 'trade');
     return karaRefresh();
   };
 
@@ -49,7 +51,7 @@
   // Gemi kartına sol tık o gemiyi ayırmak için işaretler; ayırma, limana dönüş ve indirme sağdaki filo panelindedir.
   U.refreshNavyBar = function () {
     const el = $('cmdbar'), S = G.S, tag = S.player;
-    el.classList.add('navy'); el.classList.remove('garr', 'kesif');
+    el.classList.add('navy'); el.classList.remove('garr', 'kesif', 'trade');
     const fleets = N.fleetsOf(tag);
     for (const id of [...U.shipSel]) if (!fleets.some(f => f.ships.some(sh => sh.id === id))) U.shipSel.delete(id);
     const ship = sh => {
@@ -108,7 +110,7 @@
   // ------------------------------------------------------------ garnizon
   U.refreshGarrisonBar = function () {
     const el = $('cmdbar'), S = G.S, tag = S.player;
-    el.classList.add('garr'); el.classList.remove('navy', 'kesif');
+    el.classList.add('garr'); el.classList.remove('navy', 'kesif', 'trade');
     const forts = S.provinces.filter(p => p.fort && p.ctrl === tag);
     forts.sort((a, b) => (!!b.siege - !!a.siege) || (EC.isCapital(b) - EC.isCapital(a)) || b.fort - a.fort || b.garrison - a.garrison);
     const tot = forts.reduce((s, p) => s + p.garrison, 0), max = forts.reduce((s, p) => s + EC.maxGarrison(p), 0);
@@ -147,7 +149,7 @@
   // Kâşifler ve yerleşimci kafileleri; haritada ? işaretli yerlere kâşif, ⚑ işaretli yerlere yerleşim gönderilir
   U.refreshExploreBar = function () {
     const el = $('cmdbar'), S = G.S, tag = S.player, n = S.nations[tag], X = G.explore, P = S.provinces;
-    el.classList.add('garr', 'kesif'); el.classList.remove('navy');
+    el.classList.add('garr', 'kesif'); el.classList.remove('navy', 'trade');
     const exps = S.expeditions.filter(e => e.tag === tag);
     const cols = P.filter(p => p.colony && p.colony.tag === tag);
     const t = X.targets();

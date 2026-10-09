@@ -137,6 +137,14 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   çubuktaki ⚗ (T) düğmesi. Büyük güçlerin 3, diğerlerinin 2 araştırma yeri var. Zamanının ötesindeki buluşlar katlanarak
   uzun sürer (1040'ta 1200 yılı buluşu ~9 yıl), geride kalınanlar yarı sürede öğrenilir. Ülkeler kültürlerine göre
   farklı bilgi düzeyiyle başlar (Song ve Bizans önde).
+- **Ticaret yolları:** 18 tarihî yol: İpek Yolu, Baharat Yolu, Sahra Altın Yolu, Varegler'den Rumlara, İdil, Kehribar,
+  Baltık, Kuzey Denizi, Şampanya, Akdeniz, Tütsü, Çay ve At, Hindukuş, Doğu Denizi… Her yolun aylık bir değeri var;
+  yol üzerindeki illeri elinde tutan (deniz ayaklarında en güçlü filosu olan) ülkeler pay alır. Tüccar göndererek
+  (büyük güçler 2, diğerleri 1) payınızı artırırsınız. İşgal, kuşatma ve deniz muharebeleri yolu keser, değer düşer.
+  Sağ alttaki ⚖ Ticaret kipi yolları haritada akan çizgiler, kervanlar ve gemilerle gösterir.
+- **Denizler:** Deniz bölgeleri Afrika'nın güneyine, Madagaskar'a ve Avustralya'ya uzanır (145 bölge); sınırları
+  akıntı gibi kıvrımlı, noktalı çizgilerle çizilir ve kıyıları kesmez.
+- **Amerika:** Kıta haritada keşfedilmemiş kara olarak duruyor; henüz ili ve ülkesi yok.
 - **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
   yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
 - **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,
@@ -167,7 +175,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 2. Odak ağaçları: büyük güçlere özel ağaçlar, diğerlerine standart ağaç (İngiltere'ninki hazır)
 5. Daha fazla tarihî ve kurgusal olay (Malazgirt, Viking akınları, Arapların Anadolu seferleri...)
 6. Diplomasi: ittifaklar, diğer vasallar (Fransa ve Kutsal Roma dükalıkları), deniz geçişleri
-7. Ticaret yolları
+7. Amerika kıtası
 
 ## Proje yapısı
 
@@ -183,6 +191,8 @@ js/religion.js        din, misyonerler, dinî birlik, Haçlı Seferi ve Cihat
 js/culture.js         kültürler, kültür grupları, bayraklar, asimilasyon politikası ve memurları
 js/colony.js          keşif (kâşifler) ve yerleşimler
 js/tech.js            teknoloji dalları, buluşlar ve araştırma
+js/trade.js           ticaret yolları, paylar ve tüccarlar
+js/ui_trade.js        ticaret çubuğu
 js/ui_tech.js         teknoloji penceresi
 js/stability.js       istikrar, huzursuzluk, asimilasyon ve isyanlar
 js/save.js            kayıt / yükleme

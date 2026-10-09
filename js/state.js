@@ -85,6 +85,8 @@ G.initState = function (playerTag) {
   G.cul.init();
   G.explore.init();
   G.tech.init();
+  G.trade.init();
+  G.trade.update();
   return S;
 };
 

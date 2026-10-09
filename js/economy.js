@@ -235,9 +235,10 @@ EC.budget = function (n, provs, armies) {
   for (const a of armies || S.armies) if (a.tag === n.tag) army += a.men / 1000 * 0.2;
   tax *= (G.rulerMod ? G.rulerMod(n.tag, 'adm') : 1) * (n.taxMult ?? 1);
   trade *= n.tradeMult ?? 1; farms *= n.farmMult ?? 1; mines *= n.mineMult ?? 1;
-  const income = tax + trade + mines + farms;
+  const routes = n.routeIncome || 0;
+  const income = tax + trade + mines + farms + routes;
   const expense = army + garrison;
-  return { tax, trade, mines, farms, army, garrison, income, expense, net: income - expense };
+  return { tax, trade, routes, mines, farms, army, garrison, income, expense, net: income - expense };
 };
 
 // Silahhaneleri ihtiyaca göre dağıt (yapay zekâ ve otomatik düğme)

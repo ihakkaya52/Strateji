@@ -1007,4 +1007,15 @@ SEA_ZONES = [
     ("Pasifik (Filipin)", 131.0, 10.0), ("Molukka Denizi", 127.0, 0.5), ("Timor Denizi", 127.0, -10.0),
     ("Arafura Denizi", 137.0, -9.5), ("Yeni Gine Açıkları", 143.0, -3.0), ("Pasifik (Mikronezya)", 145.0, 15.0),
     ("Pasifik (Bonin)", 145.0, 27.0),
+    # Güney denizleri: Afrika'nın batı ve doğu kıyıları, Madagaskar, Avustralya (sonradan eklenenler: kimlikler korunsun diye en sonda)
+    ("Gine Körfezi", 3.0, 2.5), ("Atlantik (ekvator)", -14.0, -1.0), ("Kongo Açıkları", 9.0, -7.0),
+    ("Angola Açıkları", 9.5, -15.5), ("Namib Açıkları", 11.5, -24.5), ("Atlantik (güney)", -10.0, -24.0),
+    ("Ümit Burnu Açıkları", 16.0, -37.0), ("Atlantik (Tristan)", -5.0, -40.0), ("Agulhas Denizi", 26.0, -37.5),
+    ("Natal Açıkları", 35.5, -29.5), ("Mozambik Kanalı (güney)", 39.5, -23.0), ("Mozambik Kanalı (kuzey)", 42.0, -15.0),
+    ("Zengibar Kıyıları", 41.5, -6.0), ("Somali Kıyıları", 48.5, 3.5), ("Madagaskar Doğusu", 53.0, -18.5),
+    ("Maskaren Denizi", 60.0, -12.0), ("Hint Okyanusu (güneybatı)", 58.0, -32.0), ("Hint Okyanusu (güney)", 78.0, -22.0),
+    ("Hint Okyanusu (Kerguelen)", 78.0, -40.0), ("Hint Okyanusu (güneydoğu)", 98.0, -20.0), ("Batı Avustralya Açıkları", 109.0, -28.0),
+    ("Kimberley Açıkları", 120.0, -15.5), ("Carpentaria Körfezi", 139.5, -14.5), ("Mercan Denizi", 149.0, -17.0),
+    ("Leeuwin Açıkları", 112.0, -38.0), ("Büyük Avustralya Körfezi", 129.0, -36.5), ("Bass Boğazı", 145.5, -40.0),
+    ("Tasman Denizi", 149.5, -33.0), ("Güney Okyanusu", 100.0, -43.0),
 ]

@@ -232,7 +232,7 @@
         <div class="pg-big">◉ ${G.fmtNum(n.gold)} <span class="${b.net >= 0 ? 'pos' : 'neg'}">${sign(b.net)} / ay</span></div>
         <table class="pg-tab">
           <tr class="sec"><td colspan="2">Gelir</td></tr>
-          ${row('Vergiler', '+' + g1(b.tax))}${row('Ticari ürünler', '+' + g1(b.trade))}${row('Madenler', '+' + g1(b.mines))}${row('Tarım', '+' + g1(b.farms))}
+          ${row('Vergiler', '+' + g1(b.tax))}${row('Ticari ürünler', '+' + g1(b.trade))}${row('Ticaret yolları', '+' + g1(b.routes || 0))}${row('Madenler', '+' + g1(b.mines))}${row('Tarım', '+' + g1(b.farms))}
           ${row('<b>Toplam gelir</b>', '<b>+' + g1(b.income) + '</b>', 'pos')}
           <tr class="sec"><td colspan="2">Gider</td></tr>
           ${row('Ordu maaşları', '−' + g1(b.army))}${row('Garnizonlar', '−' + g1(b.garrison))}

@@ -546,6 +546,7 @@ G.monthly = function () {
     const cap = mp * 24 + 20000;
     if (n.manpower > cap) n.manpower = cap;
   }
+  G.trade.monthly();
   G.econ.monthly();
   G.stab.monthly();
   G.dyn.monthly();

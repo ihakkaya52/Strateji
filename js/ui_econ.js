@@ -93,7 +93,7 @@
       </div>
       <div class="prod-col">
         <h3>Hazine <span class="muted">· ${G.fmtNum(n.gold)} altın</span></h3>
-        ${brow('Vergiler', b.tax)}${brow('Ticari ürünler', b.trade)}${brow('Madenler', b.mines)}${brow('Tarım', b.farms)}
+        ${brow('Vergiler', b.tax)}${brow('Ticari ürünler', b.trade)}${brow('Ticaret yolları', b.routes || 0)}${brow('Madenler', b.mines)}${brow('Tarım', b.farms)}
         ${brow('Ordunun maaşı', b.army, true)}${brow('Garnizonlar', b.garrison, true)}
         <div class="mod" style="border-top:1px solid #4a3f2b;margin-top:4px;padding-top:4px"><span><b>Aylık net</b></span>
           <b style="color:${b.net >= 0 ? '#9ad07a' : '#ff8a6a'}">${b.net >= 0 ? '+' : ''}${g1(b.net)}</b></div>

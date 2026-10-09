@@ -31,8 +31,10 @@ NE_BASE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master
 NE_FILES = ["ne_50m_land.geojson", "ne_50m_lakes.geojson"]
 
 # Harita sınırları (boylam/enlem)
-LON0, LAT0, LON1, LAT1 = -26.0, -36.0, 150.0, 72.0
-SEA_LAT0 = -11.0       # deniz bölgeleri bu enlemin kuzeyinde
+LON0, LAT0, LON1, LAT1 = -26.0, -46.0, 150.0, 72.0
+SEA_LAT0 = -46.0       # deniz bölgeleri bu enlemin kuzeyinde
+# Amerika kıtası: haritada keşfedilmemiş kara olarak durur (henüz il yok)
+AMERICAS_BOX = (-180.0, -56.0, -26.0, 72.0)
 AFRICA_MIN_LAT = 10.0  # Afrika'nın bu enlemin güneyi keşfedilmemiş topraktır
 # Keşfedilmemiş bölgeler (boylam/enlem kutuları): kara burada çizilir ama eyalet yoktur
 UNEXPLORED_BOXES = [
@@ -43,7 +45,7 @@ UNEXPLORED_BOXES = [
 # Keşfedilmemiş toprak yazıları
 UNEXPLORED_LABELS = [
     ("Terra Incognita", 21.0, 1.0), ("Bilinmeyen Diyarlar", 24.0, -22.0),
-    ("Terra Australis", 134.0, -24.0),
+    ("Terra Australis", 134.0, -24.0), ("Bilinmeyen Kıta", -100.0, 47.0), ("Terra Incognita", -60.0, -12.0),
 ]
 
 # Keşfedilmemiş toprakların illeri: adları en yakın tarihî yer / bölgeden, yerli kültürü ile (boylam, enlem, ad, kültür)
@@ -159,6 +161,19 @@ def load_land():
     # çok küçük adacıkları at
     parts = [p for p in getattr(land, "geoms", [land]) if p.area > 0.02]
     return proj_geom(MultiPolygon(parts)), full
+
+
+def load_americas():
+    """Amerika kıtası (ve Grönland): yalnızca keşfedilmemiş kara olarak çizilir."""
+    clip = box(*AMERICAS_BOX)
+    parts = []
+    with open(os.path.join(CACHE, "ne_50m_land.geojson")) as fh:
+        for f in json.load(fh)["features"]:
+            g = shape(f["geometry"])
+            if g.intersects(clip):
+                parts.append(g.intersection(clip))
+    g = proj_geom(unary_union(parts)).simplify(0.06, preserve_topology=True)
+    return MultiPolygon(polys(g, 0.15))
 
 
 def polys(g, min_area):
@@ -405,9 +420,10 @@ def main():
     for tag, (name, color, major, ruler, religion, group) in NATIONS.items():
         nations[tag] = dict(name=name, color=color, major=major, ruler=ruler, religion=religion, group=group)
 
-    ux0, uy0, ux1, uy1 = unexplored.bounds
+    americas = load_americas()
+    ux0, uy0, ux1, uy1 = unary_union([unexplored, americas]).bounds
     unk = []
-    for p in unexplored.geoms:
+    for p in list(unexplored.geoms) + list(americas.geoms):
         p = p.simplify(0.04, preserve_topology=True)
         unk.append([round(v, 2) for xy in list(p.exterior.coords)[:-1] for v in xy])
         for h in p.interiors:
@@ -420,6 +436,7 @@ def main():
         seas=build_seas(full_land, keep, newid, geoms, provinces),
         geo=build_geo(full_land, provinces, seeds, keep, newid, geoms),
     )
+    world["seaEdges"] = SEA_EDGES
     out = os.path.join(ROOT, "js", "data", "world.js")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", encoding="utf-8") as fh:
@@ -443,7 +460,11 @@ def build_wild(unexplored, full_land, seeds, geoms, keep, newid, neighbors, edge
     full_p = prep(full_land)
     rng = random.Random(77)
     minx, miny, maxx, maxy = unexplored.bounds
+    # ızgara eski haritadaki gibi aynı noktadan başlar: eski illerin sırası ve kimlikleri korunur;
+    # sonradan eklenen güney toprakları (Avustralya'nın güneyi, Tazmanya) en sona eklenir
+    minx, miny, OLD_MAXY = -14.613623, -11.811314274715086, 37.619367419566196
     pts = []
+    later = []
     y = miny
     row = 0
     while y <= maxy:
@@ -452,13 +473,18 @@ def build_wild(unexplored, full_land, seeds, geoms, keep, newid, neighbors, edge
             jx = x + rng.uniform(-0.3, 0.3) * WILD_STEP
             jy = y + rng.uniform(-0.3, 0.3) * WILD_STEP
             if land_p.contains(Point(jx, jy)):
-                pts.append((jx, jy))
+                (later if jy > OLD_MAXY else pts).append((jx, jy))
             x += WILD_STEP
         y += WILD_STEP * 0.87
         row += 1
     # küçük adalara da birer nokta
     for part in unexplored.geoms:
-        if part.area > 0.6 and not any(part.contains(Point(p)) for p in pts):
+        if part.area > 0.6 and part.bounds[3] <= OLD_MAXY and not any(part.contains(Point(p)) for p in pts):
+            rp = part.representative_point()
+            pts.append((rp.x, rp.y))
+    pts += later
+    for part in unexplored.geoms:
+        if part.area > 0.6 and part.bounds[3] > OLD_MAXY and not any(part.contains(Point(p)) for p in pts):
             rp = part.representative_point()
             pts.append((rp.x, rp.y))
     anc = [(proj(lo, la), nm, cul) for (nm, lo, la, cul) in WILD_ANCHORS]
@@ -559,8 +585,13 @@ def build_wild(unexplored, full_land, seeds, geoms, keep, newid, neighbors, edge
     print("yabani il:", len(local))
 
 
+SEA_EDGES = []
+
+
 def build_seas(full_land, keep, newid, geoms, provinces):
     """Deniz bölgelerini üretir; kıyı eyaletlerine komşu deniz bölgelerini yazar."""
+    global SEA_EDGES
+    import shapely
     from shapely.strtree import STRtree
     print("deniz bölgeleri...")
     x0, y0 = proj(LON0, LAT1)
@@ -577,9 +608,20 @@ def build_seas(full_land, keep, newid, geoms, provinces):
     vor = Voronoi(np.vstack([pts, np.array(frame)]))
     zones = []
     orphans = []
+    # deniz sınırları düz Voronoi çizgileri yerine akıntı gibi kıvrılsın (aynı bükme her hücreye uygulanır)
+    srng = np.random.RandomState(11)
+    swaves = [(amp, 2 * np.pi / lam, srng.uniform(0, 2 * np.pi), srng.uniform(0, 2 * np.pi)) for amp, lam in [(0.9, 11.0), (0.45, 4.6), (0.15, 1.7)]]
+
+    def seawarp(c):
+        out = c.copy()
+        for amp, k, p1, p2 in swaves:
+            out[:, 1] += amp * np.sin(k * c[:, 0] + p1)
+            out[:, 0] += amp * np.sin(k * c[:, 1] + p2)
+        return out
     for i, (name, lon, lat) in enumerate(SEA_ZONES):
         reg = vor.regions[vor.point_region[i]]
         cell = Polygon(vor.vertices[reg]).buffer(0)
+        cell = shapely.transform(shapely.segmentize(cell, 0.2), seawarp).buffer(0)
         g = cell.intersection(sea)
         parts = [p for p in getattr(g, "geoms", [g]) if isinstance(p, Polygon) and p.area > 0.01]
         if not parts:
@@ -624,6 +666,14 @@ def build_seas(full_land, keep, newid, geoms, provinces):
                 inter = zgeoms[a].intersection(zgeoms[b])
                 if inter.length > 0.05:
                     znb[a].add(b); znb[b].add(a)
+                    lines = [ln for ln in getattr(inter, "geoms", [inter]) if isinstance(ln, LineString)]
+                    if lines:
+                        from shapely.ops import linemerge
+                        ml = linemerge(unary_union(lines)) if len(lines) > 1 else lines[0]
+                        for ln in getattr(ml, "geoms", [ml]):
+                            ln = ln.simplify(0.03)
+                            if ln.length > 0.05:
+                                SEA_EDGES.append([round(v, 2) for xy in ln.coords for v in xy])
     # kıyı eyaletleri
     tree = STRtree(zgeoms)
     coast = {}

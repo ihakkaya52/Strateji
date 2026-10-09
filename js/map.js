@@ -54,6 +54,12 @@ M.init = function (canvas) {
     M.unkPath.closePath();
   }
   M.fogY = Math.max(...M.seaBbox.map(b => b[3]), -Infinity);
+  // deniz bölgeleri arasındaki sınırlar (kıyı çizgisi hariç)
+  M.seaEdgePath = new Path2D();
+  for (const s of W.seaEdges || []) {
+    M.seaEdgePath.moveTo(s[0], s[1]);
+    for (let i = 2; i < s.length; i += 2) M.seaEdgePath.lineTo(s[i], s[i + 1]);
+  }
   M.geoInit();
   M.edgeMap = new Map();
   for (const [a, b, segs] of W.edges) M.edgeMap.set(a < b ? a + '|' + b : b + '|' + a, segs);
@@ -400,10 +406,14 @@ M.draw = function () {
         ctx.fill(M.seaPaths[i]);
       }
     }
-    ctx.setLineDash([4 / sc, 4 / sc]);
-    ctx.strokeStyle = 'rgba(190,215,205,0.16)';
-    ctx.lineWidth = 0.9 / sc;
-    for (let i = 0; i < M.seaPaths.length; i++) ctx.stroke(M.seaPaths[i]);
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(150,190,180,0.07)';
+    ctx.lineWidth = 5 / sc;
+    ctx.stroke(M.seaEdgePath);
+    ctx.setLineDash([0.5 / sc, 4 / sc]);
+    ctx.strokeStyle = 'rgba(205,228,218,0.32)';
+    ctx.lineWidth = 1.3 / sc;
+    ctx.stroke(M.seaEdgePath);
     ctx.setLineDash([]);
   }
 
@@ -517,6 +527,7 @@ M.draw = function () {
     M.drawFleets();
     M.drawBattles();
     M.drawExploration();
+    if (M.tradeView) M.drawTrade();
   }
   if (M.dragBox) {
     const b = M.dragBox;
@@ -846,7 +857,15 @@ M.drawUnexplored = function (sc) {
     const g = ctx.createLinearGradient(0, M.fogY - 3, 0, M.fogY + 14);
     g.addColorStop(0, 'rgba(12,18,18,0)'); g.addColorStop(1, 'rgba(12,18,18,0.32)');
     ctx.fillStyle = g;
-    ctx.fillRect(-60, M.fogY - 3, 300, 80);
+    ctx.fillRect(-200, M.fogY - 3, 400, 80);
+  }
+  // bilinmeyen batı okyanusu: Atlantik'in ötesi sise gömülür
+  if (!M.seaX0) M.seaX0 = Math.min(...M.seaBbox.map(b => b[0]));
+  if (isFinite(M.seaX0)) {
+    const g = ctx.createLinearGradient(M.seaX0 + 2, 0, M.seaX0 - 14, 0);
+    g.addColorStop(0, 'rgba(12,18,18,0)'); g.addColorStop(1, 'rgba(12,18,18,0.32)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-200, -120, M.seaX0 + 202, 260);
   }
   ctx.lineJoin = 'round';
   ctx.strokeStyle = 'rgba(160, 190, 180, 0.08)';
@@ -1169,3 +1188,93 @@ M.drawCultureLabels = function () {
     ctx.fillText(C.name, s.x + fw / 2 + 2, s.y + 1);
   }
 };
+
+// ------------------------------------------------------------ ticaret yolları
+// Yollar değerlerine göre kalınlıkta, akan kesik çizgilerle; üzerlerinde kervanlar ve gemiler ilerler
+M.drawTrade = function () {
+  const ctx = M.ctx, S = G.S, TR = G.trade, now = performance.now(), sel = G.ui.tradeSel;
+  if (!TR.paths) return;
+  ctx.fillStyle = 'rgba(12,9,5,0.28)';
+  ctx.fillRect(0, 0, M.w, M.h);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const mine = S.player;
+  const curve = pts => {
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i + 1].x) / 2, my = (pts[i].y + pts[i + 1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    const l = pts[pts.length - 1];
+    ctx.lineTo(l.x, l.y);
+  };
+  const labels = [];
+  for (const r of TR.ROUTES) {
+    const e = S.trade[r.id];
+    if (!e) continue;
+    const pts = TR.points(r.id).map(p => M.toScreen(p.x, p.y));
+    const on = sel === r.id, ours = !!e.shares[mine];
+    const w = (1.5 + e.value / 7) * (on ? 1.5 : 1);
+    ctx.setLineDash([]);
+    curve(pts);
+    ctx.strokeStyle = 'rgba(15,10,5,0.75)'; ctx.lineWidth = w + 3; ctx.stroke();
+    ctx.globalAlpha = sel && !on ? 0.45 : 1;
+    ctx.strokeStyle = r.color; ctx.lineWidth = w; ctx.stroke();
+    // akış
+    ctx.setLineDash([w * 1.2, w * 3]);
+    ctx.lineDashOffset = -(now / 45) % (w * 4.2);
+    ctx.strokeStyle = 'rgba(255,248,225,0.75)'; ctx.lineWidth = Math.max(1, w * 0.45); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    // kervanlar: yol boyunca ilerleyen simgeler
+    const seg = [];
+    let len = 0;
+    for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); seg.push(d); len += d; }
+    const nodes = TR.paths[r.id];
+    ctx.font = `${on ? 15 : 12}px ${G.FONT_BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (len > 60) for (let k = 0; k < 3; k++) {
+      let t = ((now / 26000 + k / 3 + r.value * 0.013) % 1) * len, i = 0;
+      while (i < seg.length - 1 && t > seg[i]) { t -= seg[i]; i++; }
+      const f = seg[i] ? t / seg[i] : 0, a = pts[i], b = pts[i + 1] || a;
+      const x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f;
+      if (x < -20 || x > M.w + 20 || y < -20 || y > M.h + 20) continue;
+      const sea = nodes[i] && nodes[i].z != null && (!nodes[i + 1] || nodes[i + 1].z != null);
+      ctx.fillStyle = 'rgba(20,14,8,0.75)';
+      ctx.beginPath(); ctx.arc(x, y, on ? 10 : 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(sea ? '⛵' : '🐫', x, y + 1);
+    }
+    // kesilen yerler
+    for (const nd of nodes) {
+      const p = nd.p != null ? P_(nd.p) : null;
+      const bad = p ? (p.siege || (p.owner && p.ctrl !== p.owner)) : S.navalBattles && S.navalBattles.has(nd.z);
+      if (!bad) continue;
+      const q = p || S.seas[nd.z], s = M.toScreen(q.x, q.y);
+      ctx.fillStyle = '#c0302a'; ctx.beginPath(); ctx.arc(s.x, s.y, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = `700 10px ${G.FONT_BODY}`; ctx.fillText('✕', s.x, s.y + 0.5);
+    }
+    const mid = pts[Math.floor(pts.length / 2)];
+    labels.push({ r, e, x: mid.x, y: mid.y, ours, on });
+  }
+  // yol adları: önce seçili, sonra bizim, sonra değerli yollar; üst üste binen yazılmaz
+  labels.sort((a, b) => (b.on - a.on) || (b.ours - a.ours) || b.e.value - a.e.value);
+  const used = [];
+  for (const L of labels) {
+    if (L.x < -80 || L.x > M.w + 80 || L.y < -30 || L.y > M.h + 30) continue;
+    const bw = 150, box = [L.x - bw / 2, L.y - 28, bw, 34];
+    if (used.some(u => box[0] < u[0] + u[2] && u[0] < box[0] + box[2] && box[1] < u[1] + u[3] && u[1] < box[1] + box[3])) continue;
+    used.push(box);
+    const txt = `${L.r.icon} ${L.r.name}`, sub = `${G.fmtNum(Math.round(L.e.value * 10) / 10)} altın${L.ours ? ` · bizim %${Math.round(L.e.shares[S.player].pow * 100)}` : ''}`;
+    ctx.font = `600 ${L.on ? 14 : 12}px ${G.FONT_TITLE}`;
+    const tw = Math.max(ctx.measureText(txt).width, 70) + 14;
+    ctx.fillStyle = 'rgba(25,18,10,0.85)';
+    ctx.fillRect(L.x - tw / 2, L.y - 26, tw, 30);
+    ctx.strokeStyle = L.ours ? '#e8c869' : L.r.color; ctx.lineWidth = L.on ? 2 : 1;
+    ctx.strokeRect(L.x - tw / 2, L.y - 26, tw, 30);
+    ctx.fillStyle = '#f4e6c0'; ctx.fillText(txt, L.x, L.y - 16);
+    ctx.font = `11px ${G.FONT_BODY}`; ctx.fillStyle = L.ours ? '#e8c869' : '#c8b890';
+    ctx.fillText(sub, L.x, L.y - 3);
+  }
+  G.mapDirty = true;   // akış için sürekli çiz
+};
+function P_(id) { return G.S.provinces[id]; }

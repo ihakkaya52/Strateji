@@ -146,6 +146,9 @@ G.save = {};
     G.explore.init();
     G.explore.invalidate();
     G.tech.init();
+    G.trade.paths = null;
+    G.trade.init();
+    G.trade.update();
     // arayüz durumunu sıfırla
     const U = G.ui;
     G.selected = new Set(); G.selFleet = null;
