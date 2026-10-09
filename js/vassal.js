@@ -9,28 +9,48 @@ G.vassal = {};
   // ------------------------------------------------------------ senaryo: 1040'ta Kutsal Roma'nın düklükleri
   // İmparatorun doğrudan elinde Frankonya, Ren kıyısındaki taç toprakları ve Lombardiya kalır; gerisi vasal dükler.
   V.DUCHIES = {
-    SAX: { name: 'Saksonya Dükalığı', color: '#a88e3a', ruler: 'II. Bernhard', kind: 'dukalik', cap: 'Magdeburg',
+    SAX: { name: 'Saksonya Dükalığı', ruler: 'II. Bernhard', kind: 'dukalik', cap: 'Magdeburg',
       provs: ['Magdeburg', 'Hamburg', 'Bremen', 'Holstein', 'Münster', 'Paderborn', 'Merseburg', 'Meissen', 'Bautzen'] },
-    BAV: { name: 'Bavyera Dükalığı', color: '#7f9cc0', ruler: 'VII. Heinrich', kind: 'dukalik', cap: 'Regensburg',
+    BAV: { name: 'Bavyera Dükalığı', ruler: 'VII. Heinrich', kind: 'dukalik', cap: 'Regensburg',
       provs: ['Regensburg', 'Passau', 'Salzburg', 'Melk'] },
-    SWA: { name: 'Svabya Dükalığı', color: '#c49a6c', ruler: 'II. Otto', kind: 'dukalik', cap: 'Augsburg',
+    SWA: { name: 'Svabya Dükalığı', ruler: 'II. Otto', kind: 'dukalik', cap: 'Augsburg',
       provs: ['Augsburg', 'Konstanz', 'Zürih', 'Basel', 'Strazburg'] },
-    CAR: { name: 'Karintiya Dükalığı', color: '#8c7448', ruler: 'Adalbero', kind: 'dukalik', cap: 'Karintiya',
+    CAR: { name: 'Karintiya Dükalığı', ruler: 'Adalbero', kind: 'dukalik', cap: 'Karintiya',
       provs: ['Karintiya', 'Krayna', 'Steiermark', 'İstriya', 'Aquileia', 'Verona', 'Padova', 'Trento'] },
-    ULO: { name: 'Yukarı Lotaringiya', color: '#b3ac62', ruler: 'Sakallı Godfrey', kind: 'dukalik', cap: 'Metz',
+    ULO: { name: 'Yukarı Lotaringiya', ruler: 'Sakallı Godfrey', kind: 'dukalik', cap: 'Metz',
       provs: ['Metz', 'Trier', 'Verdun', 'Toul'] },
-    DLO: { name: 'Aşağı Lotaringiya', color: '#98974e', ruler: 'I. Gothelo', kind: 'dukalik', cap: 'Leuven',
+    DLO: { name: 'Aşağı Lotaringiya', ruler: 'I. Gothelo', kind: 'dukalik', cap: 'Leuven',
       provs: ['Leuven', 'Liège', 'Utrecht', 'Groningen', 'Cambrai'] },
-    KOL: { name: 'Köln Başpiskoposluğu', color: '#d9cfae', ruler: 'II. Hermann', kind: 'kilise', cap: 'Köln',
+    KOL: { name: 'Köln Başpiskoposluğu', ruler: 'II. Hermann', kind: 'kilise', cap: 'Köln',
       provs: ['Köln'] },
-    BOH: { name: 'Bohemya Dükalığı', color: '#b25a48', ruler: 'I. Břetislav', kind: 'dukalik', cap: 'Prag',
+    BOH: { name: 'Bohemya Dükalığı', ruler: 'I. Břetislav', kind: 'dukalik', cap: 'Prag',
       provs: ['Prag', 'Olomouc', 'Brno', 'Pilsen', 'Wrocław', 'Opole', 'Glogau'] },
-    BUR: { name: 'Burgonya Kontluğu', color: '#9a6a88', ruler: 'I. Rainald', kind: 'dukalik', cap: 'Besançon',
+    BUR: { name: 'Burgonya Kontluğu', ruler: 'I. Rainald', kind: 'dukalik', cap: 'Besançon',
       provs: ['Besançon', 'Lyon', 'Vienne', 'Cenevre', 'Arles', 'Marsilya', 'Grenoble', 'Nice'] },
-    TUS: { name: 'Toskana Markgraflığı', color: '#7c9e6c', ruler: 'Canossalı Bonifacio', kind: 'dukalik', cap: 'Canossa',
+    TUS: { name: 'Toskana Markgraflığı', ruler: 'Canossalı Bonifacio', kind: 'dukalik', cap: 'Canossa',
       provs: ['Canossa', 'Floransa', 'Siena', 'Parma', 'Bologna'] },
+    // Fransa: Capet kralının elinde Île-de-France ve birkaç piskoposluk; büyük düklükler ve kontluklar vasal
+    NMD: { lord: 'FRA', name: 'Normandiya Dükalığı', ruler: 'Piç William', kind: 'dukalik', cap: 'Rouen', provs: ['Rouen', 'Caen', 'Coutances'] },
+    FLA: { lord: 'FRA', name: 'Flandre Kontluğu', ruler: 'V. Baudouin', kind: 'dukalik', cap: 'Brugge', provs: ['Brugge', 'Gent', 'Saint-Omer', 'Arras', 'Boulogne'] },
+    BLO: { lord: 'FRA', name: 'Blois-Şampanya Kontluğu', ruler: 'III. Thibaut', kind: 'dukalik', cap: 'Blois', provs: ['Blois', 'Chartres', 'Tours', 'Troyes', 'Provins'] },
+    ANJ: { lord: 'FRA', name: 'Anjou Kontluğu', ruler: 'II. Geoffroy Martel', kind: 'dukalik', cap: 'Angers', provs: ['Angers', 'Le Mans'] },
+    BRI: { lord: 'FRA', name: 'Bretanya Dükalığı', ruler: 'II. Conan', kind: 'dukalik', cap: 'Rennes', provs: ['Rennes', 'Nantes', 'Vannes', 'Quimper', 'Saint-Brieuc'] },
+    AQU: { lord: 'FRA', name: 'Akitanya Dükalığı', ruler: 'VII. Guillaume', kind: 'dukalik', cap: 'Poitiers', provs: ['Poitiers', 'Saintes', 'Limoges', 'Bordeaux', 'Périgueux', 'Bayonne', 'Auch', 'Agen', 'Clermont'] },
+    BRY: { lord: 'FRA', name: 'Burgonya Dükalığı', ruler: 'I. Robert', kind: 'dukalik', cap: 'Dijon', provs: ['Dijon', 'Autun', 'Auxerre', 'Nevers', 'Mâcon'] },
+    TOU: { lord: 'FRA', name: 'Toulouse Kontluğu', ruler: 'Pons', kind: 'dukalik', cap: 'Toulouse', provs: ['Toulouse', 'Cahors', 'Rodez', 'Carcassonne', 'Narbonne', 'Maguelone', 'Nîmes'] },
   };
-  V.KIND_NAMES = { dukalik: 'Düklük', kilise: 'Kilise beyliği', krallik: 'Haraçgüzar krallık', vasal: 'Vasal' };
+  // 1040'ta zaten var olan ülkeler arasındaki tarihî vasallık ve haraç bağları: vasal -> [efendi, tür]
+  V.SCEN_VASSALS = {
+    ZIR: ['FAT', 'emirlik'], HAM: ['FAT', 'emirlik'], MIR: ['FAT', 'emirlik'],      // Fâtımî hutbesi okunan Kuzey Afrika ve Halep
+    DUK: ['BYZ', 'krallik'], ANI: ['BYZ', 'krallik'],                              // Bizans'ın Balkan ve Kafkas uydu krallıkları
+    PLT: ['KIE', 'dukalik'],                                                       // Rurik hanedanının Polotsk kolu
+    ABB: ['BUY', 'halife'], MEZ: ['BUY', 'emirlik'], HSN: ['BUY', 'emirlik'], ANN: ['BUY', 'emirlik'],   // Büveyhî vesayeti
+    GOR: ['LIA', 'krallik'], JUR: ['LIA', 'kabile'], TAT: ['LIA', 'kabile'],       // Liao'ya haraç ödeyenler
+    DAI: ['SNG', 'krallik'],                                                       // Song'a haraç gönderen Đại Việt
+    SRI: ['CHO', 'krallik'],                                                       // 1025 seferinden sonra Chola'ya bağlı Srivijaya
+    ENG: ['DEN', 'krallik'],                                                       // Hardeknud'un iki tacı
+  };
+  V.KIND_NAMES = { dukalik: 'Düklük', kilise: 'Kilise beyliği', krallik: 'Haraçgüzar krallık', emirlik: 'Vasal emirlik', kabile: 'Haraçgüzar boylar', halife: 'Vesayet altındaki halife', vasal: 'Vasal' };
   // Tarihî dük hanedanları (ölüm yılları yaklaşık)
   Object.assign(G.dyn.HIST, {
     SAX: { born: 995, dies: 1059, dyn: 'Billung', next: ['Ordulf', 'Magnus', 'Supplinburglu Lothar'] },
@@ -39,6 +59,14 @@ G.vassal = {};
     BOH: { born: 1002, dies: 1055, dyn: 'Přemysl', next: ['II. Spytihněv', 'II. Vratislav', 'II. Břetislav', 'Bořivoj', 'Svatopluk', 'I. Vladislav'] },
     TUS: { born: 985, dies: 1052, dyn: 'Canossa', next: ['Canossalı Matilda'] },
     ULO: { born: 997, dies: 1069, dyn: 'Ardenne-Verdun', next: ['Kambur Godfrey', 'Bouillonlu Godfrey'] },
+    NMD: { born: 1028, dies: 1087, dyn: 'Normandiya', next: ['II. Robert', 'I. Henry'] },
+    FLA: { born: 1012, dies: 1067, dyn: 'Flandre', next: ['VI. Baudouin', 'III. Arnulf', 'I. Robert', 'II. Robert', 'VII. Baudouin'] },
+    BLO: { born: 1012, dies: 1089, dyn: 'Blois', next: ['II. Étienne', 'IV. Thibaut'] },
+    ANJ: { born: 1006, dies: 1060, dyn: 'Ingelger', next: ['III. Geoffroy', 'IV. Foulques', 'V. Foulques'] },
+    BRI: { born: 1033, dies: 1066, dyn: 'Rennes', next: ['Hoël', 'IV. Alain'] },
+    AQU: { born: 1023, dies: 1058, dyn: 'Poitiers', next: ['VIII. Guillaume', 'IX. Guillaume'] },
+    BRY: { born: 1011, dies: 1076, dyn: 'Capet (Burgonya)', next: ['I. Hugues', 'I. Odo', 'II. Hugues'] },
+    TOU: { born: 991, dies: 1060, dyn: 'Toulouse', next: ['IV. Guillaume', 'IV. Raymond'] },
   });
 
   // Haritaya uygula (oyun başlamadan önce, dünya verisi üzerinde)
@@ -48,19 +76,84 @@ G.vassal = {};
     W.__duchies = true;
     W.vassals ||= {};
     for (const [tag, d] of Object.entries(V.DUCHIES)) {
+      const lord = d.lord || 'HRE';
+      if (!W.nations[lord]) continue;
       let cap = null;
       for (const p of W.provinces) {
-        if (p.owner !== 'HRE' || !(d.provs.includes(p.name) || d.provs.includes(p.home))) continue;
+        if (p.owner !== lord || !(d.provs.includes(p.name) || d.provs.includes(p.home))) continue;
         p.cul ??= G.cul.provinceCulture(p);   // halk, il imparatorluktan ayrılmadan önce belirlenir
         p.owner = tag;
         if (p.name === d.cap) cap = p.id;
       }
       if (cap == null) continue;
-      W.nations[tag] = { name: d.name, color: d.color, major: false, ruler: d.ruler, religion: 'katolik', group: 'latin', capital: cap, vkind: d.kind };
-      W.vassals[tag] = 'HRE';
+      W.nations[tag] = { name: d.name, color: W.nations[lord].color, major: false, ruler: d.ruler, religion: W.nations[lord].religion, group: W.nations[lord].group, capital: cap, vkind: d.kind };
+      W.vassals[tag] = lord;
+    }
+    for (const [tag, [lord]] of Object.entries(V.SCEN_VASSALS)) if (W.nations[tag] && W.nations[lord]) W.vassals[tag] = lord;
+    V.recolor(W);
+  };
+  // Renkler: efendi koyu bir ton, vasalları aynı rengin farklı açık tonları
+  const hsl = hex => {
+    const v = parseInt(hex.slice(1), 16), r = (v >> 16 & 255) / 255, g = (v >> 8 & 255) / 255, b = (v & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    let h = 0, s2 = 0;
+    if (d) {
+      s2 = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+      h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      h *= 60;
+    }
+    return [h, s2, l];
+  };
+  const hex = (h, s2, l) => {
+    h = ((h % 360) + 360) % 360;
+    const c = (1 - Math.abs(2 * l - 1)) * s2, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+    const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+    return '#' + [r, g, b].map(v => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
+  };
+  V.shade = (lordColor, i) => {
+    const [h, s2] = hsl(lordColor);
+    const L = [0.62, 0.50, 0.72, 0.56, 0.67, 0.45, 0.77, 0.53, 0.69, 0.59, 0.48, 0.74];
+    const H = [0, 10, -8, -16, 14, 4, -4, 18, -12, 8, -20, 12];
+    return hex(h + H[i % 12], G.clamp(s2 * 0.85, 0.25, 0.7), L[i % 12]);
+  };
+  V.recolor = function (W) {
+    const by = {};
+    for (const [v, l] of Object.entries(W.vassals || {})) if (W.nations[v] && W.nations[l]) (by[l] ||= []).push(v);
+    for (const [lord, list] of Object.entries(by)) {
+      const [h, s2, l] = hsl(W.nations[lord].color);
+      W.nations[lord].color = hex(h, Math.min(0.75, s2 * 1.1 + 0.05), Math.min(l, 0.34));
+      // komşu vasallar birbirinden ayırt edilsin diye sıra coğrafi (batıdan doğuya)
+      const cx = t => { const ps = W.provinces.filter(p => p.owner === t); return ps.reduce((a, p) => a + p.x + p.y * 0.3, 0) / (ps.length || 1); };
+      list.sort((a, b) => cx(a) - cx(b)).forEach((v, i) => { W.nations[v].color = V.shade(W.nations[lord].color, i); });
+    }
+    V.separate(W, new Set([...Object.keys(by), ...Object.keys(W.vassals || {})]));
+  };
+  // Komşusuna (özellikle bir efendinin vasal tonlarına) çok benzeyen bağımsız ülkelere ayırt edici bir renk
+  const rgb = h => { const v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; };
+  const dist = (a, b) => { const x = rgb(a), y = rgb(b), rm = (x[0] + y[0]) / 2; return Math.sqrt((2 + rm / 256) * (x[0] - y[0]) ** 2 + 4 * (x[1] - y[1]) ** 2 + (2 + (255 - rm) / 256) * (x[2] - y[2]) ** 2); };
+  V.separate = function (W, fixed) {
+    const nb = {};
+    for (const p of W.provinces) {
+      if (!p.owner) continue;
+      for (const id of p.nb) { const o = W.provinces[id].owner; if (o && o !== p.owner) (nb[p.owner] ||= new Set()).add(o); }
+    }
+    const size = {};
+    for (const p of W.provinces) if (p.owner) size[p.owner] = (size[p.owner] || 0) + 1;
+    const free = Object.keys(W.nations).filter(t => !fixed.has(t) && nb[t]).sort((a, b) => (size[b] || 0) - (size[a] || 0));
+    for (const t of free) {
+      const others = [...nb[t]].map(o => W.nations[o] && W.nations[o].color).filter(Boolean);
+      const worst = c => Math.min(...others.map(o => dist(c, o)));
+      if (worst(W.nations[t].color) >= 95) continue;
+      const [h0] = hsl(W.nations[t].color);
+      let best = null;
+      for (let h = 0; h < 360; h += 12) for (const l of [0.4, 0.5, 0.6]) for (const sat of [0.35, 0.5]) {
+        const c = hex(h, sat, l);
+        const sc = worst(c) - Math.min(Math.abs(h - h0), 360 - Math.abs(h - h0)) * 0.15;
+        if (!best || sc > best.s) best = { s: sc, c };
+      }
+      W.nations[t].color = best.c;
     }
   };
-  V.setupScenario();
 
   // ------------------------------------------------------------ haraç seviyeleri
   V.TRIB = {
@@ -249,17 +342,12 @@ G.vassal = {};
     for (const p of list) if (p[key]) c[p[key]] = (c[p[key]] || 0) + G.provinceWeight(p);
     return Object.keys(c).sort((a, b) => c[b] - c[a])[0] || null;
   };
-  const shade = (hex, k) => {
-    const v = parseInt(hex.slice(1), 16);
-    const ch = s => G.clamp(Math.round(((v >> s) & 255) * k), 0, 255);
-    return '#' + [16, 8, 0].map(s => ch(s).toString(16).padStart(2, '0')).join('');
-  };
   // Bir il listesinden hangi ülke kurulur: tarihî düklük, ölmüş asıl sahip ya da yeni bir vasal
   V.identity = function (lord, provs) {
     const S = G.S;
     for (const [tag, d] of Object.entries(V.DUCHIES)) {
       if (S.nations[tag] && S.nations[tag].alive) continue;
-      if (provs.some(p => d.provs.includes(p.name) || d.provs.includes(p.home))) return { tag, name: d.name, color: d.color, ruler: d.ruler, vkind: d.kind };
+      if (provs.some(p => d.provs.includes(p.name) || d.provs.includes(p.home))) return { tag, name: d.name, color: V.shade(S.nations[lord].color, V.list(lord).length + 1), ruler: d.ruler, vkind: d.kind };
     }
     const core = majority(provs.filter(p => p.core && p.core !== lord), 'core');
     if (core && !(S.nations[core] && S.nations[core].alive)) {
@@ -268,7 +356,7 @@ G.vassal = {};
     }
     const capP = provs.slice().sort((a, b) => G.provinceWeight(b) - G.provinceWeight(a))[0];
     const relig = majority(provs, 'relig') || S.nations[lord].religion;
-    return { tag: null, name: `${capP.home || capP.name} ${suffix(relig)}`, color: shade(S.nations[lord].color, 0.7 + G.rng() * 0.25), ruler: null, vkind: 'dukalik' };
+    return { tag: null, name: `${capP.home || capP.name} ${suffix(relig)}`, color: V.shade(S.nations[lord].color, V.list(lord).length + 1), ruler: null, vkind: 'dukalik' };
   };
   V.create = function (lord, pids, opts = {}) {
     const S = G.S, L = S.nations[lord];
@@ -409,6 +497,8 @@ G.vassal = {};
       if (!n.overlord) continue;
       n.loyalty ??= 65; n.tribLevel ||= 'orta'; n.vassalSince ??= -10 * YEAR;
       if (V.DUCHIES[n.tag]) n.vkind ||= V.DUCHIES[n.tag].kind;
+      if (V.SCEN_VASSALS[n.tag] && V.SCEN_VASSALS[n.tag][0] === n.overlord) n.vkind ||= V.SCEN_VASSALS[n.tag][1];
     }
   };
+  V.setupScenario();
 })();

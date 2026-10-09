@@ -110,6 +110,8 @@
         const cap = byName('Rouen'); if (cap) NR.capital = cap.id;
         NR.manpower = 20000; NR.gold = 300;
       }
+      // dük, Fransa kralının vasalı olsa da seferi kendi adına açar
+      if (S.nations.NMD.overlord) S.nations.NMD.overlord = null;
       E.invade('NMD', 'Lewes', 3, 11000, 'Norman Şövalyeleri').fn(n);
     } }),
     // Normandiya İngiliz tacına katılır (Fatih William yolu)

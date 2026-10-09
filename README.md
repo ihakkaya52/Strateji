@@ -54,6 +54,13 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - 1040'ta Kutsal Roma tek parça değil: imparatorun elinde Frankonya, Ren'deki taç toprakları ve Lombardiya (17 il);
   Saksonya, Bavyera, Svabya, Karintiya, Yukarı ve Aşağı Lotaringiya, Köln Başpiskoposluğu, Bohemya, Burgonya ve Toskana
   vasal düklükler. Tarihî dükleri ve hanedanları var (Billung, Přemysl, Canossa, Rheinfeldenli Rudolf…).
+- **Fransa** da bölünmüş: Capet kralının elinde Île-de-France ve birkaç piskoposluk (8 il); Normandiya, Flandre,
+  Blois-Şampanya, Anjou, Bretanya, Akitanya, Burgonya Dükalığı ve Toulouse vasal.
+- **Diğer 1040 vasallıkları:** Zîrîler, Hammâdîler ve Mirdâsîler Fâtımîlerin; Abbâsî halifesi, Mezyedîler, Hasanveyhîler
+  ve Annâzîler Büveyhîlerin; Duklja ve Ani Bizans'ın; Polotsk Kiev'in; Goryeo, Cürçenler ve Tatarlar Liao'nun; Đại Việt
+  Song'un; Srivijaya Chola'nın; İngiltere Danimarka'nın vasalı. Zîrîler 1048'de, Abbâsîler Tuğrul Bey'le odak ağacından koparlar.
+- **Renkler:** efendi koyu bir ton, vasalları aynı rengin farklı açık tonları; vasal bir bölgeye komşu olup ona çok benzeyen
+  bağımsız ülkeler ayırt edici bir renge boyanır.
 - **Vasallar sayfası** (üst çubukta ♛ ya da **V**): her vasalın sadakati, hedefi ve etkenleri (din, halk, efendinin gücü,
   haraç, ayrıcalıklar, evlilik, aforoz, naiplik), haracı (hafif / orta / ağır: insan gücü ve gelir payı), hediye,
   ayrıcalık, **tımarı geri alma** (ilhak) ve **azat etme**. Aşağıda kendi topraklarımızdan kurulabilecek vasallar

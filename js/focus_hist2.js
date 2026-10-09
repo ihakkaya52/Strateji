@@ -43,6 +43,13 @@
       for (const o of Object.values(G.S.nations)) if (o.alive && o.tag !== n.tag && o.religion === 'sunni') G.dip.add(n.tag, o.tag, v);
     } }),
     independence: () => ({ text: 'Efendimiz varsa bağımsızlık savaşı', fn: n => { if (n.overlord) G.declareIndependence(n.tag); } }),
+    // vasal efendisinden barışla kopar (efendi değişmişse etkisiz)
+    breakAway: (tag, lord, msg) => ({ text: `${nm(tag)} ${nm(lord)} himayesinden çıkar`, fn: () => {
+      const v = G.S.nations[tag];
+      if (!v || !v.alive || v.overlord !== lord) return;
+      v.overlord = null; G.labelsDirty = true; G.mapDirty = true;
+      G.log(msg, 'war', [tag, lord]);
+    } }),
     freeIfSel: () => ({ text: 'Selçuklu himayesindeysek barışla ayrılış', fn: n => { if (n.overlord) { G.log(`${n.name} artık kimsenin himayesinde değil.`, 'good', [n.tag, n.overlord]); n.overlord = null; G.labelsDirty = true; } } }),
   };
 
@@ -182,7 +189,7 @@
       [E.atk(0.1), E.armies(1, 'Türk Atlıları'), E.stab(-5)], ['fat_ordu'], { alt: true }),
     F('fat_ziri', 9, 2, 'Zîrîlerin İhaneti', 'sword', 1048,
       '1048: İfrikiye\'nin Zîrî emîri el-Muiz, Fâtımî hutbesini kesti ve Bağdat\'taki Abbâsî halifesine bağlandı. Kahire buna cevap vermek zorunda.',
-      [E.cb(['ZIR']), E.rel(['ZIR'], -50)], ['fat_ordu']),
+      [X.breakAway('ZIR', 'FAT', 'Zîrîler Fâtımî hutbesini kesip Abbâsî halifesine biat etti!'), E.cb(['ZIR']), E.rel(['ZIR'], -50)], ['fat_ordu']),
     F('fat_dai', 1, 3, 'Dâîler Ağı', 'scroll', 1050,
       'Nâsır-ı Hüsrev Horasan\'a, Mueyyed eş-Şîrâzî İran\'a: İsmâilî davetçiler Kahire\'den bütün İslam dünyasına yayılıyor.',
       [E.missionary(), E.envoy(), E.research(0.05)], ['fat_suleyhi']),
@@ -279,10 +286,10 @@
       [E.mpm(0.15), E.tax(0.05)], ['abb_ibnmuslime']),
     F('abb_tugrul', 6, 3, 'Tuğrul Bey\'i Bağdat\'a Davet Et', 'banner', 1055,
       'Tarihî yol: İbnü\'l-Müslime\'nin mektupları Rey\'e ulaştı. Halife, Sünnî Türk sultanını Büveyhîlerin elinden kurtarıcı olarak çağırıyor.',
-      [E.rel(['SEL'], 80), E.cb(['BUY']), X.ally('SEL')], ['abb_buveyh'], { hist: true, notify: { SEL: 'Halife el-Kâim sizi Bağdat\'a davet ediyor: Büveyhî vesayetine son verin!' } }),
+      [X.breakAway('ABB', 'BUY', 'Tuğrul Bey\'in gelişiyle Büveyhî vesayeti sona erdi.'), E.rel(['SEL'], 80), E.cb(['BUY']), X.ally('SEL')], ['abb_buveyh'], { hist: true, notify: { SEL: 'Halife el-Kâim sizi Bağdat\'a davet ediyor: Büveyhî vesayetine son verin!' } }),
     F('abb_ordu', 8, 3, 'Halifenin Kendi Ordusu', 'sword', 1048,
       'Alternatif tarih: Müsterşid\'den yetmiş yıl önce bir halife kılıç kuşanıyor. Bağdat\'ın gençleri, Arap bedevîler ve satın alınan Türk köleler: Abbâsî ordusu yeniden doğuyor. Hiçbir sultanın himayesine girilmeyecek.',
-      [E.armies(2, 'Abbâsî Ordusu'), E.cap(2000), E.mpm(0.2), E.stab(-5)], ['abb_buveyh'], { alt: true }),
+      [E.armies(2, 'Abbâsî Ordusu'), E.cap(2000), E.mpm(0.2), E.stab(-5), X.independence()], ['abb_buveyh'], { alt: true }),
     F('abb_suk', 1, 4, 'Bağdat Çarşıları', 'coin', 1050,
       'Kerh\'in kumaşçıları, Bâbü\'t-Tâk\'ın kitapçıları: dünyanın en büyük şehirlerinden biri yeniden canlanıyor.',
       [E.trade(0.15), E.merchant()], ['abb_kanal']),
