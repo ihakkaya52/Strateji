@@ -32,7 +32,8 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 ## Başlangıç ekranı ve tarihî krallıklar
 
 - Başlangıç ekranında yalnızca kendine özel tarihî odak ağacı olan krallıklar var: **Büyük Selçuklu**, **İngiltere**,
-  **Bizans**, **Fâtımî Halifeliği** ve **Abbâsî Halifeliği** (konusu: Abbâsîlerin yükselişi). Diğer bütün krallıklar "Haritadan başka bir krallık seç" ile oynanabilir (ortak odak ağacı).
+  **Bizans**, **Fâtımî Halifeliği**, **Abbâsî Halifeliği** (konusu: Abbâsîlerin yükselişi), **Kutsal Roma İmparatorluğu**
+  ve **Papalık** (konusu: Yatırım Kavgası; Sutri, Worms, Canossa, Clermont). Diğer bütün krallıklar "Haritadan başka bir krallık seç" ile oynanabilir (ortak odak ağacı).
 - Bir krallığa tıklayınca menü sola kayar, sağda profili açılır: hükümdar ve becerileri, özellikleri, veliaht, din,
   kültür, başkent, geçmiş, tarihî hedefler, alternatif yollar, rakipler ve dostlar. Çift tıklama ya da sağ alttaki
   **Başla** düğmesi oyunu başlatır.
@@ -44,6 +45,9 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   vasal kurar ya da toprak katar.
 - Ağaçlar birbirine bağlıdır: Malazgirt, Besâsîrî fitnesi, Tuğrul Bey'in Bağdat'a girişi gibi olaylar karşı tarafın
   oyuncusuna da duyurulur; kendi ordusunu kuran bir Abbâsî halifesi Selçuklu himayesini reddeder.
+- Papa aforoz edebilir (aforozlu hükümdarın istikrarı düşer, Katolik dünya ondan yüz çevirir), affı reddederse Saksonya
+  karşı kral Rudolf'un sancağı altında ayaklanır. Papalık seçimle gelir: papa ölünce kardinaller yaşlı bir aday seçer,
+  hanedan yoktur. Papalığı oynayan oyuncu Clermont'ta Haçlı seferini kendisi ilan eder (ya da Endülüs'e yöneltir).
 
 ## Şu an oyunda olanlar (1. sürüm)
 
@@ -246,6 +250,7 @@ js/navy.js            gemiler, tersaneler, deniz savaşı, çıkarma
 js/names.js           komutan, kaptan ve gemi adları
 js/ui_mil.js          ordu ve donanma arayüzleri
 js/focus.js           odak ağaçları
+js/focus_hist*.js     tarihî odak ağaçları ve ulus profilleri (SEL, ENG / BYZ, FAT, ABB / HRE, PAP)
 js/events.js          olaylar
 js/map.js             harita çizimi
 js/ui.js              paneller ve pencereler

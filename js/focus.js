@@ -114,6 +114,7 @@ G.focus.spawnArmies = function (n, count, name) {
   if (spawn == null) { n.manpower += count * G.RECRUIT_COST; return; }
   for (let i = 0; i < count; i++) {
     const a = G.createArmy(n.tag, spawn, 12000);
+    a.gear = G.econ.need(a);
     if (name) a.name = count > 1 ? `${name} ${i + 1}` : name;
   }
 };

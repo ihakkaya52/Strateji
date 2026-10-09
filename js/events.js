@@ -25,12 +25,37 @@ function spawnRebel(tag, def, cityNames, from, armies) {
   // bu topraklardaki eski sahibin ordularını geri çek
   G.evacuateArmies();
   const provs = S.provinces.filter(p => p.owner === tag && p.kind !== 'rural');
-  for (let i = 0; i < armies; i++) G.createArmy(tag, (i === 0 ? S.provinces[cap] : G.pick(provs)).id);
+  for (let i = 0; i < armies; i++) {
+    const a = G.createArmy(tag, (i === 0 ? S.provinces[cap] : G.pick(provs)).id);
+    a.gear = G.econ.need(a);   // isyancılar silahlarıyla gelir
+  }
   G.declareWar(tag, from, true);
   return n;
 }
 
 G.events.list = [
+  {
+    // Yapay zekâ Selçukluları erken bir talihsizlikle çökmesin diye Dandanakan tarihî sonucuyla işlenir
+    // (Selçuklu ya da Gazneli oyuncunun elindeyse savaşı kendisi kazanmalı).
+    id: 'dandanakan',
+    date: at(1040, 5, 23),
+    cond: S => S.player !== 'SEL' && S.player !== 'GAZ' && S.nations.SEL && S.nations.SEL.alive && S.nations.GAZ && S.nations.GAZ.alive && G.atWar('SEL', 'GAZ'),
+    title: 'Dandanakan',
+    text: 'Merv ile Serahs arasındaki susuz çölde üç gün süren muharebenin sonunda Gazneli Sultan Mesud\'un fillerle desteklenen ordusu ' +
+      'Tuğrul ve Çağrı Beylerin Türkmen atlılarına yenildi. Horasan artık Selçukluların; Mesud Hindistan\'a çekiliyor.',
+    who: ['SEL', 'GAZ', 'ABB', 'BUY'],
+    effect: S => {
+      const home = new Set(window.WORLD.provinces.filter(p => p.owner === 'SEL').map(p => p.name));
+      for (const p of S.provinces) if (home.has(p.name) && p.owner !== 'SEL' && (p.owner === 'GAZ' || p.ctrl === 'GAZ')) G.transferProvince(p.id, 'SEL');
+      for (const a of S.armies) if (a.tag === 'GAZ') { a.men = Math.round(a.men * 0.6); a.org = Math.min(a.org, 30); }
+      G.makePeace('SEL', 'GAZ', false, 'Dandanakan\'dan sonra Gazneliler Horasan\'ı Selçuklulara bıraktı.');
+      // Selçuklu yeniden toparlanacak kadar asker toplar
+      const N = S.nations.SEL;
+      N.manpower = Math.max(N.manpower, 20000);
+      while (S.armies.filter(a => a.tag === 'SEL').length < 4) { const a = G.createArmy('SEL', N.capital); a.gear = G.econ.need(a); }
+    },
+    options: ['Horasan Selçukluların!'],
+  },
   {
     id: 'macbeth',
     date: at(1040, 8, 14),
@@ -72,7 +97,21 @@ G.events.list = [
       spawnRebel('NRM', {
         name: 'Apulia Normanları', color: '#5b5ea6', major: false,
         ruler: 'Demir Kol William', religion: 'katolik', group: 'iskandinav',
-      }, ['Melfi', 'Troia'], 'BYZ', 3);
+      }, ['Melfi', 'Troia'], 'BYZ', 4);
+      // Norman şövalyeleri sayıca az ama çağın en iyi ağır süvarisi (Olivento ve Montemaggiore, 1041)
+      const N = S.nations.NRM;
+      if (N && N.alive) { N.atkMult += 0.35; N.defMult += 0.25; N.orgMult += 0.2; N.manpower = 25000; }
+      // Olivento, Montemaggiore ve Montepeloso (1041): Bizans'ın İtalya ordusu üç kez bozuldu ve imparatorluk
+      // Delyan isyanı ile saray kavgaları arasında Normanlarla uğraşamadı. Bizans'ı yapay zekâ yönetiyorsa
+      // Normanlar Melfi kontluğunu korur; Bizans'ı oynayan oyuncu ise savaşı sürdürebilir.
+      if (N && N.alive && S.player !== 'BYZ' && G.atWar('NRM', 'BYZ')) {
+        G.makePeace('NRM', 'BYZ', false, 'Bizans, Melfi\'deki Norman kontluğunu şimdilik tanımak zorunda kaldı.');
+        const until = S.hour + 8 * 24 * 365;
+        N.truces.BYZ = until; S.nations.BYZ.truces.NRM = until;
+        // Normanların gözü Lombard prensliklerinde (Salerno 1077, Benevento, Napoli)
+        for (const t of ['SAL', 'BEN', 'NAP']) if (S.nations[t] && S.nations[t].alive) N.claims.add(t);
+      }
+      for (const p of S.provinces) if (p.owner === 'NRM' && p.kind !== 'rural') { p.fort = Math.max(p.fort || 0, 2); p.walls = 100; }
     },
     options: ['Bu barbarlar Apulia\'dan atılacak!'],
   },

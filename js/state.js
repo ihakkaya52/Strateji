@@ -74,7 +74,9 @@ G.initState = function (playerTag) {
 
   // 1040: Dandanakan'ın ardından Selçuklu-Gazneli savaşı sürüyor; Gazneli ordusu dağınık
   G.declareWar('SEL', 'GAZ', true);
-  for (const a of S.armies) if (a.tag === 'GAZ') { a.org = 65; a.men *= 0.8; }
+  // (Mesud'un ordusu çölde susuz ve yorgun; Selçuklu atlı okçuları bozkırda üstün)
+  for (const a of S.armies) if (a.tag === 'GAZ') { a.org = 55; a.men = Math.round(a.men * 0.75); }
+  S.nations.SEL.atkMult += 0.05;
   // orduları mareşallere bağla, donanmaları kur
   for (const n of Object.values(S.nations)) G.command.organize(n.tag);
   G.econ.init();

@@ -17,6 +17,7 @@ G.dyn = {};
     GAZ: { born: 998, dies: 1041, dyn: 'Gazneli', next: ['Mevdud', 'II. Mesud', 'Abdürreşid', 'Ferruhzad', 'İbrahim', 'III. Mesud'] },
     SNG: { born: 1010, dies: 1063, dyn: 'Zhao', next: ['Yingzong', 'Shenzong', 'Zhezong', 'Huizong'] },
     LIA: { born: 1016, dies: 1055, dyn: 'Yelü', next: ['Daozong', 'Tianzuo'] },
+    PAP: { born: 1012, dies: 1045, dyn: 'Tusculum', elective: true, next: ['VI. Gregorius', 'II. Clemens', 'II. Damasus', 'IX. Leo', 'II. Victor', 'IX. Stephanus', 'II. Nicolaus', 'II. Alexander', 'VII. Gregorius', 'III. Victor', 'II. Urbanus', 'II. Paschalis', 'II. Gelasius', 'II. Callixtus', 'II. Honorius', 'II. Innocentius', 'II. Celestinus', 'II. Lucius', 'III. Eugenius', 'IV. Anastasius', 'IV. Hadrianus', 'III. Alexander', 'III. Lucius', 'III. Urbanus', 'VIII. Gregorius', 'III. Clemens', 'III. Celestinus', 'III. Innocentius'] },
     ABB: { born: 1001, dies: 1075, dyn: 'Abbâsî', next: ['el-Muktedî', 'el-Müstazhir', 'el-Müsterşid', 'er-Râşid', 'el-Muktefî'] },
     ENG: { born: 1018, dies: 1042, dyn: 'Wessex', next: ['Günah Çıkaran Edward', 'II. Harold', 'I. William'] },
   };
@@ -38,6 +39,8 @@ G.dyn = {};
     // alternatif tarih yollarında hanedanın kendi halef listesi olabilir
     const list = n.histNext || (h && h.next);
     if (list && (n.histIdx || 0) < list.length) name = list[n.histIdx || 0];
+    // seçimle gelen makamlarda (Papalık) adaylar yaşlıdır
+    if (h && h.elective) { minAge = 48; maxAge = 66; }
     return { name: name || G.nameFor(n.tag), born: y - (minAge + Math.floor(G.rng() * (maxAge - minAge + 1))), sk: skills(), hist: !!name,
       idx: name ? (n.histIdx || 0) : null };
   };
@@ -54,6 +57,7 @@ G.dyn = {};
     if (h && n.tag === 'SEL') n.rulerSk = { adm: 5, dip: 4, mil: 5 };
     n.dynasty = h ? h.dyn : (n.ruler || '').split(/\s+/).pop() || n.name.split(' ')[0];
     n.histIdx = 0;
+    n.regency = 0;
     n.heir = G.rng() < 0.85 ? DY.makeHeir(n, 0, Math.max(0, Math.min(25, DY.age(n) - 18))) : null;
     // özel başlangıçlı ülkelerde hükümdar becerileri ve veliaht tarihe göre
     const pr = G.PROFILES && G.PROFILES[n.tag];
@@ -65,7 +69,6 @@ G.dyn = {};
     }
     n.marriages ||= new Set();
     n.pastRulers ||= [];
-    n.regency = 0;
   };
 
   // Hükümdar becerilerinin etkisi
@@ -95,9 +98,11 @@ G.dyn = {};
       const hist = h && n.reignStart == null && (n.histIdx || 0) === 0 && y >= h.dies;   // yalnızca 1040'taki hükümdar
       // özel başlangıçlı krallıklarda 1040'taki hükümdar tarihî ölüm yılından önce ölmez
       const shield = h && n.reignStart == null && y < h.dies && G.PROFILES && G.PROFILES[n.tag];
-      if (!shield && G.rng() < deathChance(DY.age(n), hist)) { DY.die(n); continue; }
+      // seçilmiş papalar yaşlı ve hastalıklı: ortalama birkaç yıl hüküm sürerler
+      const mult = h && h.elective ? 2.5 : 1;
+      if (!shield && G.rng() < deathChance(DY.age(n), hist) * mult) { DY.die(n); continue; }
       // varisi yoksa doğabilir; varis de ölebilir
-      if (!n.heir && DY.age(n) < 60 && G.rng() < 0.02) {
+      if (!n.heir && ((h && h.elective) || (DY.age(n) < 60 && G.rng() < 0.02))) {
         n.heir = DY.makeHeir(n, 0, 0);
         if (n.tag === S.player) G.log(`Sarayda bir veliaht doğdu: ${n.heir.name}.`, 'good', [n.tag]);
       } else if (n.heir && G.rng() < deathChance(y - n.heir.born) * 0.6) {
@@ -119,6 +124,7 @@ G.dyn = {};
       const heir = n.heir;
       n.ruler = heir.name; n.rulerBorn = heir.born; n.rulerSk = heir.sk; n.reignStart = S.time.y;
       if (heir.hist) n.histIdx = (heir.idx ?? (n.histIdx || 0)) + 1;
+      if (h && h.elective) n.dynasty = 'Kilise';   // papa hanedanla değil seçimle gelir
       n.heir = null;
       const hAge = S.time.y - heir.born;
       let extra = '';
@@ -128,8 +134,9 @@ G.dyn = {};
         extra = ` Yeni hükümdar ${hAge} yaşında; ${16 - hAge} yıl boyunca naipler yönetecek.`;
       }
       // yeni varis: hükümdarın çocuğu ya da kardeşi
-      n.heir = G.rng() < 0.75 ? DY.makeHeir(n, 0, Math.max(0, Math.min(18, hAge - 16))) : null;
-      if (me) G.ui.showEvent('Hükümdar Öldü', `${old} ${age} yaşında öldü. Taht ${n.ruler}'a geçti.${extra}`, [{ text: 'Yaşasın yeni hükümdar!' }]);
+      n.heir = G.rng() < 0.75 || (h && h.elective) ? DY.makeHeir(n, 0, Math.max(0, Math.min(18, hAge - 16))) : null;
+      if (me && h && h.elective) G.ui.showEvent('Papa Öldü', `${old} ${age} yaşında öldü. Kardinaller toplandı ve ${n.ruler}'u Aziz Petrus'un tahtına seçti.`, [{ text: 'Habemus papam!' }]);
+      else if (me) G.ui.showEvent('Hükümdar Öldü', `${old} ${age} yaşında öldü. Taht ${n.ruler}'a geçti.${extra}`, [{ text: 'Yaşasın yeni hükümdar!' }]);
       else G.log(`${n.name}: ${old} öldü, yerine ${n.ruler} geçti.`, 'info', [n.tag]);
     } else DY.crisis(n, old, age);
     if (G.ui.refreshTop && me) G.labelsDirty = true;

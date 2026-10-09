@@ -364,7 +364,7 @@
       [E.reign('Harald Hardrada', { born: 1015, dyn: 'Hårfagre', sk: { adm: 3, dip: 3, mil: 6 }, next: ['III. Olaf', 'III. Magnus'] }), E.rel(['NOR'], 100), E.naval(0.1), E.armies(2, 'Varang Muhafızları')], ['eng_1066'], { alt: true }),
     F('eng_stamford', 2, 9, 'Stamford Köprüsü', 'sword', 1066,
       '25 Eylül 1066: Harold zorlu bir yürüyüşle kuzeye vardı ve Vikingleri Stamford Köprüsü\'nde hazırlıksız yakaladı. Hardrada ve Tostig öldü; 300 gemiden 24\'ü geri döndü.',
-      [E.atk(0.05), E.mp(6000), E.stab(5)], ['eng_harald2'], { avail: n => !G.S.armies.some(a => a.tag === 'NOR' && G.S.provinces[a.prov].owner === n.tag), need: 'Norveç orduları İngiltere\'den atılmalı' }),
+      [E.atk(0.05), E.mp(6000), E.stab(5)], ['eng_harald2'], { avail: n => !G.S.armies.some(a => a.tag === 'NOR' && a.prov != null && G.S.provinces[a.prov] && G.S.provinces[a.prov].owner === n.tag), need: 'Norveç orduları İngiltere\'den atılmalı' }),
     F('eng_castles', 5, 9, 'Motte ve Bailey Kaleleri', 'castle', 1067,
       'Normanlar fethettikleri her kasabaya toprak tepe üstünde ahşap bir kale dikiyor. Londra\'da Beyaz Kule yükseliyor.',
       [E.forts(6), E.def(0.1)], ['eng_william']),

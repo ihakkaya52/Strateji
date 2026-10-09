@@ -155,6 +155,8 @@ G.ai.monthly = function () {
       const on = S.nations[o];
       if (!on || !on.alive || (n.truces[o] || 0) > S.hour || G.sameRealm(n.tag, o) || G.dip.allied(n.tag, o)) continue;
       if (G.realm(o).includes(S.player) && grace) continue;
+      // Katolik hükümdarlar Papa'ya kendiliğinden saldırmaz (yalnızca odak ağaçlarından gelen gerekçeyle)
+      if (o === 'PAP' && n.religion === 'katolik') continue;
       const theirs = defPower(o);
       const need = G.realm(o).includes(S.player) ? 2.2 : 1.7;
       if (mine < theirs * need) continue;
