@@ -5,6 +5,7 @@
 (function () {
   const { E, F, mutex, finish, byName, nm, alive } = G.focusKit;
   const YEAR = 24 * 365;
+  const V = G.vassal;
 
   // ------------------------------------------------------------ bu ağaçlara özel etkiler
   const X = {
@@ -21,21 +22,38 @@
       for (const o of Object.values(G.S.nations)) if (o.alive && o.tag !== tag && o.religion === 'katolik') G.dip.add(tag, o.tag, -30);
       G.log(`Papa ${t.ruler}'i aforoz etti! Tebaası sadakat yemininden kurtuldu.`, 'war', [n.tag, tag]);
     } }),
-    // karşı kral: Saksonya ayaklanır (Rudolf von Rheinfelden)
-    antiking: () => ({ text: 'Sakson prensleri karşı kral seçer: Saksonya ayaklanır', fn: () => {
-      const S = G.S, p = byName('Magdeburg');
-      if (!p || p.owner !== 'HRE' || p.ctrl !== 'HRE' || !S.nations.HRE.alive) return;
-      G.stab.revolt(p, 'Rudolf\'un Krallığı');
-      // Saksonya'nın geri kalanı da karşı krala katılır (kendi kültürümüzden olduğu için isyan kendiliğinden yayılmaz)
-      const rebel = p.owner;
-      if (rebel === 'HRE') return;
-      for (const name of ['Goslar', 'Merseburg', 'Meissen', 'Erfurt']) {
-        const q = byName(name);
-        if (q && q.owner === 'HRE' && q.ctrl === 'HRE') { G.transferProvince(q.id, rebel); q.unrest = 0; q.garrison = 0; }
-      }
-      G.evacuateArmies(); G.labelsDirty = true; G.mapDirty = true;
-      G.log('Forchheim\'da toplanan prensler Rheinfeldenli Rudolf\'u karşı kral seçti!', 'war', ['HRE', 'PAP']);
+    // karşı kral: Svabya dükü Rheinfeldenli Rudolf kral seçilir, sadakatsiz dükler ona katılır
+    antiking: () => ({ text: 'Prensler karşı kral seçer: Svabya dükü Rudolf ve sadakatsiz dükler imparatora başkaldırır', fn: () => {
+      const S = G.S, H = S.nations.HRE;
+      if (!H || !H.alive) return;
+      V.mod('SAX', -30, 'Karşı kral', 5); V.mod('BAV', -20, 'Karşı kral', 5);
+      let lead = S.nations.SWA && S.nations.SWA.alive && S.nations.SWA.overlord === 'HRE' ? S.nations.SWA : null;
+      if (lead) {
+        if (lead.ruler !== 'Rheinfeldenli Rudolf') { (lead.pastRulers ||= []).unshift({ name: lead.ruler, from: lead.reignStart ?? 1040, to: S.time.y, age: G.dyn.age(lead) }); lead.ruler = 'Rheinfeldenli Rudolf'; lead.rulerBorn = 1025; lead.reignStart = S.time.y; }
+      } else lead = ['SAX', 'BAV'].map(t => S.nations[t]).find(o => o && o.alive && o.overlord === 'HRE') || null;
+      if (!lead || lead.tag === S.player) return;
+      V.rebel(lead.tag, { title: 'Karşı Kral', threshold: 50, text: 'Forchheim\'da toplanan prensler Rheinfeldenli Rudolf\'u kral seçti; Papa ona taç gönderdi.' });
     } }),
+    // vasal sadakati
+    loyal: (tags, v, label) => ({ text: `${tags.map(nm).join(', ')} sadakati ${v > 0 ? '+' : ''}${v}`, fn: () => { for (const t of tags) if (alive(t)) V.mod(t, v, label); } }),
+    loyalAll: (v, label) => ({ text: `Bütün vasalların sadakati ${v > 0 ? '+' : ''}${v}`, fn: n => { for (const o of V.list(n.tag)) V.mod(o.tag, v, label); } }),
+    // 1073: Harz kalelerine karşı Sakson ayaklanması
+    saxonRevolt: () => ({ text: 'Saksonya dükalığının sadakati −45: Saksonlar ayaklanır', fn: n => {
+      const X = G.S.nations.SAX;
+      if (!X || !X.alive || X.overlord !== n.tag) return;
+      V.mod('SAX', -45, 'Harz kaleleri', 6);
+      if (X.tag !== G.S.player) V.rebel('SAX', { title: 'Sakson Ayaklanması', threshold: 30, text: 'Harz dağlarına dikilen kraliyet kalelerine öfkelenen Sakson soyluları ve köylüleri ayaklandı.' });
+    } }),
+    // Sakson haklarını tanımak: ayaklanma barışla biter, Saksonya ayrıcalık kazanır
+    saxonPeace: () => ({ text: 'Asi düklerle barış: yeniden vasalımız olurlar, Saksonya\'ya ayrıcalık ve sadakat +40', fn: n => {
+      const S = G.S;
+      for (const o of Object.values(S.nations)) if (o.alive && o.rebelFrom === n.tag) { o.rebelFrom = null; o.overlord = n.tag; o.loyalty = 60; }
+      for (const o of V.list(n.tag)) if (G.atWar(n.tag, o.tag)) G.makePeace(n.tag, o.tag, false, `${o.name} ile barış yapıldı; dük yeniden biat etti.`);
+      const X = S.nations.SAX;
+      if (X && X.alive && X.overlord === n.tag) { X.privileges = Math.min(V.MAX_PRIV, (X.privileges || 0) + 1); V.mod('SAX', 40, 'Sakson hakları tanındı', 10); }
+      G.labelsDirty = true; G.mapDirty = true;
+    } }),
+    absolve: tag => ({ text: `${nm(tag)} hükümdarının aforozu kalkar`, fn: () => { const t = G.S.nations[tag]; if (t) t.excommunicated = null; } }),
     // kutsal sefer (bedelsiz), yalnızca başka dindense ve zaten bir seferde değilsek
     holy: pick => ({ text: pick.text, fn: n => {
       const tag = pick.tag(n);
@@ -91,16 +109,16 @@
       [E.stab(5), E.gold(150), E.envoy()]),
     F('hre_bohemya', 2, 1, 'Bohemya\'yı Diz Çöktür', 'sword', 1041,
       '1041: Dük Břetislav Polonya\'yı yağmalayıp Gniezno\'dan Aziz Adalbert\'in kemiklerini Prag\'a taşıdı. Heinrich ikinci seferinde Prag önlerine dayandı; Břetislav Regensburg\'da diz çöktü.',
-      [X.calmCul('cek', 'Çek illeri'), E.rel(['POL'], -20), E.atk(0.04)], ['hre_heinrich']),
+      [X.loyal(['BOH'], 20, 'Regensburg biatı'), E.rel(['POL'], -20), E.atk(0.04)], ['hre_heinrich']),
     F('hre_landfriede', 5, 1, 'Konstanz Barış Ilanı', 'scroll', 1043,
       '1043: Heinrich Konstanz kürsüsünden bütün düşmanlarını affettiğini ilan etti ve tebaasından da aynısını istedi. Tanrı\'nın Barışı imparatorluğun barışı oluyor.',
-      [E.stab(8), E.calm(null, 'Bütün ülke')], ['hre_heinrich']),
+      [E.stab(8), E.calm(null, 'Bütün ülke'), X.loyalAll(10, 'Konstanz barışı')], ['hre_heinrich']),
     F('hre_macar', 8, 1, 'Macar Seferi', 'spear', 1044,
       '1041\'de Macar soyluları Kral Péter\'i kovup Aba Samuel\'i tahta çıkardı. Péter imparatorun sarayına sığındı. 1044\'te Ménfő\'de Heinrich\'in şövalyeleri Macar ordusunu dağıttı.',
       [E.war('HUN'), E.armies(1, 'Bavyera Şövalyeleri')], ['hre_heinrich']),
     F('hre_godfrey', 2, 2, 'Sakallı Godfrey', 'shield', 1044,
       '1044: Yukarı ve Aşağı Lotaringiya\'yı birlikte isteyen Sakallı Godfrey imparatora başkaldırdı. Lotaringiya dükleri asırlar boyu imparatorların baş belası.',
-      [E.def(0.05), E.forts(2), E.calm(['Liège', 'Verdun', 'Metz', 'Toul', 'Trier', 'Leuven'], 'Lotaringiya')], ['hre_bohemya']),
+      [E.def(0.05), E.forts(2), X.loyal(['ULO', 'DLO'], 15, 'Lotaringiya ile uzlaşma')], ['hre_bohemya']),
     F('hre_sutri', 5, 2, 'Sutri Sinodu', 'scroll', 1046,
       'Aralık 1046: Roma\'da üç papa birden var. Heinrich Sutri\'de bir sinod topladı; IX. Benedictus, III. Silvester ve VI. Gregorius azledildi. Papayı artık imparator seçecek.',
       [E.rel(['PAP'], 20), E.stab(5)], ['hre_landfriede'], { notify: { PAP: 'III. Heinrich Sutri\'de bir sinod topladı: Roma\'daki üç papanın üçü de azledilecek!' } }),
@@ -112,7 +130,7 @@
       [E.cb(['HUN']), E.atk(0.08), E.siege(0.1), E.armies(1, 'Doğu Markı Ordusu')], ['hre_macar'], { alt: true }),
     F('hre_burgonya', 2, 3, 'Burgonya Tacı', 'crown', 1046,
       'Arles krallığı II. Konrad\'dan beri imparatorun elinde. Lyon, Besançon ve Provence kontları sadakatlerini tazeliyor.',
-      [E.tax(0.05), E.calm(['Lyon', 'Vienne', 'Cenevre', 'Arles', 'Marsilya', 'Grenoble', 'Besançon', 'Nice'], 'Burgonya')], ['hre_godfrey']),
+      [E.tax(0.05), X.loyal(['BUR'], 20, 'Burgonya tacı')], ['hre_godfrey']),
     F('hre_reformpapa', 4, 3, 'Reformcu Papalar', 'scroll', 1048,
       'Tarihî yol: Heinrich Alman piskoposları birer birer Roma\'ya gönderiyor: II. Clemens, II. Damasus, IX. Leo. Cluny\'nin ruhu Petrus\'un tahtına oturuyor. Ama bu papalar bir gün imparatora karşı dönecek.',
       [E.rel(['PAP'], 40), X.catholic(10), E.research(0.05)], ['hre_sutri'], { hist: true, notify: { PAP: 'İmparator Roma\'ya reformcu bir Alman piskopos gönderiyor. Kilise yozlaşmadan arınacak.' } }),
@@ -124,7 +142,7 @@
       [X.silver(), E.tax(0.05)], ['hre_macar']),
     F('hre_italya', 1, 4, 'İtalya Seferi', 'spear', 1047,
       'İmparator Alpleri aşıyor: Lombardiya şehirleri, Toskana markgrafları ve güneyin Norman beyleri biat etmeli.',
-      [E.calm(['Milano', 'Pavia', 'Torino', 'Verona', 'Padova', 'Bologna', 'Ravenna', 'Parma', 'Canossa', 'Floransa', 'Siena', 'Ancona', 'Spoleto'], 'İtalya krallığı'), E.armies(1, 'İtalya Ordusu'), E.speed(0.05)], ['hre_burgonya']),
+      [E.calm(['Milano', 'Pavia', 'Torino', 'Verona', 'Padova', 'Bologna', 'Ravenna', 'Parma', 'Canossa', 'Floransa', 'Siena', 'Ancona', 'Spoleto'], 'İtalya krallığı'), X.loyal(['TUS'], 15, 'İtalya seferi'), E.armies(1, 'İtalya Ordusu'), E.speed(0.05)], ['hre_burgonya']),
     F('hre_1056', 5, 4, '1056: Çocuk Kral', 'crown', 1056,
       'Ekim 1056: III. Heinrich otuz dokuz yaşında Bodfeld\'de öldü. Altı yaşındaki oğlu IV. Heinrich kral; annesi Agnes naip. Prensler başını kaldırıyor.',
       [E.reign('IV. Heinrich', { born: 1050, dyn: 'Salier', sk: { adm: 3, dip: 2, mil: 4 } }), X.regency(9, 'Agnes de Poitou'), E.stab(-8)], null, { reqAny: ['hre_reformpapa', 'hre_imparatorpapa'] }),
@@ -142,7 +160,7 @@
       [E.missionary(), E.rel(['DEN'], 20), E.trade(0.05)], ['hre_ostsiedlung']),
     F('hre_sakson', 5, 6, 'Sakson Ayaklanması', 'sword', 1073,
       '1073: Heinrich Harz dağlarına kaleler kurup Svabyalı ministerialleri yerleştirdi. Saksonlar ayaklandı; kral Harzburg\'dan gece kaçmak zorunda kaldı.',
-      [E.stab(-5), E.calm(null, 'Bütün ülke')], ['hre_kaiserswerth']),
+      [E.stab(-5), X.saxonRevolt()], ['hre_kaiserswerth']),
     F('hre_burgen', 9, 6, 'Harz Kaleleri', 'castle', 1068,
       'Harzburg, Hasenburg, Heimburg: kral Saksonya\'yı taş kalelerle zapt ediyor.',
       [E.forts(3), E.def(0.06)], ['hre_hamburg']),
@@ -151,7 +169,7 @@
       [E.atk(0.08), E.cap(1500), E.stab(5)], ['hre_sakson'], { hist: true }),
     F('hre_sakson_haklar', 6, 7, 'Sakson Haklarını Tanı', 'scroll', 1075,
       'Alternatif tarih: Kral Saksonların eski haklarını tanıyor, kaleleri yıktırıyor. Prensler kralın yanında; Roma\'yla kavgada arkasında birleşik bir Almanya olacak.',
-      [E.stab(12), E.def(-0.03), E.mpm(0.08)], ['hre_sakson'], { alt: true }),
+      [X.saxonPeace(), E.stab(8), E.def(-0.03)], ['hre_sakson'], { alt: true }),
     F('hre_ministerial', 9, 7, 'Ministerialler', 'helm', 1070,
       'Özgür olmayan ama kılıç kuşanan kraliyet hizmetkârları: sadık şövalyeler, kale komutanları, saray memurları.',
       [E.org(0.08), E.armies(1, 'Kraliyet Ministerialleri')], ['hre_burgen']),
@@ -160,14 +178,14 @@
       [E.rel(['PAP'], -60), E.stab(3)], null, { reqAny: ['hre_langensalza', 'hre_sakson_haklar'], notify: { PAP: 'Worms\'ta toplanan Alman piskoposları Papa\'yı tanımadıklarını ilan etti! Kral Heinrich, Papa\'nın tahttan inmesini istiyor.' } }),
     F('hre_canossa', 4, 9, 'Canossa\'ya Yürüyüş', 'scroll', 1077,
       'Tarihî yol: Ocak 1077. Kral karla kaplı Alpleri kış ortasında aştı; Canossa kalesinin kapısında üç gün yalınayak, tövbe gömleğiyle bekledi. Papa aforozu kaldırdı. Taç kurtuldu, onur kayboldu.',
-      [E.stab(10), E.rel(['PAP'], 40), E.org(-0.05)], ['hre_worms'], { hist: true, notify: { PAP: 'Kral Heinrich tövbe gömleğiyle Canossa kalesinin kapısında bekliyor. Affedilmek istiyor.' } }),
+      [X.absolve('HRE'), E.stab(10), E.rel(['PAP'], 40), E.org(-0.05)], ['hre_worms'], { hist: true, notify: { PAP: 'Kral Heinrich tövbe gömleğiyle Canossa kalesinin kapısında bekliyor. Affedilmek istiyor.' } }),
     F('hre_roma', 6, 9, 'Roma Üzerine', 'sword', 1077,
       'Alternatif tarih: Bir kral diz çökmez. Heinrich Lombard piskoposlarının ordusuyla Alpleri aşıyor; hedef Canossa değil, Roma.',
       [E.war('PAP', true), E.atk(0.08), E.armies(2, 'Lombard Ordusu'), X.catholic(-15)], ['hre_worms'],
       { alt: true, notify: { PAP: 'Kral Heinrich af dilemiyor: ordusuyla Alpleri aştı ve Roma\'ya yürüyor!' } }),
     F('hre_elster', 5, 10, 'Elster Savaşı', 'helm', 1080,
       'Ekim 1080: Karşı kral Rudolf, Elster kıyısında Heinrich\'i yendi ama sağ elini kaybetti ve öldü. "Krala bağlılık yemini ettiğim el buydu" dedi. Saksonlar başsız kaldı.',
-      [E.atk(0.05), E.calm(['Magdeburg', 'Goslar', 'Merseburg', 'Meissen'], 'Saksonya'), E.stab(5)], null, { reqAny: ['hre_canossa', 'hre_roma'] }),
+      [E.atk(0.05), X.loyal(['SAX', 'SWA', 'BAV'], 15, 'Elster'), E.stab(5)], null, { reqAny: ['hre_canossa', 'hre_roma'] }),
     F('hre_roma1084', 5, 11, 'İmparatorluk Tacı', 'crown', 1084,
       'Mart 1084: Heinrich Roma\'ya girdi. Kendi papası III. Clemens onu Aziz Petrus\'ta imparator olarak taçlandırdı. Gregorius Sant\'Angelo kalesinde kuşatma altında.',
       [E.stab(10), E.cap(1500), E.envoy()], ['hre_elster'], { notify: { PAP: 'Heinrich Roma\'ya girdi ve karşı papa III. Clemens onu imparator olarak taçlandırdı!' } }),
@@ -177,10 +195,10 @@
     // Worms Konkordatosu 1122'de imzalandı; senaryo 1120'de bittiği için kapı 1110'da açılır
     F('hre_konkordato', 4, 13, 'Worms Konkordatosu', 'scroll', 1110,
       'Tarihî yol: Eylül 1122. Piskoposları kilise seçecek, yüzük ve asayı papa verecek; imparator yalnızca asayla toprağı verecek. Elli yıllık kavga uzlaşmayla bitti.',
-      [E.stab(15), E.rel(['PAP'], 50), X.catholic(10), E.tax(0.05)], ['hre_ogul'], { hist: true }),
+      [E.stab(15), E.rel(['PAP'], 50), X.catholic(10), X.loyalAll(15, 'Worms Konkordatosu')], ['hre_ogul'], { hist: true }),
     F('hre_sezar', 6, 13, 'Sezaropapizm', 'dragon', 1111,
       'Alternatif tarih: 1111\'de V. Heinrich Papa II. Paschalis\'i kardinalleriyle birlikte tutukladı. Papa yatırım hakkını imparatora bıraktı. Bu kez geri adım yok: imparator kilisenin de efendisi.',
-      [X.forceVassal('PAP'), E.cap(2000), E.atk(0.05), X.catholic(-15), E.stab(5)], ['hre_ogul'], { alt: true, notify: { PAP: 'V. Heinrich Papa\'yı ve kardinalleri tutukladı! Yatırım hakkı imparatora bırakılmazsa Roma yanacak.' } }),
+      [X.forceVassal('PAP'), E.cap(2000), E.atk(0.05), X.catholic(-15), X.loyalAll(-10, 'Sezaropapizm')], ['hre_ogul'], { alt: true, notify: { PAP: 'V. Heinrich Papa\'yı ve kardinalleri tutukladı! Yatırım hakkı imparatora bırakılmazsa Roma yanacak.' } }),
   ];
   mutex(HRE, ['hre_peter', 'hre_macar_ilhak']);
   mutex(HRE, ['hre_reformpapa', 'hre_imparatorpapa']);
@@ -255,7 +273,7 @@
       [X.excommunicate('HRE'), E.stab(5)], ['pap_gregor'], { notify: { HRE: 'Papa VII. Gregorius kralı aforoz etti! Tebaanız sadakat yemininden azat edildi; prensler yeni bir kral seçmek için toplanıyor.' } }),
     F('pap_canossa_af', 4, 12, 'Canossa\'da Af', 'scroll', 1077,
       'Tarihî yol: Kral üç gün kalenin kapısında yalınayak bekledi. Matilda ve Cluny başrahibi Hugo araya girdi; papa aforozu kaldırdı. Ama prensler yine de karşı kral seçecek.',
-      [E.rel(['HRE'], 40), X.catholic(10), E.stab(5)], ['pap_aforoz'], { hist: true, notify: { HRE: 'Papa Canossa\'da affı kabul etti: aforoz kaldırıldı.' } }),
+      [X.absolve('HRE'), E.rel(['HRE'], 40), X.catholic(10), E.stab(5)], ['pap_aforoz'], { hist: true, notify: { HRE: 'Papa Canossa\'da affı kabul etti: aforoz kaldırıldı.' } }),
     F('pap_israr', 6, 12, 'Karşı Krala Taç', 'crown', 1077,
       'Alternatif tarih: Gregorius kapıyı açmıyor. Sakson prensleri Forchheim\'da Rheinfeldenli Rudolf\'u kral seçiyor; Papa ona taç gönderiyor: "Petra dedit Petro, Petrus diadema Rudolpho."',
       [X.antiking(), E.rel(['HRE'], -40), E.cb(['HRE'])], ['pap_aforoz'], { alt: true, notify: { HRE: 'Papa affı reddetti ve Sakson prenslerinin seçtiği karşı kral Rudolf\'a taç gönderdi! Saksonya ayaklanıyor.' } }),
@@ -297,11 +315,12 @@
         '962\'de I. Otto Roma\'da imparator olarak taçlandı: Charlemagne\'ın tacı Alman krallarına geçti. Almanya, İtalya ve Burgonya tek bir hükümdarın altında.',
         '1024\'te Sakson hanedanı sönünce Frankonyalı Salierler tahta çıktı. II. Konrad Burgonya\'yı ekledi; oğlu III. Heinrich 1039\'da imparatorluğu zirvesinde devraldı.',
         'Ama imparatorluğun gücü kiliseye dayanıyor: piskoposları kral atıyor, papayı imparator seçiyor. Cluny\'den yükselen reform rüzgârı bu düzeni yıkmak üzere.',
+        'İmparatorun doğrudan elinde yalnızca Frankonya, Ren kıyısındaki taç toprakları ve Lombardiya var. Saksonya, Bavyera, Svabya, Karintiya, iki Lotaringiya, Bohemya, Burgonya, Toskana ve Köln başpiskoposu birer vasal: sadakatlerini korumak, haraçlarını ayarlamak ve gerektiğinde tımarı geri almak sizin elinizde.',
         'Tarihte Heinrich\'in oğlu Canossa\'da yalınayak bekleyecek, Saksonlar ayaklanacak, iki papa ve iki kral birbirini aforoz edecek. Elli yıllık Yatırım Kavgası sizi bekliyor.',
       ],
       goals: [['1046', 'Sutri sinodu: üç papanın azli'], ['1056', 'III. Heinrich\'in ölümü, çocuk kral'], ['1075', 'Langensalza\'da Sakson ayaklanması'],
         ['1076', 'Worms sinodu ve aforoz'], ['1077', 'Canossa'], ['1084', 'Roma\'da imparatorluk tacı'], ['1122', 'Worms Konkordatosu']],
-      paths: ['Macaristan: vasal kral mı, Pannonia markı mı?', 'Reformcu papalar mı, imparatora bağlı bir papalık mı?', 'Saksonları ezmek mi, haklarını tanımak mı?',
+      paths: ['Dükler: hafif haraç ve ayrıcalıklar mı, ağır haraç ve doğrudan yönetim mi?', 'Macaristan: vasal kral mı, Pannonia markı mı?', 'Reformcu papalar mı, imparatora bağlı bir papalık mı?', 'Saksonları ezmek mi, haklarını tanımak mı?',
         'Canossa\'da diz çökmek mi, Roma\'ya yürümek mi?', 'Worms Konkordatosu mu, sezaropapizm mi?'],
       rivals: ['PAP', 'HUN', 'POL', 'FRA', 'NRM'], friends: ['VEN'],
     },

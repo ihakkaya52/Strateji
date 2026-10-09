@@ -87,6 +87,7 @@ G.initState = function (playerTag) {
   G.cul.init();
   G.explore.init();
   G.tech.init();
+  G.vassal.init();
   G.trade.init();
   G.trade.update();
   return S;
@@ -333,7 +334,8 @@ G.makePeace = function (a, b, transfer, msg) {
   for (const [rebel, lord] of [[a, b], [b, a]]) {
     if (S.nations[rebel].rebelFrom === lord) {
       const score = G.warScore(rebel, lord);
-      indep = { rebel, lord, won: score >= 0 || !transfer };
+      // (vasallık: efendi kazandıysa asi topraklarıyla birlikte yeniden boyun eğer)
+      indep = { rebel, lord, won: !(G.vassal && G.vassal.forceSubmit) && (score >= 0 || !transfer) };
     }
   }
   const war = G.findWar(a, b);
@@ -381,19 +383,35 @@ G.peaceTerms = function (me, tag, terms) {
     p.owner = p.ctrl; p.siege = null; n++;
     p.conquered = S.hour;
   }
+  // vasal olarak bırakılacak iller: her eski sahibin illerinden ayrı bir vasal kurulur
+  const newVassals = [];
+  const vgroups = {};
+  for (const id of terms.vassalProvs || []) {
+    const p = S.provinces[id];
+    if (!A.has(p.ctrl) || A.has(p.owner)) continue;
+    (vgroups[p.owner] ||= []).push(id);
+  }
   let gold = 0;
   if (terms.gold && nb.gold > 0) { gold = Math.floor(nb.gold / 2); nb.gold -= gold; nm.gold += gold; }
   const parts = [];
   if (n) parts.push(`${n} il ${nm.name}'a geçti`);
   if (gold) parts.push(`${gold} altın tazminat ödendi`);
   if (terms.vassal) parts.push(`${nb.name} ${nm.name} tacının vasalı oldu`);
+  for (const ids of Object.values(vgroups)) {
+    const v = G.vassal.create(me, ids, { quiet: true, loyalty: 60 });
+    if (v) newVassals.push(v);
+  }
+  if (newVassals.length) parts.push(`${newVassals.map(v => v.name).join(', ')} vasalımız olarak kuruldu`);
+  G.vassal.forceSubmit = !!terms.vassal && nb.rebelFrom === me;
   G.makePeace(me, tag, false, `${nm.name} ile ${nb.name} barış imzaladı${parts.length ? ': ' + parts.join(', ') : ''}.`);
+  G.vassal.forceSubmit = false;
   if (terms.vassal && nb.alive) {
     nb.overlord = me; nb.tribute = 0.25; nb.rebelFrom = null;
+    nb.loyalty = 40; nb.tribLevel = 'orta'; nb.vassalSince = S.hour;
     for (const t of [...nb.allies]) { nb.allies.delete(t); if (S.nations[t]) S.nations[t].allies.delete(tag); }
     G.labelsDirty = true; G.mapDirty = true;
   }
-  return { n, gold };
+  return { n, gold, vassals: newVassals };
 };
 
 // Ülke savaş koalisyonlarından çıkarılır (teslimiyet, yok olma)

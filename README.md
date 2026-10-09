@@ -49,6 +49,24 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   karşı kral Rudolf'un sancağı altında ayaklanır. Papalık seçimle gelir: papa ölünce kardinaller yaşlı bir aday seçer,
   hanedan yoktur. Papalığı oynayan oyuncu Clermont'ta Haçlı seferini kendisi ilan eder (ya da Endülüs'e yöneltir).
 
+## Vasallık (Kutsal Roma)
+
+- 1040'ta Kutsal Roma tek parça değil: imparatorun elinde Frankonya, Ren'deki taç toprakları ve Lombardiya (17 il);
+  Saksonya, Bavyera, Svabya, Karintiya, Yukarı ve Aşağı Lotaringiya, Köln Başpiskoposluğu, Bohemya, Burgonya ve Toskana
+  vasal düklükler. Tarihî dükleri ve hanedanları var (Billung, Přemysl, Canossa, Rheinfeldenli Rudolf…).
+- **Vasallar sayfası** (üst çubukta ♛ ya da **V**): her vasalın sadakati, hedefi ve etkenleri (din, halk, efendinin gücü,
+  haraç, ayrıcalıklar, evlilik, aforoz, naiplik), haracı (hafif / orta / ağır: insan gücü ve gelir payı), hediye,
+  ayrıcalık, **tımarı geri alma** (ilhak) ve **azat etme**. Aşağıda kendi topraklarımızdan kurulabilecek vasallar
+  (tarihî düklükler, ölmüş eski sahipler, yabancı halkların bölgeleri).
+- İl panelinde **Bu ilden vasal kur** ve komşu vasala **il ver** düğmeleri.
+- Sadakat 30'un altına inen vasal haracın yarısını öder; 20'nin altında ayaklanır ve sadakatsiz diğer dükler
+  **prens birliği** kurup ona katılır. Asiler yenilirse yeniden vasal olur, kazanırsa bağımsızlaşır.
+- **Barış antlaşması:** barış masasında işgal edilen her il için **Al / Vasal / İade** seçilir. "Vasal" seçilen iller her eski
+  sahibin topraklarından ayrı bir vasal olarak kurulur (tarihî düklük ya da eski sahibi varsa o yeniden doğar) ve
+  ilhaktan %40 ucuzdur. Düşmanın tamamını vasal yapmak ve tazminat da istenebilir.
+- Odak ağacıyla bağlı: Sakson ayaklanması (1073), Sakson haklarını tanımak, Papa'nın aforozu (vasalların sadakati düşer),
+  Canossa (aforoz kalkar) ve karşı kral Rudolf (Svabya ve sadakatsiz dükler imparatora başkaldırır).
+
 ## Şu an oyunda olanlar (1. sürüm)
 
 - **Harita:** Gerçek kıyı şeritleri (Natural Earth). Her şehir bir eyalet, aralarda kırsal eyaletler, çöl ve tundralar geçilemez.
@@ -250,6 +268,8 @@ js/navy.js            gemiler, tersaneler, deniz savaşı, çıkarma
 js/names.js           komutan, kaptan ve gemi adları
 js/ui_mil.js          ordu ve donanma arayüzleri
 js/focus.js           odak ağaçları
+js/vassal.js          vasallık: düklükler, sadakat, haraç, ilhak, vasal kurma, prens birlikleri
+js/ui_vassal.js       vasallar sayfası ve il panelindeki vasal düğmeleri
 js/focus_hist*.js     tarihî odak ağaçları ve ulus profilleri (SEL, ENG / BYZ, FAT, ABB / HRE, PAP)
 js/events.js          olaylar
 js/map.js             harita çizimi

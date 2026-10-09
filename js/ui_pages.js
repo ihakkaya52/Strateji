@@ -92,6 +92,7 @@
   // ------------------------------------------------------------ sayfalar
   const PAGES = {};
   const BIND = {};
+  U.PAGES = PAGES; U.PAGE_BIND = BIND; U.PAGE_TITLES = TITLES;   // diğer dosyalar sayfa ekleyebilir
 
   // Hükümdar ve hanedan
   PAGES.hanedan = function () {

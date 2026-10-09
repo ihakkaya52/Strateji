@@ -74,13 +74,16 @@ U.profileHtml = function (tag) {
   const alts = tree.filter(f => f.alt).length;
   const nl = t => `<span class="pf-tag"><span class="flag" style="background:${(W.nations[t] || {}).color || '#555'}"></span>${G.esc((W.nations[t] || { name: t }).name)}</span>`;
   const lord = W.vassals && W.vassals[tag];
+  const vass = Object.entries(W.vassals || {}).filter(([, l]) => l === tag).map(([v]) => v);
+  const vprovs = W.provinces.filter(p => vass.includes(p.owner)).length;
   return `<div class="pf-head">
       <div class="pf-portrait">${G.portrait ? G.portrait.ruler(tag, r.born ? { age: y - r.born < 30 ? 'young' : y - r.born > 55 ? 'old' : 'adult' } : {}) : ''}</div>
       <div class="pf-title"><h2>${G.esc(pr.title || n.name)}</h2>
         <div class="pf-kind">${G.esc(pr.kind || (n.major ? 'Majör krallık' : 'Minör krallık'))}${pr.difficulty ? ` · Zorluk: <b>${pr.difficulty}</b>` : ''}</div>
         <div class="pf-meta"><span class="rl-dot" style="background:${G.RELIGIONS[n.religion].color}"></span> ${G.RELIGIONS[n.religion].name}
           ${cul ? ` · ${G.cul.flagHtml(cul)} ${G.esc(G.cul.get(cul).name)}` : ''} · Başkent ${G.esc(pr.capital || '')} · ${provs.length} il, ${cities} şehir
-          ${lord ? ` · <span class="bad">${G.esc(W.nations[lord].name)} vasalı</span>` : ''}</div>
+          ${lord ? ` · <span class="bad">${G.esc(W.nations[lord].name)} vasalı</span>` : ''}
+          ${vass.length ? ` · <b>${vass.length} vasal</b> (${vprovs} il)` : ''}</div>
       </div>
       <button class="pf-x" data-close="1" title="Kapat">✕</button>
     </div>
@@ -94,6 +97,7 @@ U.profileHtml = function (tag) {
         ${h ? `<div class="pf-name">${G.esc(h.name)} <span class="muted">· ${y - h.born} yaşında</span></div>${sk(h.sk)}<p class="pf-note">${G.esc(h.note || '')}</p>` : '<p class="muted">Tahtın belirgin bir varisi yok.</p>'}
       </div>
     </div>
+    ${vass.length ? `<div class="pf-card wide"><h4>Vasallar</h4><div class="pf-vass">${vass.map(nl).join('')}</div></div>` : ''}
     <div class="pf-card wide"><h4>Geçmiş</h4>${(pr.history || []).map(p => `<p>${G.esc(p)}</p>`).join('')}</div>
     <div class="pf-grid">
       <div class="pf-card"><h4>Tarihî hedefler</h4>

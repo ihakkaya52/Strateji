@@ -146,6 +146,7 @@ G.save = {};
     G.explore.init();
     G.explore.invalidate();
     G.tech.init();
+    G.vassal.init();
     G.trade.paths = null;
     G.trade.init();
     G.trade.update();

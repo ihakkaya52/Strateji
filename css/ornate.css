@@ -672,3 +672,50 @@ button.big { font-size: 15px; padding: 7px 18px; border-color: var(--gold); colo
 .pv-drow .small { line-height: 1.3; }
 @media (max-width: 700px) { #provpanel { width: calc(100% - 16px); } .pv-stats { grid-template-columns: repeat(2, 1fr); } }
 .pv-tile .pv-k { letter-spacing: .2px; font-size: 9.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------------------------------------------------------------- vasallar */
+#tb-vassal.warn { border-color: #c0803a; }
+#tb-vassal.warn .ico { color: #e8a050; }
+.vs-sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 4px 0 12px; }
+.vs-sum > div { border: 1px solid #4a3f2b; border-radius: 4px; padding: 6px 10px; background: rgba(0,0,0,.22); display: flex; flex-direction: column; }
+.vs-sum b { color: var(--gold); font-size: 16px; font-weight: 500; }
+.vs-lord { margin-bottom: 10px; }
+.vs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.vs-card { border: 1px solid #4a3f2b; border-radius: 5px; padding: 9px 11px; background: linear-gradient(180deg, rgba(60,48,28,.35), rgba(0,0,0,.25)); display: flex; flex-direction: column; gap: 7px; }
+.vs-head { display: flex; gap: 9px; align-items: center; }
+.vs-title { flex: 1; min-width: 0; }
+.vs-title .link { font-family: var(--title); font-size: 15px; color: #f0dca0; }
+.vs-stats { display: flex; gap: 12px; font-size: 12px; color: #cdbf9a; flex-wrap: wrap; }
+.vs-loyrow { font-size: 13px; }
+.vs-bar { position: relative; height: 8px; border-radius: 4px; background: rgba(0,0,0,.45); border: 1px solid #3a3122; margin-top: 3px; }
+.vs-bar > div { height: 100%; border-radius: 4px; }
+.vs-bar > div.good { background: linear-gradient(90deg, #6f8a3a, #a8c060); }
+.vs-bar > div.mid { background: linear-gradient(90deg, #9a7a2a, #d8b050); }
+.vs-bar > div.bad { background: linear-gradient(90deg, #7a2a20, #c85a40); }
+.vs-bar i { position: absolute; top: -3px; width: 2px; height: 12px; background: #f3e6c0; transform: translateX(-1px); }
+.vs-bar u { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(230,90,70,.7); }
+b.good { color: #b8d070; } b.mid { color: #e0c060; } b.bad { color: #e87a60; }
+.vs-fac { font-size: 12px; margin-top: 3px; }
+.vs-fac summary { cursor: pointer; color: var(--muted); }
+.vs-f { display: flex; justify-content: space-between; padding: 1px 0; border-bottom: 1px dotted #3a3122; }
+.vs-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pc-seg { display: inline-flex; border: 1px solid #5a4a2e; border-radius: 4px; overflow: hidden; }
+.pc-seg button { border: 0; border-radius: 0; padding: 2px 8px; font-size: 11.5px; background: rgba(0,0,0,.3); margin: 0; }
+.pc-seg button + button { border-left: 1px solid #5a4a2e; }
+.pc-seg button.on { background: #6a5426; color: #fff3cf; }
+.vs-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.vs-acts button { font-size: 12px; padding: 3px 8px; }
+.vs-cand { display: flex; gap: 10px; justify-content: space-between; align-items: center; border: 1px solid #4a3f2b; border-radius: 4px; padding: 6px 10px; margin-bottom: 5px; background: rgba(0,0,0,.18); }
+.vs-help p { margin: 4px 0; }
+.pv-vas { margin-top: 12px; padding: 8px 9px; border: 1px solid #5a4a2e; border-radius: 5px; background: rgba(60,48,28,.25); }
+.pv-vas .pv-dk { color: var(--gold); }
+.pv-vas .pv-drow { flex-wrap: wrap; }
+/* barış masası: il başına üç seçenek */
+.pc-prov.pc3 { grid-template-columns: 1fr auto auto 40px; cursor: default; }
+.pc-prov.pc3.al { border-color: #a8b870; background: rgba(168,184,112,.1); }
+.pc-prov.pc3.vas { border-color: #c09a50; background: rgba(192,154,80,.12); }
+.pc-prov.pc3.iade { opacity: .75; }
+.pc-prov.pc3 .pc-seg button[data-ps="vas"].on { background: #7a5a20; }
+.pc-prov.pc3 .pc-seg button[data-ps="iade"].on { background: #4a3a2a; }
+@media (max-width: 700px) { .vs-sum { grid-template-columns: repeat(2, 1fr); } }
+.pf-vass { display: flex; flex-wrap: wrap; gap: 6px 12px; }

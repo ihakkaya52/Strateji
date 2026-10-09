@@ -39,7 +39,8 @@ G.events.list = [
     // (Selçuklu ya da Gazneli oyuncunun elindeyse savaşı kendisi kazanmalı).
     id: 'dandanakan',
     date: at(1040, 5, 23),
-    cond: S => S.player !== 'SEL' && S.player !== 'GAZ' && S.nations.SEL && S.nations.SEL.alive && S.nations.GAZ && S.nations.GAZ.alive && G.atWar('SEL', 'GAZ'),
+    cond: S => S.player !== 'SEL' && S.player !== 'GAZ' && S.nations.SEL && S.nations.SEL.alive && S.nations.GAZ && S.nations.GAZ.alive &&
+      (G.atWar('SEL', 'GAZ') || window.WORLD.provinces.some(p => p.owner === 'SEL' && S.provinces[p.id].owner === 'GAZ')),
     title: 'Dandanakan',
     text: 'Merv ile Serahs arasındaki susuz çölde üç gün süren muharebenin sonunda Gazneli Sultan Mesud\'un fillerle desteklenen ordusu ' +
       'Tuğrul ve Çağrı Beylerin Türkmen atlılarına yenildi. Horasan artık Selçukluların; Mesud Hindistan\'a çekiliyor.',
@@ -48,7 +49,8 @@ G.events.list = [
       const home = new Set(window.WORLD.provinces.filter(p => p.owner === 'SEL').map(p => p.name));
       for (const p of S.provinces) if (home.has(p.name) && p.owner !== 'SEL' && (p.owner === 'GAZ' || p.ctrl === 'GAZ')) G.transferProvince(p.id, 'SEL');
       for (const a of S.armies) if (a.tag === 'GAZ') { a.men = Math.round(a.men * 0.6); a.org = Math.min(a.org, 30); }
-      G.makePeace('SEL', 'GAZ', false, 'Dandanakan\'dan sonra Gazneliler Horasan\'ı Selçuklulara bıraktı.');
+      if (G.atWar('SEL', 'GAZ')) G.makePeace('SEL', 'GAZ', false, 'Dandanakan\'dan sonra Gazneliler Horasan\'ı Selçuklulara bıraktı.');
+      S.nations.SEL.truces.GAZ = S.nations.GAZ.truces.SEL = S.hour + 5 * 24 * 365;
       // Selçuklu yeniden toparlanacak kadar asker toplar
       const N = S.nations.SEL;
       N.manpower = Math.max(N.manpower, 20000);

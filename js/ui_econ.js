@@ -196,6 +196,7 @@
         ${U.portSection(p)}
         ${armies.length ? `<h3>Ordular</h3><div class="pv-armies">${armies.map(a => `<div>${U.flag(a.tag)} <b>${G.esc(a.name)}</b><span class="muted">${G.esc(a.general.name)}</span><span>${G.fmtK(a.men)}</span></div>`).join('')}</div>` : ''}
         ${queued.length ? `<h3>İnşaatta</h3><div class="muted">${queued.map(b => EC.BUILD[b.kind].name).join(', ')}</div>` : ''}
+        ${U.vassalProvHtml ? U.vassalProvHtml(p) : ''}
         ${U.massacreHtml(p)}`;
     } else if (tab === 'kale') {
       const max = EC.maxGarrison(p), target = EC.garrisonTarget(p);
