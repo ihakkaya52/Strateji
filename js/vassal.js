@@ -29,15 +29,16 @@ G.vassal = {};
       provs: ['Besançon', 'Lyon', 'Vienne', 'Cenevre', 'Arles', 'Marsilya', 'Grenoble', 'Nice'] },
     TUS: { name: 'Toskana Markgraflığı', ruler: 'Canossalı Bonifacio', kind: 'dukalik', cap: 'Canossa',
       provs: ['Canossa', 'Floransa', 'Siena', 'Parma', 'Bologna'] },
-    // Fransa: Capet kralının elinde Île-de-France ve birkaç piskoposluk; büyük düklükler ve kontluklar vasal
+    // Fransa: 1040'ta yalnızca Normandiya vasal olarak ayrı; diğer düklükler (later) başlangıçta kralın elinde,
+    // ama tarihî düklük olarak vasallar sayfasından sonradan kurulabilir
     NMD: { lord: 'FRA', name: 'Normandiya Dükalığı', ruler: 'Piç William', kind: 'dukalik', cap: 'Rouen', provs: ['Rouen', 'Caen', 'Coutances'] },
-    FLA: { lord: 'FRA', name: 'Flandre Kontluğu', ruler: 'V. Baudouin', kind: 'dukalik', cap: 'Brugge', provs: ['Brugge', 'Gent', 'Saint-Omer', 'Arras', 'Boulogne'] },
-    BLO: { lord: 'FRA', name: 'Blois-Şampanya Kontluğu', ruler: 'III. Thibaut', kind: 'dukalik', cap: 'Blois', provs: ['Blois', 'Chartres', 'Tours', 'Troyes', 'Provins'] },
-    ANJ: { lord: 'FRA', name: 'Anjou Kontluğu', ruler: 'II. Geoffroy Martel', kind: 'dukalik', cap: 'Angers', provs: ['Angers', 'Le Mans'] },
-    BRI: { lord: 'FRA', name: 'Bretanya Dükalığı', ruler: 'II. Conan', kind: 'dukalik', cap: 'Rennes', provs: ['Rennes', 'Nantes', 'Vannes', 'Quimper', 'Saint-Brieuc'] },
-    AQU: { lord: 'FRA', name: 'Akitanya Dükalığı', ruler: 'VII. Guillaume', kind: 'dukalik', cap: 'Poitiers', provs: ['Poitiers', 'Saintes', 'Limoges', 'Bordeaux', 'Périgueux', 'Bayonne', 'Auch', 'Agen', 'Clermont'] },
-    BRY: { lord: 'FRA', name: 'Burgonya Dükalığı', ruler: 'I. Robert', kind: 'dukalik', cap: 'Dijon', provs: ['Dijon', 'Autun', 'Auxerre', 'Nevers', 'Mâcon'] },
-    TOU: { lord: 'FRA', name: 'Toulouse Kontluğu', ruler: 'Pons', kind: 'dukalik', cap: 'Toulouse', provs: ['Toulouse', 'Cahors', 'Rodez', 'Carcassonne', 'Narbonne', 'Maguelone', 'Nîmes'] },
+    FLA: { lord: 'FRA', later: true, name: 'Flandre Kontluğu', ruler: 'V. Baudouin', kind: 'dukalik', cap: 'Brugge', provs: ['Brugge', 'Gent', 'Saint-Omer', 'Arras', 'Boulogne'] },
+    BLO: { lord: 'FRA', later: true, name: 'Blois-Şampanya Kontluğu', ruler: 'III. Thibaut', kind: 'dukalik', cap: 'Blois', provs: ['Blois', 'Chartres', 'Tours', 'Troyes', 'Provins'] },
+    ANJ: { lord: 'FRA', later: true, name: 'Anjou Kontluğu', ruler: 'II. Geoffroy Martel', kind: 'dukalik', cap: 'Angers', provs: ['Angers', 'Le Mans'] },
+    BRI: { lord: 'FRA', later: true, name: 'Bretanya Dükalığı', ruler: 'II. Conan', kind: 'dukalik', cap: 'Rennes', provs: ['Rennes', 'Nantes', 'Vannes', 'Quimper', 'Saint-Brieuc'] },
+    AQU: { lord: 'FRA', later: true, name: 'Akitanya Dükalığı', ruler: 'VII. Guillaume', kind: 'dukalik', cap: 'Poitiers', provs: ['Poitiers', 'Saintes', 'Limoges', 'Bordeaux', 'Périgueux', 'Bayonne', 'Auch', 'Agen', 'Clermont'] },
+    BRY: { lord: 'FRA', later: true, name: 'Burgonya Dükalığı', ruler: 'I. Robert', kind: 'dukalik', cap: 'Dijon', provs: ['Dijon', 'Autun', 'Auxerre', 'Nevers', 'Mâcon'] },
+    TOU: { lord: 'FRA', later: true, name: 'Toulouse Kontluğu', ruler: 'Pons', kind: 'dukalik', cap: 'Toulouse', provs: ['Toulouse', 'Cahors', 'Rodez', 'Carcassonne', 'Narbonne', 'Maguelone', 'Nîmes'] },
   };
   // 1040'ta zaten var olan ülkeler arasındaki tarihî vasallık ve haraç bağları: vasal -> [efendi, tür]
   V.SCEN_VASSALS = {
@@ -77,7 +78,7 @@ G.vassal = {};
     W.vassals ||= {};
     for (const [tag, d] of Object.entries(V.DUCHIES)) {
       const lord = d.lord || 'HRE';
-      if (!W.nations[lord]) continue;
+      if (!W.nations[lord] || d.later) continue;
       let cap = null;
       for (const p of W.provinces) {
         if (p.owner !== lord || !(d.provs.includes(p.name) || d.provs.includes(p.home))) continue;
