@@ -314,7 +314,7 @@ function peacePair(a, b, transfer, skipWar) {
 }
 
 // Barış: transfer=true ise işgal edilen topraklar işgalciye geçer. Bütün koalisyon birlikte barışır.
-G.makePeace = function (a, b, transfer) {
+G.makePeace = function (a, b, transfer, msg) {
   const S = G.S, na = S.nations[a], nb = S.nations[b];
   if (!na.enemies.has(b)) return;
   // bağımsızlık savaşı sonucu
@@ -346,10 +346,43 @@ G.makePeace = function (a, b, transfer) {
   }
   G.evacuateArmies();
   G.labelsDirty = true; G.mapDirty = true;
-  G.log(transfer
+  G.log(msg || (transfer
     ? `${na.name} ile ${nb.name} barış imzaladı. ${moved} eyalet el değiştirdi.`
-    : `${na.name} ile ${nb.name} beyaz barış yaptı.`, 'info', [a, b]);
+    : `${na.name} ile ${nb.name} beyaz barış yaptı.`), 'info', [a, b]);
   G.checkElimination();
+};
+
+// Barış masası: seçilen işgal altındaki iller işgalcilere geçer, gerisi sahiplerine döner;
+// istenirse düşman lideri vasal olur ve hazinesinin yarısını tazminat olarak öder.
+G.peaceCost = function (me, tag) {
+  // düşman tarafının toplam il ağırlığına göre her ilin "barış puanı" bedeli
+  const B = new Set(G.warSide(tag, me));
+  let tot = 0;
+  for (const p of G.S.provinces) if (B.has(p.owner)) tot += G.provinceWeight(p);
+  return p => (tot ? G.provinceWeight(p) / tot * 100 : 100);
+};
+G.peaceTerms = function (me, tag, terms) {
+  const S = G.S, A = new Set(G.warSide(me, tag)), nb = S.nations[tag], nm = S.nations[me];
+  let n = 0;
+  for (const id of terms.provs || []) {
+    const p = S.provinces[id];
+    if (!A.has(p.ctrl) || A.has(p.owner)) continue;
+    p.owner = p.ctrl; p.siege = null; n++;
+    p.conquered = S.hour;
+  }
+  let gold = 0;
+  if (terms.gold && nb.gold > 0) { gold = Math.floor(nb.gold / 2); nb.gold -= gold; nm.gold += gold; }
+  const parts = [];
+  if (n) parts.push(`${n} il ${nm.name}'a geçti`);
+  if (gold) parts.push(`${gold} altın tazminat ödendi`);
+  if (terms.vassal) parts.push(`${nb.name} ${nm.name} tacının vasalı oldu`);
+  G.makePeace(me, tag, false, `${nm.name} ile ${nb.name} barış imzaladı${parts.length ? ': ' + parts.join(', ') : ''}.`);
+  if (terms.vassal && nb.alive) {
+    nb.overlord = me; nb.tribute = 0.25; nb.rebelFrom = null;
+    for (const t of [...nb.allies]) { nb.allies.delete(t); if (S.nations[t]) S.nations[t].allies.delete(tag); }
+    G.labelsDirty = true; G.mapDirty = true;
+  }
+  return { n, gold };
 };
 
 // Ülke savaş koalisyonlarından çıkarılır (teslimiyet, yok olma)

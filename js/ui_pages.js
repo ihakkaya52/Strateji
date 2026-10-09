@@ -240,7 +240,7 @@
   // ------------------------------------------------------------ Esc: her şeyi kapat, ana siyasi haritaya dön
   U.escapeAll = function () {
     if (U.targetOrdu) U.endTargetMode();
-    for (const id of ['dipwin', 'prodwin', 'navywin', 'focuswin', 'warpanel', 'battlepanel', 'pagewin', 'mus-pop']) { const e = $(id); if (e) e.classList.add('hidden'); }
+    for (const id of ['dipwin', 'prodwin', 'navywin', 'focuswin', 'warpanel', 'battlepanel', 'pagewin', 'mus-pop', 'peacewin', 'gamemenu']) { const e = $(id); if (e) e.classList.add('hidden'); }
     U.page = null; U.battleKey = null; U.dipTag = null;
     G.clearSelection();
     U.closePanel();

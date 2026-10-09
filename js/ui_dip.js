@@ -79,8 +79,7 @@
           ${w ? `<div class="muted">Taraflar: ${list([...(w.att.has(me) ? w.att : w.def)])} ⚔ ${list([...(w.att.has(me) ? w.def : w.att)])}</div>` : ''}</div>`);
         const can = leader && !mn.overlord;
         const why = !can ? yesNo(false, 'Barışa koalisyonun lideri karar verir.') : '';
-        btn('peace_t', 'Barış: işgal edilen topraklar bizim olsun', can, why || yesNo(G.ai.considerPeace(tag, me, true), G.ai.considerPeace(tag, me, true) ? 'Kabul ederler.' : 'Savaş skoru yetersiz.'), 'good');
-        btn('peace_w', 'Beyaz barış teklif et', can, why || yesNo(G.ai.considerPeace(tag, me, false), G.ai.considerPeace(tag, me, false) ? 'Kabul ederler.' : 'Henüz kazandıklarını düşünüyorlar.'));
+        btn('peace_table', '☮ Barış masası', can, why || 'Hangi illeri alacağınızı seçin; vasallık ve tazminat isteyin.', 'good');
       } else {
         if (mn.justify && mn.justify.target === tag) {
           const f = (S.hour - mn.justify.start) / (mn.justify.done - mn.justify.start);
@@ -197,6 +196,7 @@
         if (err) log(err, 'war');
         break;
       }
+      case 'peace_table': U.showPeace(tag); return;
       case 'peace_t':
       case 'peace_w': {
         const transfer = act === 'peace_t';

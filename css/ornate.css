@@ -334,3 +334,35 @@
 #menu-saves { margin-top: 10px; }
 #menu-saves h3 { text-align: center; }
 button.big { font-size: 15px; padding: 7px 18px; border-color: var(--gold); color: var(--gold); }
+
+/* barış masası */
+#peacewin {
+  position: fixed; top: 70px; left: 50%; transform: translateX(-50%); width: min(900px, calc(100% - 16px)); max-height: calc(100% - 90px);
+  display: flex; flex-direction: column; z-index: 23;
+  background: linear-gradient(rgba(34,38,30,0.98), rgba(18,20,14,0.98)); border: 2px solid #b08a40; border-radius: 6px;
+  box-shadow: 0 0 0 1px #000, 0 16px 60px rgba(0,0,0,0.8);
+}
+#peacewin .focus-head { display: flex; align-items: center; padding: 8px 14px; border-bottom: 1px solid #4a3f2b; }
+#peacewin h2 { margin: 0; font-family: var(--title); font-size: 17px; color: #d8e0b0; letter-spacing: 1px; }
+.pc-body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; padding: 10px 14px 14px; overflow: hidden; min-height: 0; }
+.pc-left { overflow-y: auto; max-height: calc(100vh - 200px); }
+.pc-body h3 { font-family: var(--title); font-weight: 400; font-size: 13px; letter-spacing: 1px; color: var(--gold); margin: 4px 0 6px; }
+.pc-tools { display: flex; gap: 6px; margin-bottom: 6px; } .pc-tools button { font-size: 12px; padding: 2px 8px; }
+.pc-grp { margin-bottom: 8px; }
+.pc-own { font-weight: 600; margin-bottom: 3px; }
+.pc-prov, .pc-opt { display: grid; grid-template-columns: 18px 1fr auto 40px; gap: 6px; align-items: center; padding: 3px 6px; border: 1px solid #3a3122; border-radius: 3px; margin-bottom: 2px; cursor: pointer; font-size: 13px; }
+.pc-opt { grid-template-columns: 18px 1fr 40px; }
+.pc-prov.on, .pc-opt.on { border-color: #a8b870; background: rgba(168,184,112,0.1); }
+.pc-opt.off { opacity: 0.5; cursor: default; }
+.pc-prov small { color: var(--muted); }
+.pc-prov b, .pc-opt b { text-align: right; color: var(--gold); }
+.pc-score { display: flex; justify-content: space-between; font-size: 14px; padding: 2px 0; }
+.pc-score b { font-size: 16px; }
+.pc-meter { position: relative; height: 12px; background: #1a160e; border: 1px solid #000; border-radius: 2px; margin: 6px 0; }
+.pc-meter .lim { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(120,170,80,0.35); }
+.pc-meter .dem { position: absolute; left: 0; top: 3px; bottom: 3px; background: #d6b36a; }
+.pc-meter .dem.over { background: #d0503f; }
+.pc-verdict { margin: 8px 0; padding: 5px 8px; border-radius: 3px; font-size: 13px; }
+.pc-verdict.yes { background: rgba(90,160,74,0.2); color: #b8e098; }
+.pc-verdict.no { background: rgba(192,68,58,0.2); color: #ffb0a0; }
+.pc-btns { display: flex; gap: 8px; flex-wrap: wrap; }

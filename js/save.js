@@ -138,7 +138,7 @@ G.save = {};
     U.provId = null; U.dipTag = null; U.page = null; U.battleKey = null; U.panelKind = null; U.focusView = null;
     if (G.map.frontCache) G.map.frontCache.clear();
     G.map.selProv = null; G.map.selNation = null;
-    for (const id of ['menu', 'pickbar', 'modal', 'dipwin', 'prodwin', 'navywin', 'focuswin', 'warpanel', 'battlepanel', 'pagewin', 'provpanel', 'panel', 'armypanel', 'gamemenu']) {
+    for (const id of ['menu', 'pickbar', 'modal', 'dipwin', 'prodwin', 'navywin', 'focuswin', 'warpanel', 'battlepanel', 'pagewin', 'provpanel', 'panel', 'armypanel', 'gamemenu', 'peacewin']) {
       const e = document.getElementById(id); if (e) e.classList.add('hidden');
     }
     U.picking = false;
