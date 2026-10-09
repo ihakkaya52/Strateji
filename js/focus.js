@@ -130,6 +130,8 @@ G.focus.canStart = function (n, f) {
   if ((f.req || []).some(r => !n.focus.done.has(r))) return false;
   // mutex: birbirini dışlayan odaklardan biri tamamlandıysa ya da sürüyorsa diğeri açılmaz
   if (f.mutex && f.mutex.some(m => n.focus.done.has(m) || n.focus.cur === m)) return false;
+  if (f.reqAny && !f.reqAny.some(r => n.focus.done.has(r))) return false;
+  if (f.year && G.S.time.y < f.year) return false;
   if (f.avail && !f.avail(n)) return false;
   return true;
 };
@@ -148,7 +150,10 @@ G.focus.daily = function () {
     const tag = n.tag, fs = n.focus;
     if (!fs.cur && tag !== S.player) {
       // yapay zekâ: uygun odaklardan birini seç (ağacın üst sıralarına öncelik, büyük ağaçlarda biraz daha derin)
-      const opts = G.focus.tree(tag).filter(f => G.focus.canStart(n, f) && (!f.ai || f.ai(n)));
+      let opts = G.focus.tree(tag).filter(f => G.focus.canStart(n, f) && (!f.ai || f.ai(n)));
+      // yapay zekâ çoğunlukla tarihin akışını izler, arada bir alternatif yola sapar
+      const hist = opts.filter(f => !f.alt);
+      if (hist.length && G.rng() < 0.85) opts = hist;
       if (opts.length) {
         const minY = Math.min(...opts.map(f => f.y));
         const top = opts.filter(f => f.y <= minY + 2);
@@ -159,13 +164,13 @@ G.focus.daily = function () {
     const f = G.focus.get(tag, fs.cur);
     if (f.avail && !f.avail(n)) continue;   // koşul bozulduysa bekler
     fs.prog++;
-    if (fs.prog >= FOCUS_DAYS) {
+    if (fs.prog >= (f.days || FOCUS_DAYS)) {
       fs.done.add(f.id);
       fs.cur = null; fs.prog = 0;
       f.effect(n);
       G.mapDirty = true;
       if (tag === S.player) {
-        G.ui.showEvent(`Odak tamamlandı: ${f.name}`, `${f.desc} (${f.effectText})`, [{ text: 'Devam' }]);
+        G.ui.showEvent(f.event || `Odak tamamlandı: ${f.name}`, `${f.desc}\n\n${f.effectText}`, [{ text: f.ok || 'Devam' }]);
       } else {
         G.log(`${n.name} "${f.name}" odağını tamamladı.`, 'info', [tag]);
       }

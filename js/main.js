@@ -48,6 +48,7 @@
   U.initMenu(startGame);
 
   function startGame(tag) {
+    G.rng = G.makeRng((Date.now() % 100000) + 11);   // her yeni oyun farklı zarlarla
     G.initState(tag);
     G.map.selNation = null;
     G.labelsDirty = true;

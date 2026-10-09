@@ -16,26 +16,31 @@ U.nlink = tag => {
 
 // ------------------------------------------------------------ menü
 U.initMenu = function (onStart) {
-  const list = $('major-list');
-  const majors = Object.entries(window.WORLD.nations).filter(([, n]) => n.major);
-  list.innerHTML = majors.map(([tag, n]) => `
-    <div class="major-card" data-tag="${tag}">
+  const list = $('major-list'), W = window.WORLD;
+  // yalnızca kendine özel tarihî odak ağacı olan krallıklar
+  const tags = (G.SPECIAL_TAGS || []).filter(t => W.nations[t]);
+  list.innerHTML = tags.map(tag => {
+    const n = W.nations[tag], pr = (G.PROFILES || {})[tag] || {};
+    return `<div class="major-card" data-tag="${tag}">
       <span class="flag" style="background:${n.color}"></span>
-      <div><div class="nm">${G.esc(n.name)}</div><div class="rl">${G.esc(n.ruler)} · ${G.RELIGIONS[n.religion].name}</div></div>
-    </div>`).join('');
-  list.onclick = e => {
-    const c = e.target.closest('.major-card');
-    if (c) onStart(c.dataset.tag);
+      <div><div class="nm">${G.esc(n.name)}</div><div class="rl">${G.esc(pr.ruler ? pr.ruler.name : n.ruler)} · ${G.RELIGIONS[n.religion].name}</div>
+      <div class="rl2">${G.esc(pr.kind || (n.major ? 'Majör krallık' : 'Minör krallık'))}</div></div>
+    </div>`;
+  }).join('');
+  U.menuSel = null;
+  const select = tag => {
+    U.menuSel = tag;
+    for (const c of list.querySelectorAll('.major-card')) c.classList.toggle('on', c.dataset.tag === tag);
+    $('menu-profile').innerHTML = U.profileHtml(tag);
+    $('menu').classList.add('picked');
+    $('btn-start').disabled = false;
+    $('btn-start').textContent = `${W.nations[tag].name} ile başla ▶`;
   };
-  const eng = window.WORLD.nations.ENG;
-  const sp = $('special-list');
-  sp.innerHTML = eng ? `
-    <div class="major-card" data-tag="ENG">
-      <span class="flag" style="background:${eng.color}"></span>
-      <div><div class="nm">${G.esc(eng.name)}</div>
-      <div class="rl">Danimarka tacının vasalı · Bağımsızlık odak ağacı</div></div>
-    </div>` : '';
-  sp.onclick = list.onclick;
+  list.onclick = e => { const c = e.target.closest('.major-card'); if (c) select(c.dataset.tag); };
+  list.ondblclick = e => { const c = e.target.closest('.major-card'); if (c) onStart(c.dataset.tag); };
+  $('btn-start').onclick = () => { if (U.menuSel) onStart(U.menuSel); };
+  $('menu-profile').onclick = e => { if (e.target.closest('[data-close]')) { $('menu').classList.remove('picked'); U.menuSel = null; $('btn-start').disabled = true; $('btn-start').textContent = 'Başla ▶';
+    for (const c of list.querySelectorAll('.major-card')) c.classList.remove('on'); } };
   $('btn-pick-map').onclick = () => {
     $('menu').classList.add('hidden');
     $('pickbar').classList.remove('hidden');
@@ -54,6 +59,53 @@ U.initMenu = function (onStart) {
     U.picking = false;
     onStart(U.pickTag);
   };
+};
+
+// Başlangıç ekranında krallığın profili: hükümdar, veliaht, din, kültür, geçmiş ve tarihî hedefler
+U.profileHtml = function (tag) {
+  const W = window.WORLD, n = W.nations[tag], pr = (G.PROFILES || {})[tag] || {};
+  const provs = W.provinces.filter(p => p.owner === tag);
+  const cities = provs.filter(p => p.kind !== 'rural').length;
+  const y = 1040, r = pr.ruler || { name: n.ruler }, h = pr.heir;
+  const pips = v => `<span class="pf-pips">${[1, 2, 3, 4, 5, 6].map(i => `<i class="${i <= v ? 'on' : ''}"></i>`).join('')}</span>`;
+  const sk = s => s ? `<div class="pf-sk"><span>⚖ Yönetim</span>${pips(s.adm)}<span>🕊 Diplomasi</span>${pips(s.dip)}<span>⚔ Askerlik</span>${pips(s.mil)}</div>` : '';
+  const cul = G.cul ? G.cul.ofNation(tag) : null;
+  const tree = G.FOCUS_TREES[tag] || [];
+  const alts = tree.filter(f => f.alt).length;
+  const nl = t => `<span class="pf-tag"><span class="flag" style="background:${(W.nations[t] || {}).color || '#555'}"></span>${G.esc((W.nations[t] || { name: t }).name)}</span>`;
+  const lord = W.vassals && W.vassals[tag];
+  return `<div class="pf-head">
+      <div class="pf-portrait">${G.portrait ? G.portrait.ruler(tag, r.born ? { age: y - r.born < 30 ? 'young' : y - r.born > 55 ? 'old' : 'adult' } : {}) : ''}</div>
+      <div class="pf-title"><h2>${G.esc(pr.title || n.name)}</h2>
+        <div class="pf-kind">${G.esc(pr.kind || (n.major ? 'Majör krallık' : 'Minör krallık'))}${pr.difficulty ? ` · Zorluk: <b>${pr.difficulty}</b>` : ''}</div>
+        <div class="pf-meta"><span class="rl-dot" style="background:${G.RELIGIONS[n.religion].color}"></span> ${G.RELIGIONS[n.religion].name}
+          ${cul ? ` · ${G.cul.flagHtml(cul)} ${G.esc(G.cul.get(cul).name)}` : ''} · Başkent ${G.esc(pr.capital || '')} · ${provs.length} il, ${cities} şehir
+          ${lord ? ` · <span class="bad">${G.esc(W.nations[lord].name)} vasalı</span>` : ''}</div>
+      </div>
+      <button class="pf-x" data-close="1" title="Kapat">✕</button>
+    </div>
+    <div class="pf-grid">
+      <div class="pf-card"><h4>Hükümdar</h4>
+        <div class="pf-name">${G.esc(r.name)} <span class="muted">· ${r.born ? y - r.born + ' yaşında' : ''}</span></div>
+        ${sk(r.sk)}
+        ${(r.traits || []).map(([t, d]) => `<div class="pf-trait"><b>${G.esc(t)}</b><span>${G.esc(d)}</span></div>`).join('')}
+      </div>
+      <div class="pf-card"><h4>Veliaht</h4>
+        ${h ? `<div class="pf-name">${G.esc(h.name)} <span class="muted">· ${y - h.born} yaşında</span></div>${sk(h.sk)}<p class="pf-note">${G.esc(h.note || '')}</p>` : '<p class="muted">Tahtın belirgin bir varisi yok.</p>'}
+      </div>
+    </div>
+    <div class="pf-card wide"><h4>Geçmiş</h4>${(pr.history || []).map(p => `<p>${G.esc(p)}</p>`).join('')}</div>
+    <div class="pf-grid">
+      <div class="pf-card"><h4>Tarihî hedefler</h4>
+        <div class="pf-goals">${(pr.goals || []).map(([yr, t]) => `<div><b>${yr}</b><span>${G.esc(t)}</span></div>`).join('')}</div>
+      </div>
+      <div class="pf-card"><h4>Alternatif tarihler</h4>
+        <p class="muted small">Odak ağacı: ${tree.length} odak, ${alts} alternatif. Dönüm noktalarında bir yolu seçince öbürü kapanır.</p>
+        <ul class="pf-paths">${(pr.paths || []).map(t => `<li>⇄ ${G.esc(t)}</li>`).join('')}</ul>
+        ${pr.rivals ? `<h5>Rakipler</h5><div class="pf-tags">${pr.rivals.map(nl).join('')}</div>` : ''}
+        ${pr.friends ? `<h5>Dostlar</h5><div class="pf-tags">${pr.friends.map(nl).join('')}</div>` : ''}
+      </div>
+    </div>`;
 };
 
 U.pickNation = function (tag) {
@@ -232,7 +284,7 @@ U.showNation = function (tag) {
   const wars = [...n.enemies];
   el.innerHTML = `<button class="close">✕</button>
     <h2>${U.flag(tag)} ${G.esc(n.name)}</h2>
-    <div class="muted">${n.major ? 'Büyük güç' : 'Küçük ülke'}${isMe ? ' · Sizin ülkeniz' : ''}</div>
+    <div class="muted">${n.major ? 'Majör krallık' : 'Minör krallık'}${isMe ? ' · Sizin ülkeniz' : ''}</div>
     ${G.portrait ? `<div class="dip-ruler"><div class="dip-portrait">${G.portrait.ruler(tag)}</div>
       <div><div class="rn">${G.esc(n.ruler)}</div><div class="rt">${G.RELIGIONS[n.religion].name} · ${G.esc(G.GROUP_NAMES[n.group] || '')}</div></div></div>` : ''}
     <table>
@@ -384,8 +436,8 @@ U.showFocus = function () {
   $('focus-title').textContent = `${n.name} · Ulusal Odak`;
   const cur = n.focus.cur && G.focus.get(tag, n.focus.cur);
   $('focus-sub').textContent = cur
-    ? `Sürüyor: ${cur.name} (${G.FOCUS_DAYS - n.focus.prog} gün kaldı)`
-    : 'Bir odak seçin. Her odak ' + G.FOCUS_DAYS + ' gün sürer. · Tekerlek: yakınlaştır · sol tıkla basılı tutup sürükle';
+    ? `Sürüyor: ${cur.name} (${(cur.days || G.FOCUS_DAYS) - n.focus.prog} gün kaldı)`
+    : 'Bir odak seçin. Her odak ' + G.FOCUS_DAYS + ' gün sürer; tarihî olaylar yılı gelmeden açılmaz, ⇄ ile bağlı yollardan biri seçilince öbürü kapanır. · Tekerlek: yakınlaştır · sol tıkla sürükle';
   const W = 180, H = 178, PX = 30, PY = 26, NW = 150;
   const pos = f => ({ x: PX + f.x * W, y: PY + f.y * H });
   const maxX = Math.max(...tree.map(f => f.x)), maxY = Math.max(...tree.map(f => f.y));
@@ -393,19 +445,36 @@ U.showFocus = function () {
   const cx = f => pos(f).x + NW / 2;
   let lines = '';
   for (const f of tree) {
-    for (const r of f.req || []) {
+    for (const r of (f.req || []).concat(f.reqAny || [])) {
       const a = G.focus.get(tag, r), done = n.focus.done.has(r);
+      const any = (f.reqAny || []).includes(r);
       const x1 = cx(a), y1 = pos(a).y + 142, x2 = cx(f), y2 = pos(f).y + 4, my = y2 - 14;
       const d = `M${x1},${y1} L${x1},${my} L${x2},${my} L${x2},${y2}`;
-      lines += `<path d="${d}" class="fl-under"/><path d="${d}" class="fl ${done ? 'done' : ''}"/>
+      lines += `<path d="${d}" class="fl-under"/><path d="${d}" class="fl ${done ? 'done' : ''} ${any ? 'any' : ''}"/>
         <rect x="${x1 - 3.5}" y="${my - 3.5}" width="7" height="7" transform="rotate(45 ${x1} ${my})" class="fl-gem ${done ? 'done' : ''}"/>`;
     }
   }
+  // birbirini dışlayan odak çiftleri arasına ⇄ işareti
+  for (const f of tree) for (const m of f.mutex || []) {
+    const o = G.focus.get(tag, m);
+    if (!o || o.x < f.x || o.y !== f.y) continue;
+    const y = pos(f).y + 42, x1 = cx(f) + 46, x2 = cx(o) - 46;
+    if (x2 - x1 < 10) continue;
+    lines += `<path d="M${x1},${y} L${x2},${y}" class="fl-mutex"/><text x="${(x1 + x2) / 2}" y="${y - 6}" class="fl-mutex-t">⇄ ya o, ya bu</text>`;
+  }
   const nodes = tree.map(f => {
-    const st = G.focus.state(n, f), p = pos(f);
-    const prog = st === 'current' ? n.focus.prog / G.FOCUS_DAYS : st === 'done' ? 1 : 0;
+    let st = G.focus.state(n, f);
+    const p = pos(f);
+    if (st === 'locked' && f.mutex && f.mutex.some(m => n.focus.done.has(m) || n.focus.cur === m)) st = 'closed';
+    const days = f.days || G.FOCUS_DAYS;
+    const prog = st === 'current' ? n.focus.prog / days : st === 'done' ? 1 : 0;
     const R = 31, C2 = 2 * Math.PI * R;
-    return `<div class="fnode ${st}" data-f="${f.id}" style="left:${p.x}px;top:${p.y}px" title="${G.esc(f.desc)}">
+    const tip = `${f.name}${f.year ? ` (${f.year})` : ''}${f.alt ? ' · ALTERNATİF TARİH' : ''}\n\n${f.desc}\n\n${f.effectText}` +
+      (f.year && S.time.y < f.year ? `\n\n${f.year} yılından önce başlatılamaz.` : '') + (f.need ? `\nKoşul: ${f.need}` : '') +
+      (f.reqAny ? `\nÖnkoşul: ${f.reqAny.map(r => G.focus.get(tag, r).name).join(' ya da ')}` : '') +
+      (st === 'closed' ? '\n\nBu yol kapandı: seçilen alternatif tarihten geri dönüş yok.' : '');
+    return `<div class="fnode ${st} ${f.alt ? 'alt' : ''}" data-f="${f.id}" style="left:${p.x}px;top:${p.y}px" title="${G.esc(tip)}">
+      ${f.year ? `<div class="fn-year ${S.time.y < f.year ? 'future' : ''}">${f.year}</div>` : ''}${f.alt ? '<div class="fn-alt">ALTERNATİF</div>' : ''}
       <svg class="medal" viewBox="0 0 84 84" width="84" height="84">
         <defs>
           <radialGradient id="mg-${f.id}" cx="50%" cy="40%" r="60%">

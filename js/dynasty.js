@@ -19,6 +19,7 @@ G.dyn = {};
     LIA: { born: 1016, dies: 1055, dyn: 'Yelü', next: ['Daozong', 'Tianzuo'] },
     ENG: { born: 1018, dies: 1042, dyn: 'Wessex', next: ['Günah Çıkaran Edward', 'II. Harold', 'I. William'] },
   };
+  DY.HIST = HIST;
   const YEAR = 24 * 365;
   const roll = () => 1 + Math.floor(G.rng() * 3 + G.rng() * 3);   // 1–6, ortası sık
   const skills = () => ({ adm: roll(), dip: roll(), mil: roll() });
@@ -33,7 +34,9 @@ G.dyn = {};
     const h = HIST[n.tag];
     const y = G.S.time.y;
     let name = null;
-    if (h && h.next && (n.histIdx || 0) < h.next.length) name = h.next[n.histIdx || 0];
+    // alternatif tarih yollarında hanedanın kendi halef listesi olabilir
+    const list = n.histNext || (h && h.next);
+    if (list && (n.histIdx || 0) < list.length) name = list[n.histIdx || 0];
     return { name: name || G.nameFor(n.tag), born: y - (minAge + Math.floor(G.rng() * (maxAge - minAge + 1))), sk: skills(), hist: !!name,
       idx: name ? (n.histIdx || 0) : null };
   };
@@ -51,6 +54,12 @@ G.dyn = {};
     n.dynasty = h ? h.dyn : (n.ruler || '').split(/\s+/).pop() || n.name.split(' ')[0];
     n.histIdx = 0;
     n.heir = G.rng() < 0.85 ? DY.makeHeir(n, 0, Math.max(0, Math.min(25, DY.age(n) - 18))) : null;
+    // özel başlangıçlı ülkelerde hükümdar becerileri ve veliaht tarihe göre
+    const pr = G.PROFILES && G.PROFILES[n.tag];
+    if (pr) {
+      if (pr.ruler && pr.ruler.sk) n.rulerSk = { ...pr.ruler.sk };
+      if (pr.heir) n.heir = { name: pr.heir.name, born: pr.heir.born, sk: { ...pr.heir.sk }, hist: true, idx: 0 };
+    }
     n.marriages ||= new Set();
     n.pastRulers ||= [];
     n.regency = 0;
@@ -80,8 +89,10 @@ G.dyn = {};
       if (!n.alive) continue;
       if (n.rulerBorn == null) DY.setup(n);
       const h = HIST[n.tag];
-      const hist = h && (n.histIdx || 0) === 0 && y >= h.dies;
-      if (G.rng() < deathChance(DY.age(n), hist)) { DY.die(n); continue; }
+      const hist = h && n.reignStart == null && (n.histIdx || 0) === 0 && y >= h.dies;   // yalnızca 1040'taki hükümdar
+      // özel başlangıçlı krallıklarda 1040'taki hükümdar tarihî ölüm yılından önce ölmez
+      const shield = h && n.reignStart == null && y < h.dies && G.PROFILES && G.PROFILES[n.tag];
+      if (!shield && G.rng() < deathChance(DY.age(n), hist)) { DY.die(n); continue; }
       // varisi yoksa doğabilir; varis de ölebilir
       if (!n.heir && DY.age(n) < 60 && G.rng() < 0.02) {
         n.heir = DY.makeHeir(n, 0, 0);

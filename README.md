@@ -29,6 +29,20 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 | Esc | Her şeyi kapat, ana siyasi haritaya dön |
 | L | Olaylar sayfası |
 
+## Başlangıç ekranı ve tarihî krallıklar
+
+- Başlangıç ekranında yalnızca kendine özel tarihî odak ağacı olan krallıklar var: şimdilik **Büyük Selçuklu** ve
+  **İngiltere**. Diğer bütün krallıklar "Haritadan başka bir krallık seç" ile oynanabilir (ortak odak ağacı).
+- Bir krallığa tıklayınca menü sola kayar, sağda profili açılır: hükümdar ve becerileri, özellikleri, veliaht, din,
+  kültür, başkent, geçmiş, tarihî hedefler, alternatif yollar, rakipler ve dostlar. Çift tıklama ya da sağ alttaki
+  **Başla** düğmesi oyunu başlatır.
+- Krallıklar majör ve minör diye ayrılır.
+- **Tarihî odak ağaçları:** odakların çoğu gerçek olaylardır ve yılı gelmeden açılmaz (Dandanakan 1040, Bağdat'a giriş
+  1055, Malazgirt 1071, Hardeknud'un ölümü 1042, Stamford Köprüsü ve Hastings 1066, Domesday 1086…). Dönüm noktalarında
+  birbirini dışlayan alternatif tarihler vardır (Alp Arslan mı Kutalmış mı, Edward mı Godwin mi Magnus mu, Harold mı
+  William mı Hardrada mı); biri seçilince öbürü kapanır. Bazı odaklar hükümdarı değiştirir, istila orduları çıkarır,
+  vasal kurar ya da toprak katar.
+
 ## Şu an oyunda olanlar (1. sürüm)
 
 - **Harita:** Gerçek kıyı şeritleri (Natural Earth). Her şehir bir eyalet, aralarda kırsal eyaletler, çöl ve tundralar geçilemez.

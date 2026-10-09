@@ -125,6 +125,7 @@ G.tech = {};
     n.techs.add(t.id);
     apply(n, t);
   };
+  T.grant = (tag, id) => { const n = G.S.nations[tag]; if (n && n.techs && T.BY[id]) grant(n, T.BY[id]); };
 
   T.init = function () {
     const S = G.S;

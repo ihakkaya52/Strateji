@@ -125,17 +125,19 @@
     <p class="subtitle">Ortaçağ büyük strateji · 1040 – 1120</p>
     <p class="intro">Yıl 1040. Tuğrul Bey Dandanakan'da Gaznelileri ezdi, Bizans Anadolu'yu elinde tutuyor,
       Vikinglerin torunları Kuzey Denizi'ne hükmediyor. Bir ülke seç ve tarihi yeniden yaz.</p>
-    <h3>Büyük güçler</h3>
+    <h3>Tarihî başlangıçlar</h3>
     <div id="major-list"></div>
-    <h3>Özel başlangıç</h3>
-    <div id="special-list"></div>
+    <p class="menu-tip">Bir krallığa tıklayın: sağda profili açılır. Çift tıklayın ya da sağ alttaki <b>Başla</b> düğmesine basın.</p>
     <div class="menu-other">
-      <button id="btn-pick-map">Haritadan başka bir ülke seç</button>
+      <button id="btn-pick-map">Haritadan başka bir krallık seç</button>
     </div>
     <div id="menu-saves"></div>
-    <p class="hint">Kontroller: sol tık seç · sol tıkla sürükle kaydır · Shift + sürükle ordu seç · sağ tık ordu / filo yürüt, ülkeye sağ tık diplomasi · O komuta · N donanma · P üretim ·
+    <p class="hint" id="menu-hint">Kontroller: sol tık seç · sol tıkla sürükle kaydır · Shift + sürükle ordu seç · sağ tık ordu / filo yürüt, ülkeye sağ tık diplomasi · O komuta · N donanma · P üretim ·
       WASD / oklar kaydır (Shift hızlı) · tekerlek ya da Q/E yakınlaştır · Boşluk duraklat · 1-5 hız</p>
   </div>
+  <!-- Seçilen krallığın profili ve başlama düğmesi (menü açıkken) -->
+  <div id="menu-profile"></div>
+  <button id="btn-start" disabled>Başla ▶</button>
 </div>
 
 <!-- Haritadan seçme modu -->
@@ -207,6 +209,7 @@
 <script src="js/trade.js"></script>
 <script src="js/focus.js"></script>
 <script src="js/focus_trees.js"></script>
+<script src="js/focus_hist.js"></script>
 <script src="js/events.js"></script>
 <script src="js/map.js"></script>
 <script src="js/geo.js"></script>

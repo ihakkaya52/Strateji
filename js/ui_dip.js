@@ -123,7 +123,7 @@
         ${G.portrait ? `<div class="dip-portrait" title="${G.esc(n.ruler)}">${G.portrait.ruler(tag)}</div>` : ''}
         <div class="dip-title">
           <h2>${G.esc(n.name)}</h2>
-          <div class="dip-sub">${n.major ? 'Büyük güç' : n.rebel ? 'İsyancılar' : 'Küçük ülke'} · ${G.RELIGIONS[n.religion] ? G.RELIGIONS[n.religion].name : ''} · ${n.culture ? `${G.cul.flagHtml(n.culture, 'sm')} ${G.esc(G.cul.get(n.culture).name)}` : G.GROUP_NAMES[n.group] || ''}</div>
+          <div class="dip-sub">${n.major ? 'Majör krallık' : n.rebel ? 'İsyancılar' : 'Minör krallık'} · ${G.RELIGIONS[n.religion] ? G.RELIGIONS[n.religion].name : ''} · ${n.culture ? `${G.cul.flagHtml(n.culture, 'sm')} ${G.esc(G.cul.get(n.culture).name)}` : G.GROUP_NAMES[n.group] || ''}</div>
           <div class="dip-sub">${G.esc(n.ruler)}${n.rulerBorn != null ? `, ${G.dyn.age(n)} yaşında` : ''}</div>
         </div>
         <button class="dip-close" title="Kapat (Esc)">✕</button>
