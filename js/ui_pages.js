@@ -133,6 +133,15 @@
       <div class="pg-card">
         <h3>En çok kazandıran iller</h3>
         <table class="pg-tab">${top.map(o => row(`<span class="link" data-prov="${o.p.id}">${G.esc(o.p.name)}</span>`, `+${g1(o.v)}`, 'pos')).join('')}</table>
+        <h3>İstikrar</h3>
+        <div class="pg-big" style="font-size:18px">${Math.round(n.stability ?? 60)} <span class="muted">/ 100</span></div>
+        <table class="pg-tab">${G.stab.stabFactors(n).map(f => row(G.esc(f[0]), (f[1] > 0 && f[0] !== 'Temel' ? '+' : '') + f[1], f[1] < 0 ? 'neg' : '')).join('')}</table>
+        <h3>En huzursuz iller</h3>
+        ${(() => {
+          const list = own.filter(p => p.ctrl === tag && (p.unrest || 0) > 5).sort((x, y) => y.unrest - x.unrest).slice(0, 8);
+          return list.length ? `<table class="pg-tab">${list.map(p => row(`<span class="link" data-prov="${p.id}">${G.esc(p.name)}</span>`, `%${Math.round(p.unrest)} (${G.stab.trend(p) >= 0 ? '+' : ''}${Math.round(G.stab.trend(p) * 10) / 10}/ay)`, p.unrest > 50 ? 'neg' : '')).join('')}</table>`
+            : '<p class="muted">Bütün illerimiz huzurlu.</p>';
+        })()}
         <h3>İnsan gücü</h3>
         <p>♟ ${G.fmtNum(n.manpower)} · ayda +${G.fmtNum(G.monthlyManpower(tag))}</p>
       </div>

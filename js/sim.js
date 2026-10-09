@@ -545,6 +545,7 @@ G.monthly = function () {
     if (n.manpower > cap) n.manpower = cap;
   }
   G.econ.monthly();
+  G.stab.monthly();
   G.ai.monthly();
   G.dip.monthly();
 };

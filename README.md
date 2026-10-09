@@ -97,6 +97,15 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Alt çubuk kipleri (sağ alt):** ⚔ Kara (mareşaller ve ordular), ⚓ Donanma (amiraller, her gemi ve kaptanı,
   deniz piyadeleri, gemideki ordular; gemileri seçip yeni filo kurma, limana dönme, asker indirme),
   ♜ Garnizon (harita kararır, kaleler parlar, garnizon sayıları görünür; kale listesi ve toplu garnizon ayarı).
+- **Kayıt / yükleme:** Üstteki ☰ Menü: yeni kayıt, hızlı kayıt (Ctrl+S), kayıtlar listesi, dosyaya indirme ve dosyadan
+  yükleme. Oyun üç ayda bir kendiliğinden kaydedilir; ana menüde "Devam et" ile kalınan yerden sürülür.
+- **Barış masası:** Diplomasi sayfasındaki "☮ Barış masası": işgal edilen illerden hangilerinin alınacağı tek tek
+  seçilir, vasallık ve savaş tazminatı istenebilir. Her talebin bir bedeli vardır; toplam bedel savaş skorunu
+  aşarsa düşman kabul etmez. Yapay zekâ kazanırken oyuncuya kendi şartlarını gönderir.
+- **İstikrar ve isyanlar:** Her ülkenin bir istikrarı (hazine, işgal, uzayan savaşlar, yabancı topraklar), her ilin
+  bir huzursuzluğu vardır (yabancı toprak, farklı din ve kültür, yeni fetih; garnizon, ordu ve başkent yatıştırır).
+  Huzursuz il daha az vergi ve asker verir; %100'e ulaşınca isyan çıkar: komşu huzursuz illerle birlikte ayaklanır,
+  yok olmuş eski sahibi varsa o ülke yeniden doğar. 25 yıl elde tutulan il asıl toprak olur.
 - **Kayıplar:** Muharebe, kuşatma, bozgun ve batan gemilerde askerler ölür. Bozguna uğrayan ordu dost toprağa
   yürüyerek çekilir; yolda yakalanırsa kılıçtan geçirilir, kaçacak yeri yoksa imha olur.
 - **Kuşatma (cep):** İkmal yolu başkente bağlanamayan ordu kuşatılmış sayılır: her gün %3 erir, toparlanamaz,
@@ -141,6 +150,10 @@ js/data/world.js      üretilmiş harita verisi (elle düzenlenmez)
 js/util.js            sabitler ve yardımcılar
 js/state.js           oyun durumu, ülkeler, ordular, savaş / barış
 js/sim.js             zaman, hareket, muharebe, kuşatma, insan gücü
+js/stability.js       istikrar, huzursuzluk, asimilasyon ve isyanlar
+js/save.js            kayıt / yükleme
+js/ui_save.js         oyun menüsü ve kayıtlı oyunlar
+js/ui_peace.js        barış masası
 js/warfare.js         kayıplar, ikmal ve kuşatılmış ordular, bozgun, teslimiyet teklifleri
 js/ui_war.js          savaş durumu paneli ve grafiği
 js/ui_battle.js       muharebe penceresi

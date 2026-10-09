@@ -224,7 +224,7 @@ EC.budget = function (n, provs, armies) {
   let tax = 0, trade = 0, mines = 0, farms = 0, garrison = 0;
   for (const p of provs || S.provinces) {
     if (p.owner === n.tag && p.ctrl === n.tag) {
-      tax += EC.isCapital(p) ? 3 : p.kind === 'city' ? 1 : 0.3;
+      tax += (EC.isCapital(p) ? 3 : p.kind === 'city' ? 1 : 0.3) * G.unrestMult(p);
       for (const g of EC.GOOD_KEYS) if (g !== 'insaat') trade += (p.civLines[g] || 0) * G.GOODS[g].gold * (G.GOODS[g].res === p.res ? 1.5 : 1);
       if (p.mine && p.res && G.RESOURCES[p.res].mine) mines += p.mine * G.RESOURCES[p.res].mine;
       farms += p.farm * 0.5;

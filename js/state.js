@@ -79,6 +79,7 @@ G.initState = function (playerTag) {
   for (const n of Object.values(S.nations)) G.command.organize(n.tag);
   G.econ.init();
   G.navy.init();
+  G.stab.init();
   return S;
 };
 
@@ -200,7 +201,7 @@ G.monthlyManpower = function (tag) {
   for (const p of G.S.provinces) {
     if (p.owner === tag && p.ctrl === tag) {
       m += (p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140) *
-        (1 + (p.farm || 0) * 0.25 * (p.res === 'tahil' ? 1.5 : 1));
+        (1 + (p.farm || 0) * 0.25 * (p.res === 'tahil' ? 1.5 : 1)) * G.unrestMult(p);
     }
   }
   return m * (G.S.nations[tag] ? G.S.nations[tag].mpMult : 1);

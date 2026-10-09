@@ -179,6 +179,9 @@
         <tr><td>Sahibi</td><td>${U.nlink(p.owner)}</td></tr>
         ${p.ctrl !== p.owner ? `<tr><td>İşgalci</td><td>${U.nlink(p.ctrl)}</td></tr>` : ''}
         <tr><td>Kaynak</td><td>${res ? `${res.icon} ${G.esc(res.name)}` : '—'}</td></tr>
+        ${p.owner && p.unrest != null ? `<tr><td>Huzursuzluk</td><td><div class="bar unrest" title="${G.stab.factors(p).map(f => `${f[0]}: ${f[1] > 0 ? '+' : ''}${Math.round(f[1] * 10) / 10}`).join('\n')}"><div style="width:${p.unrest}%"></div></div>
+          <span class="${p.unrest > 50 ? 'bad' : 'muted'}">%${Math.round(p.unrest)} · ayda ${G.stab.trend(p) >= 0 ? '+' : ''}${Math.round(G.stab.trend(p) * 10) / 10}</span></td></tr>
+        <tr><td>Asıl sahibi</td><td>${p.core === p.owner ? '<span class="muted">bu ülke</span>' : U.nlink(p.core)}${p.relig ? ` · ${G.esc((G.RELIGIONS[p.relig] || { name: p.relig }).name)}` : ''}</td></tr>` : ''}
         <tr><td>Arazi</td><td>${G.esc(G.terrainOf(p).name)} <span class="muted">· savunma ${G.terrainOf(p).def >= 1 ? '+' : ''}%${Math.round((G.terrainOf(p).def - 1) * 100)} · hareket %${Math.round(G.terrainOf(p).move * 100)}</span></td></tr>
         <tr><td>Alan</td><td>${G.fmtNum(p.area)} km²</td></tr>
         <tr><td>Aylık insan gücü</td><td>${G.fmtNum((p.kind === 'capital' ? 900 : p.kind === 'city' ? 380 : 140) * (1 + p.farm * 0.25 * (p.res === 'tahil' ? 1.5 : 1)))}</td></tr>

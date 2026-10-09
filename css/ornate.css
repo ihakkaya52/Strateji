@@ -366,3 +366,5 @@ button.big { font-size: 15px; padding: 7px 18px; border-color: var(--gold); colo
 .pc-verdict.yes { background: rgba(90,160,74,0.2); color: #b8e098; }
 .pc-verdict.no { background: rgba(192,68,58,0.2); color: #ffb0a0; }
 .pc-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.bar.unrest { display: inline-block; width: 90px; height: 6px; vertical-align: middle; margin-right: 6px; background: #1a160e; }
+.bar.unrest > div { background: linear-gradient(90deg, #d0a040, #c0443a); height: 100%; }
