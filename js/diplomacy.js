@@ -15,10 +15,7 @@ const key = (a, b) => (a < b ? a + '|' + b : b + '|' + a);
 D.base = (a, b) => {
   const S = G.S, na = S.nations[a], nb = S.nations[b];
   if (!na || !nb) return 0;
-  let v = na.religion === nb.religion ? 15 : -15;
-  if (na.group === nb.group) v += 10;
-  if (na.marriages && na.marriages.has(b)) v += 25;
-  return v;
+  return D.modifiers(a, b, true).reduce((t, x) => t + x[1], 0);
 };
 D.raw = (a, b) => G.S.rel.get(key(a, b)) || 0;
 D.opinion = (a, b) => (a === b ? 200 : G.clamp(D.base(a, b) + D.raw(a, b), -200, 200));
@@ -27,11 +24,22 @@ D.add = (a, b, v) => {
   G.S.rel.set(k, G.clamp((G.S.rel.get(k) || 0) + v, -220, 220));
 };
 
-D.modifiers = function (a, b) {
+// Din dostlukta kültürün bir adım önündedir
+D.modifiers = function (a, b, baseOnly) {
   const S = G.S, na = S.nations[a], nb = S.nations[b], out = [];
-  out.push([na.religion === nb.religion ? 'Aynı din' : 'Farklı din', na.religion === nb.religion ? 15 : -15]);
-  if (na.group === nb.group) out.push(['Aynı kültür grubu', 10]);
+  if (!na || !nb) return out;
+  const R = G.rel;
+  if (na.religion === nb.religion) out.push(['Aynı din ve mezhep', 15]);
+  else if (R && R.sameFamily(na.religion, nb.religion)) out.push([`Aynı din, farklı mezhep (${R.familyName(na.religion)})`, 5]);
+  else out.push(['Farklı din', -15]);
+  const C = G.cul;
+  if (C && na.culture && nb.culture) {
+    if (na.culture === nb.culture) out.push(['Aynı kültür', 10]);
+    else if (C.get(na.culture).group === C.get(nb.culture).group) out.push([`Aynı kültür grubu (${C.GROUPS[C.get(na.culture).group].name})`, 6]);
+  } else if (na.group === nb.group) out.push(['Aynı kültür grubu', 6]);
   if (na.marriages && na.marriages.has(b)) out.push(['Hanedan evliliği', 25]);
+  if (nb.rulerTitle) out.push([`Hükümdarları "${nb.rulerTitle}": katliamı unutulmadı`, -25]);
+  if (baseOnly) return out;
   const r = Math.round(D.raw(a, b));
   if (r) out.push(['Diplomatik geçmiş (elçiler, savaşlar, antlaşmalar)', r]);
   return out;

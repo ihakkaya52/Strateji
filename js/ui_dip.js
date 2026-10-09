@@ -33,7 +33,7 @@
     const age = G.dyn.age(n), sk = n.rulerSk;
     const heir = n.heir ? `${G.esc(n.heir.name)} <span class="muted">(${S.time.y - n.heir.born} yaşında)</span>` : '<span class="bad">Varis yok!</span>';
     return `<div class="dy-block">
-      <div class="dy-row"><span class="dy-k">Hükümdar</span><b>${G.esc(n.ruler)}</b><span class="muted">${age} yaşında${n.regency > S.hour ? ' · naiplik' : ''}</span></div>
+      <div class="dy-row"><span class="dy-k">Hükümdar</span><b>${G.esc(G.rulerName(n))}</b><span class="muted">${age} yaşında${n.regency > S.hour ? ' · naiplik' : ''}</span></div>
       <div class="dy-skills">${pips(sk.adm, '⚖', 'Yönetim')}${pips(sk.dip, '🕊', 'Diplomasi')}${pips(sk.mil, '⚔', 'Askerlik')}</div>
       <div class="dy-row"><span class="dy-k">Hanedan</span><span>${G.esc(n.dynasty || '—')}</span></div>
       <div class="dy-row"><span class="dy-k">Veliaht</span><span>${heir}</span></div>
@@ -123,8 +123,8 @@
         ${G.portrait ? `<div class="dip-portrait" title="${G.esc(n.ruler)}">${G.portrait.ruler(tag)}</div>` : ''}
         <div class="dip-title">
           <h2>${G.esc(n.name)}</h2>
-          <div class="dip-sub">${n.major ? 'Majör krallık' : n.rebel ? 'İsyancılar' : 'Minör krallık'} · ${G.RELIGIONS[n.religion] ? G.RELIGIONS[n.religion].name : ''} · ${n.culture ? `${G.cul.flagHtml(n.culture, 'sm')} ${G.esc(G.cul.get(n.culture).name)}` : G.GROUP_NAMES[n.group] || ''}</div>
-          <div class="dip-sub">${G.esc(n.ruler)}${n.rulerBorn != null ? `, ${G.dyn.age(n)} yaşında` : ''}</div>
+          <div class="dip-sub">${n.major ? 'Majör krallık' : n.rebel ? 'İsyancılar' : 'Minör krallık'} · ${G.esc(G.rel.fullName(n.religion))} · ${n.culture ? `${G.cul.flagHtml(n.culture, 'sm')} ${G.esc(G.cul.fullName(n.culture))}` : G.GROUP_NAMES[n.group] || ''}</div>
+          <div class="dip-sub">${G.esc(G.rulerName(n))}${n.rulerBorn != null ? `, ${G.dyn.age(n)} yaşında` : ''}</div>
         </div>
         <button class="dip-close" title="Kapat (Esc)">✕</button>
       </div>

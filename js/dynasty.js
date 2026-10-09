@@ -111,7 +111,8 @@ G.dyn = {};
   DY.die = function (n) {
     const S = G.S, old = n.ruler, age = DY.age(n), me = n.tag === S.player;
     n.pastRulers ||= [];
-    n.pastRulers.unshift({ name: old, from: n.reignStart ?? 1040, to: S.time.y, age });
+    n.pastRulers.unshift({ name: old + (n.rulerTitle ? ` "${n.rulerTitle}"` : ''), from: n.reignStart ?? 1040, to: S.time.y, age });
+    n.rulerTitle = null;   // kötü unvan hükümdarla birlikte gömülür
     if (n.pastRulers.length > 20) n.pastRulers.length = 20;
     const h = HIST[n.tag];
     if (n.heir) {
@@ -184,7 +185,7 @@ G.dyn = {};
     }
     n.pastRulers ||= [];
     n.pastRulers.unshift({ name: n.ruler, from: n.reignStart ?? 1040, to: S.time.y, age: DY.age(n) });
-    n.ruler = name; n.reignStart = S.time.y;
+    n.ruler = name; n.reignStart = S.time.y; n.rulerTitle = null;
     n.rulerBorn = S.time.y - (28 + Math.floor(G.rng() * 15));
     n.rulerSk = skills(); n.rulerSk.mil = Math.max(n.rulerSk.mil, 4);
     const h = HIST[n.tag];

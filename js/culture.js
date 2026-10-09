@@ -168,6 +168,8 @@ G.cul = {};
       C.LIST[id] = { id, name: d[0], group: g, flag: d[2], color: hsl((hue + off + 360) % 360, 48 + (k % 2) * 10, 40 + (k % 3) * 8) };
     });
   }
+  // "Türk › Oğuz" biçiminde tam ad
+  C.fullName = id => { const k = C.get(id), g = C.GROUPS[k.group]; return g ? `${g.name} › ${k.name}` : k.name; };
   C.get = id => C.LIST[id] || { id, name: id || '—', group: '', flag: ['plain', '#777', '', '', '', ''], color: '#888888' };
 
   // Ülkelerin ana kültürü
@@ -351,8 +353,10 @@ G.cul = {};
     let v = 5 * (n.rulerSk ? 1 + 0.1 * (n.rulerSk.adm - 3) : 1);
     if (G.econ.isCapital(p)) v *= 0.6;
     if (p.kind === 'rural') v *= 1.2;
-    if (C.accepted(tag, p.cul)) v *= 1.5;                         // akraba halkı kaynaştırmak kolay
-    if (p.relig && p.relig !== n.religion) v *= 0.6;              // farklı dindeki halk direnir
+    // aynı kültür grubundan (ör. Türk › Kıpçak'tan Türk › Oğuz'a) kolay, başka gruptan zor
+    v *= C.accepted(tag, p.cul) ? 1.6 : 0.7;
+    // aynı dinden halk kolay kaynaşır; başka mezhep biraz, başka din çok direnir
+    if (p.relig && p.relig !== n.religion) v *= G.rel.sameFamily(p.relig, n.religion) ? 0.9 : 0.5;
     v -= (p.unrest || 0) / 30;
     v *= n.cultPolicy === 'baski' ? 1.8 : n.cultPolicy === 'hosgoru' ? 0.5 : 1;
     return Math.max(0.8, v);

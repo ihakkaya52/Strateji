@@ -102,7 +102,7 @@
     return `<div class="hn-top">
         <div class="hn-portrait">${G.portrait ? G.portrait.ruler(tag) : ''}</div>
         <div class="hn-main">
-          <div class="hn-name">${G.esc(n.ruler)}</div>
+          <div class="hn-name">${G.esc(G.rulerName(n))}</div>
           <div class="muted">${G.esc(n.name)} · ${G.esc(n.dynasty || '')} hanedanı · ${G.dyn.age(n)} yaşında · ${n.reignStart ? `${n.reignStart}'den beri` : '1040 öncesinden beri'} tahtta</div>
           ${n.regency > S.hour ? `<div class="bad">Naiplik: hükümdar reşit olana dek ${Math.ceil((n.regency - S.hour) / 24 / 365)} yıl daha naipler yönetiyor.</div>` : ''}
           <table class="pg-tab" style="margin-top:8px">
@@ -124,9 +124,9 @@
           <p class="muted small">Aynı dinden bir ülkeye sağ tıklayıp diplomasi sayfasından "Hanedan evliliği" yapabilirsiniz (ilişki en az 25). Akrabalar arasında ilişki +25'tir.</p>
         </div>
         <div class="pg-card"><h3>Din</h3>
-          <p><span class="rl-dot" style="background:${(G.RELIGIONS[n.religion] || {}).color}"></span> ${G.esc((G.RELIGIONS[n.religion] || { name: n.religion }).name)} · dinî birlik <b>%${Math.round(G.rel.unity(tag) * 100)}</b></p>
+          <p><span class="rl-dot" style="background:${(G.RELIGIONS[n.religion] || {}).color}"></span> ${G.esc(G.rel.fullName(n.religion))} · dinî birlik <b>%${Math.round(G.rel.unity(tag) * 100)}</b></p>
           <p>✝ Misyonerler: ${(n.missions || []).length} / ${n.missionaries} görevde${(n.missions || []).length ? ': ' + n.missions.map(m => `<span class="link" data-prov="${m.prov}">${G.esc(S.provinces[m.prov].name)}</span> %${Math.round(m.prog)}`).join(', ') : ''}</p>
-          <p class="muted small">Başka dinden bir ilinize tıklayıp il panelinden misyoner gönderin. Dinî birlik %70'in altına düşerse istikrar azalır.</p>
+          <p class="muted small">Aynı dinin başka mezhebindeki illere mezhep öğretisi (ayda 1 altın, hızlı), başka dindeki illere misyoner (ayda 2 altın) gönderilir. Aynı dinden halk neredeyse hiç isyan etmez; başka dinden halk ayaklanabilir.</p>
           ${G.rel.activeOf(tag) ? `<p class="bad">${G.rel.kindName(G.rel.activeOf(tag).kind)} sürüyor: hedef ${G.esc(S.provinces[G.rel.activeOf(tag).goal].name)}</p>` : ''}
         </div>
         <div class="pg-card"><h3>Halk</h3>

@@ -138,6 +138,16 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Kültürler ve bayraklar:** 120'yi aşkın halk (Rum, Oğuz, Fars, Alman, Oksitan, Bulgar, Ermeni, Svahili, Aborijin…),
   31 kültür grubunda; her birinin kendi bayrağı var. Çok halklı devletlerde iller tarihî bölgelerine göre farklı halktan
   (Bizans'ta Rum, Bulgar, Ermeni, Sırp ve İtalyan; Selçuklu'da Oğuz ve Fars…). Kültür haritası halkları bayraklarıyla gösterir.
+- **Din ve kültürün üst kategorileri:** Dinler ailelere ayrılır (İslam › Sünnî / Şiî / İbâdî, Hristiyanlık › Katolik /
+  Ortodoks / Miafizit / Nestûrî, Eski İnançlar…), kültürler gruplara (Türk › Oğuz / Kıpçak, İran › Fars / Kürt…).
+  Aynı dinin başka mezhebine **mezhep öğretisi** (ayda 1 altın, hızlı), başka dine **misyoner** (ayda 2 altın) gönderilir.
+  Aynı dinden halk neredeyse hiç isyan etmez; başka dinden halk ayaklanabilir. Asimilasyon aynı kültür grubunda kolay,
+  başka grupta ve başka dinde zordur. Diplomaside din kültürün bir adım önündedir (aynı din +15, aynı mezhep ailesi +5,
+  aynı kültür +10, aynı kültür grubu +6).
+- **Katliam:** Başka dinden ya da başka kültür grubundan halkı olan bir ilde, 15 yılda bir verilebilen emir: bütün
+  halk öldürülür, yerine kendi halkımız yerleşir. Bedeli ağırdır: istikrar −25, kurbanların dinindeki ve kültür
+  grubundaki ülkelerle ilişki çöker, il 30 yıl ıssız kalır, bütün illerde huzursuzluk artar ve hükümdar ölene dek
+  "Kanlı", "Kasap" gibi bir unvanla anılır (bütün ülkelerle ilişki −25, istikrar −8).
 - **Asimilasyon:** Ana halkınızdan ve aynı kültür grubundan olanlar kabul edilmiş sayılır; yabancı halklar huzursuzlanır.
   İl panelinden "Asimile et" (memur başına ayda 2 altın; büyük güçlerin 2, diğerlerinin 1 memuru var). Asimile olmuş
   illerde isyan çıkmaz. Politika: Hoşgörü (huzursuzluk yok, asimilasyon yavaş, istikrar +4), Ilımlı, Zorla asimilasyon

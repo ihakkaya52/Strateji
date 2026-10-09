@@ -5,9 +5,18 @@ G.rel = {};
 (function () {
   const R = G.rel;
   const YEAR = 24 * 365;
-  R.CHRISTIAN = ['katolik', 'ortodoks'];
-  R.MUSLIM = ['sunni', 'sii', 'ibadi'];
-  R.family = r => (R.CHRISTIAN.includes(r) ? 'hristiyan' : R.MUSLIM.includes(r) ? 'islam' : r);
+  // Dinlerin üst kategorisi (aile) ve alt kategorisi (mezhep)
+  R.CHRISTIAN = ['katolik', 'ortodoks', 'miafizit', 'nesturi'];
+  R.MUSLIM = ['sunni', 'sii', 'ibadi', 'bergvata'];
+  R.PAGAN = ['tengri', 'pagan_slav', 'pagan_baltik', 'pagan_fin', 'pagan_afrika', 'ruya'];
+  R.family = r => (R.CHRISTIAN.includes(r) ? 'hristiyan' : R.MUSLIM.includes(r) ? 'islam' : R.PAGAN.includes(r) ? 'pagan' : r);
+  R.FAMILY_NAMES = { hristiyan: 'Hristiyanlık', islam: 'İslam', pagan: 'Eski İnançlar', budist: 'Budizm', hindu: 'Hinduizm', konfucyus: 'Çin İnançları' };
+  R.familyName = r => R.FAMILY_NAMES[R.family(r)] || (G.RELIGIONS[r] || { name: r }).name;
+  // "İslam › Sünnî" biçiminde tam ad
+  R.fullName = r => { const n = (G.RELIGIONS[r] || { name: r || '—' }).name, f = R.familyName(r); return f && f !== n ? `${f} › ${n}` : n; };
+  // Aynı ailedeki başka mezhebe öğreti, başka dine misyonerlik yapılır
+  R.sameFamily = (a, b) => !!a && !!b && R.family(a) === R.family(b);
+  R.TEACH_GOLD = 1;
   R.CONVERT_NEED = 100;
   R.MISSION_GOLD = 2;            // misyoner başına aylık altın
   R.HOLY_GOLD = 200;             // kutsal sefer çağrısının bedeli
@@ -31,7 +40,8 @@ G.rel = {};
       if (p.owner !== tag) continue;
       const w = G.provinceWeight(p);
       tot += w;
-      if ((p.relig || n.religion) === n.religion) same += w;
+      const r = p.relig || n.religion;
+      if (r === n.religion) same += w; else if (R.sameFamily(r, n.religion)) same += w * 0.75;   // aynı dinin başka mezhebi büyük ölçüde sayılır
     }
     return tot ? same / tot : 1;
   };
@@ -43,7 +53,8 @@ G.rel = {};
     if (!p.relig || p.relig === n.religion) return [false, 'Bu il zaten bizim dinimizden.'];
     if (n.missions.some(m => m.prov === p.id)) return [false, 'Misyonerimiz zaten burada.'];
     if (n.missions.length >= n.missionaries) return [false, `Bütün misyonerlerimiz görevde (${n.missions.length} / ${n.missionaries}).`];
-    return [true, `Ayda ${R.MISSION_GOLD} altın; yaklaşık ${Math.round(R.CONVERT_NEED / R.speed(tag, p))} ayda din değişir.`];
+    const teach = R.sameFamily(p.relig, n.religion);
+    return [true, `${teach ? 'Mezhep öğretisi' : 'Misyonerlik'}: ayda ${teach ? R.TEACH_GOLD : R.MISSION_GOLD} altın; yaklaşık ${Math.round(R.CONVERT_NEED / R.speed(tag, p))} ayda halk ${G.RELIGIONS[n.religion].name} olur.`];
   };
   R.speed = function (tag, p) {
     const n = G.S.nations[tag];
@@ -51,7 +62,7 @@ G.rel = {};
     if (G.econ.isCapital(p)) v *= 0.6;
     if (p.kind === 'rural') v *= 1.25;
     v -= (p.unrest || 0) / 25;
-    if (R.family(p.relig) === R.family(n.religion)) v *= 1.4;   // mezhep değiştirmek daha kolay
+    if (R.family(p.relig) === R.family(n.religion)) v *= 1.7;   // aynı dinin başka mezhebine öğreti: çok daha kolay
     return Math.max(1, v);
   };
   R.sendMission = function (tag, pid) {
@@ -206,12 +217,12 @@ G.rel = {};
       for (const m of n.missions.slice()) {
         const p = S.provinces[m.prov];
         if (p.owner !== n.tag || p.ctrl !== n.tag || p.relig === n.religion) { R.recall(n.tag, m.prov); continue; }
-        n.gold -= R.MISSION_GOLD;
+        n.gold -= R.sameFamily(p.relig, n.religion) ? R.TEACH_GOLD : R.MISSION_GOLD;
         m.prog += R.speed(n.tag, p);
         if (m.prog >= R.CONVERT_NEED) {
           const old = p.relig;
           p.relig = n.religion;
-          p.unrest = Math.min(100, (p.unrest || 0) + 10);
+          p.unrest = Math.min(100, (p.unrest || 0) + (R.sameFamily(old, n.religion) ? 2 : 8));
           R.recall(n.tag, m.prov);
           if (n.tag === S.player) G.log(`${p.name} halkı ${G.RELIGIONS[n.religion].name} dinine geçti (eskiden ${(G.RELIGIONS[old] || { name: old }).name}).`, 'good', [n.tag]);
         }

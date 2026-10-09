@@ -273,6 +273,12 @@
         if (b.dataset.mission === 'go') { if (!G.rel.sendMission(me, p.id)) U.addLog(G.fmtDate(S.time, false), G.rel.canMission(me, p)[1], 'war'); }
         else G.rel.recall(me, p.id);
       }
+      else if (b.dataset.massacre) {
+        U.showEvent('Katliam emri', G.massacre.costText(me, p), [
+          { text: '☠ Emri ver', action: () => { G.massacre.order(me, p.id); U.refreshProvince(); U.refreshTop(); G.mapDirty = true; } },
+          { text: 'Vazgeç' }]);
+        return;
+      }
       else if (b.dataset.assim) {
         if (b.dataset.assim === 'go') { if (!G.cul.sendAssim(me, p.id)) U.addLog(G.fmtDate(S.time, false), G.cul.canAssim(me, p)[1], 'war'); }
         else G.cul.recall(me, p.id);
@@ -307,8 +313,13 @@
         act = `<div class="row-btns"><button data-assim="go" ${ok ? '' : 'disabled'} title="${G.esc(why)}">⚖ Asimile et</button><span class="muted small">${G.esc(why)}</span></div>`;
       }
     }
-    return `<h3>Halk</h3><div class="cul-row">${C.flagHtml(p.cul)} <b>${G.esc(K.name)}</b> <span class="muted">· ${G.esc(C.GROUPS[K.group] ? C.GROUPS[K.group].name : '')} grubu</span></div>
-      <div class="small">${state}</div>${act}`;
+    let ms = '';
+    if (mine && G.massacre && (p.cul !== n.culture || !G.rel.sameFamily(p.relig, n.religion))) {
+      const [okM, whyM] = G.massacre.can(me, p);
+      ms = `<div class="row-btns"><button class="danger" data-massacre="1" ${okM ? '' : 'disabled'} title="${G.esc(okM ? 'Bütün halkı kılıçtan geçir. Bedeli çok ağır.' : whyM)}">☠ Katliam</button>${okM ? '' : `<span class="muted small">${G.esc(whyM)}</span>`}</div>`;
+    }
+    return `<h3>Halk</h3><div class="cul-row">${C.flagHtml(p.cul)} <b>${G.esc(C.fullName(p.cul))}</b></div>
+      <div class="small">${state}${p.massacred ? ' · <span class="bad">katliamdan sonra ıssız</span>' : ''}</div>${act}${ms}`;
   };
 
   // Keşfedilmemiş / sahipsiz topraklar: kâşif ve yerleşim
@@ -373,14 +384,17 @@
     const m = mine ? (n.missions || []).find(x => x.prov === p.id) : null;
     let act = '';
     if (mine && p.relig !== n.religion) {
-      if (m) act = `<div class="rl-prog"><span>✝ Misyonerimiz çalışıyor</span><div class="bar"><div style="width:${m.prog / G.rel.CONVERT_NEED * 100}%"></div></div>
+      if (m) act = `<div class="rl-prog"><span>${G.rel.sameFamily(p.relig, n.religion) ? '📜 Öğreticilerimiz çalışıyor' : '✝ Misyonerimiz çalışıyor'}</span><div class="bar"><div style="width:${m.prog / G.rel.CONVERT_NEED * 100}%"></div></div>
           <button data-mission="stop">Geri çağır</button></div>`;
       else {
         const [ok, why] = G.rel.canMission(me, p);
-        act = `<div class="row-btns"><button data-mission="go" ${ok ? '' : 'disabled'} title="${G.esc(why)}">✝ Misyoner gönder</button><span class="muted small">${G.esc(why)}</span></div>`;
+        const teach = G.rel.sameFamily(p.relig, n.religion);
+        act = `<div class="row-btns"><button data-mission="go" ${ok ? '' : 'disabled'} title="${G.esc(why)}">${teach ? '📜 Mezhep öğretisi gönder' : '✝ Misyoner gönder'}</button><span class="muted small">${G.esc(why)}</span></div>`;
       }
     }
-    return `<h3>Din</h3><div><span class="rl-dot" style="background:${R.color}"></span> ${G.esc(R.name)}${p.owner && S.nations[p.owner] && p.relig !== S.nations[p.owner].religion ? ' <span class="bad">(devletin dininden farklı)</span>' : ''}</div>${act}`;
+    const on = p.owner && S.nations[p.owner];
+    const diff = on && p.relig !== on.religion ? (G.rel.sameFamily(p.relig, on.religion) ? ' <span class="muted">(aynı din, başka mezhep: sorun çıkarmaz)</span>' : ' <span class="bad">(başka din: isyan edebilir)</span>') : '';
+    return `<h3>Din</h3><div><span class="rl-dot" style="background:${R.color}"></span> ${G.esc(G.rel.fullName(p.relig))}${diff}</div>${act}`;
   };
 
   // Kuşatma durumu: kalesiz yerde ilerleme çubuğu, kalede surlar / erzak / garnizon ve hücum

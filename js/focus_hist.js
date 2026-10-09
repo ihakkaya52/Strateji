@@ -48,7 +48,7 @@
         if (n.ruler !== name && !dead) {
           n.pastRulers ||= [];
           n.pastRulers.unshift({ name: n.ruler, from: n.reignStart ?? 1040, to: S.time.y, age: G.dyn.age(n) });
-          n.ruler = name; n.reignStart = S.time.y;
+          n.ruler = name; n.reignStart = S.time.y; n.rulerTitle = null;
           n.rulerBorn = opt.born ?? S.time.y - 35;
           n.rulerSk = opt.sk ? { ...opt.sk } : { adm: 3, dip: 3, mil: 4 };
           n.regency = 0;
