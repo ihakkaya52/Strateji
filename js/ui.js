@@ -151,6 +151,7 @@ U.initGame = function () {
     if (!m) return;
     G.map.mode = m; G.mapDirty = true;
     for (const b of $('mapmodes').querySelectorAll('[data-mode]')) b.classList.toggle('active', b.dataset.mode === m);
+    if (U.refreshLegend) U.refreshLegend();
   };
   document.body.addEventListener('click', e => {
     const t = e.target.closest('[data-nation]');

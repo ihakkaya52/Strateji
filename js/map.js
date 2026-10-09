@@ -203,6 +203,12 @@ M.mute = function (hex) {
 };
 
 M.provColor = function (p) {
+  const c = M.provColorRaw(p), h = M.legendHi;
+  // lejantta üzerine gelinen din / kültür dışındaki iller soluklaşır
+  if (h && (h.mode === 'religion' ? (p.relig || (p.owner && G.S && G.S.nations[p.owner] && G.S.nations[p.owner].religion)) !== h.key : p.cul !== h.key)) return 'rgb(150,140,118)';
+  return c;
+};
+M.provColorRaw = function (p) {
   const S = G.S;
   if (S && M.mode === 'culture' && p.cul) return M.mute(G.cul.get(p.cul).color);
   if (p.kind === 'waste' && !p.owner) return S && M.mode === 'religion' && p.relig ? M.mute(G.RELIGIONS[p.relig].color) : '#6a5e48';
@@ -532,9 +538,9 @@ M.drawBase = function () {
   }
 
   // sınırlar: yumuşak, iki katmanlı (geniş gölge + ince mürekkep)
-  if (sc > 9 && !geo) {
-    ctx.strokeStyle = `rgba(40,28,14,${G.clamp((sc - 9) / 60, 0, 0.16)})`;
-    ctx.lineWidth = 0.6 / sc;
+  if (sc > 7 && !geo) {
+    ctx.strokeStyle = `rgba(40,28,14,${G.clamp((sc - 7) / 45, 0, 0.2)})`;
+    ctx.lineWidth = 0.5 / sc;
     ctx.stroke(M.innerBorders);
   }
   const bw = Math.min(1.6, 0.5 + sc / 40);
@@ -546,19 +552,23 @@ M.drawBase = function () {
     ctx.stroke(M.outerBorders);
     ctx.setLineDash([]);
   } else {
-  ctx.strokeStyle = 'rgba(30,20,10,0.16)';
-  ctx.lineWidth = bw * 3.2 / sc;
+  // devletler arası: en kalın (gölge + koyu mürekkep)
+  ctx.strokeStyle = 'rgba(30,20,10,0.18)';
+  ctx.lineWidth = bw * 3.6 / sc;
   ctx.stroke(M.outerBorders);
-  ctx.strokeStyle = 'rgba(35,24,12,0.55)';
-  ctx.lineWidth = bw / sc;
+  ctx.strokeStyle = 'rgba(35,24,12,0.62)';
+  ctx.lineWidth = bw * 1.3 / sc;
   ctx.stroke(M.outerBorders);
   }
-  // efendi-vasal sınırı: kesik çizgi
-  ctx.setLineDash([3 / sc, 3 / sc]);
-  ctx.strokeStyle = 'rgba(35,24,12,0.45)';
-  ctx.lineWidth = bw * 0.8 / sc;
+  // efendi ile vasalı arası: orta kalınlıkta düz mürekkep
+  if (!geo) {
+    ctx.strokeStyle = 'rgba(30,20,10,0.10)';
+    ctx.lineWidth = bw * 2.2 / sc;
+    ctx.stroke(M.realmBorders);
+  }
+  ctx.strokeStyle = 'rgba(35,24,12,0.48)';
+  ctx.lineWidth = bw * 0.75 / sc;
   ctx.stroke(M.realmBorders);
-  ctx.setLineDash([]);
   if (S) M.drawFronts(sc);
 
   return vis;
@@ -571,9 +581,7 @@ M.drawOver = function (vis) {
   ctx.setTransform(M.dpr, 0, 0, M.dpr, 0, 0);
   M.drawUnexploredNames();
   if (S && M.garrisonView) M.drawGarrisons(vis, P, true);
-  if (S && M.mode === 'culture') M.drawCultureLabels();
   if (geo) { M.drawGeoNames(); ctx.globalAlpha = 0.5; }
-  if (M.mode === 'culture') ctx.globalAlpha = 0.35;
   M.drawLabels(vis, P);
   ctx.globalAlpha = 1;
   if (S) {

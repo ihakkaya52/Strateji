@@ -380,11 +380,15 @@
   const panV = { x: 0, y: 0 };
   let panHold = 0;
   const edge = { on: false, dx: 0, dy: 0 };
+  // ekran kenarına ve köşelerine yaklaşan imleç haritayı o yöne kaydırır (üst çubuk ya da düğmelerin üstünde de);
+  // büyük bir pencere açıkken kaydırma olmaz
+  const WINDOWS = ['pagewin', 'focuswin', 'techwin', 'peacewin', 'modal', 'menu'];
+  const windowOpen = () => WINDOWS.some(id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden') && el.offsetParent !== null; });
   window.addEventListener('mousemove', e => {
-    const m = 6;
+    const m = 12;
     edge.dx = e.clientX <= m ? -1 : e.clientX >= window.innerWidth - m ? 1 : 0;
     edge.dy = e.clientY <= m ? -1 : e.clientY >= window.innerHeight - m ? 1 : 0;
-    edge.on = !!(edge.dx || edge.dy) && e.target === canvas;
+    edge.on = !!(edge.dx || edge.dy) && !e.buttons && !windowOpen();
   });
   document.addEventListener('mouseleave', () => { edge.on = false; });
   window.addEventListener('blur', () => { edge.on = false; keys.clear(); });

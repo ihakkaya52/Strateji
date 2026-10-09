@@ -375,6 +375,7 @@
     if (U.setBarMode && U.barMode !== 'kara') U.setBarMode('kara');
     G.map.mode = 'political';
     for (const b of document.querySelectorAll('#mapmodes [data-mode]')) b.classList.toggle('active', b.dataset.mode === 'political');
+    if (U.refreshLegend) U.refreshLegend();
     G.map.garrisonView = false;
     G.mapDirty = true;
   };
