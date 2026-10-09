@@ -311,3 +311,26 @@
 .ap-ship .cp { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ap-ship .hpbar { width: 50px; }
 .og-cnt { color: var(--muted); font-family: var(--body); letter-spacing: 0; }
+
+/* oyun menüsü ve kayıtlar */
+#gamemenu {
+  position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: min(620px, calc(100% - 16px)); max-height: calc(100% - 100px);
+  display: flex; flex-direction: column; z-index: 24;
+  background: linear-gradient(rgba(42,34,22,0.98), rgba(22,18,12,0.98)); border: 2px solid #b08a40; border-radius: 6px;
+  box-shadow: 0 0 0 1px #000, 0 16px 60px rgba(0,0,0,0.8);
+}
+#gamemenu .focus-head { display: flex; align-items: center; padding: 8px 14px; border-bottom: 1px solid #4a3f2b; }
+#gamemenu h2 { margin: 0; font-family: var(--title); font-size: 17px; color: var(--gold); letter-spacing: 1px; }
+.sv-body { padding: 10px 16px 14px; overflow-y: auto; }
+.sv-body h3, #menu-saves h3 { font-family: var(--title); font-weight: 400; font-size: 13px; letter-spacing: 1px; color: var(--gold); margin: 10px 0 6px; }
+.sv-save { display: flex; gap: 6px; }
+.sv-save input { flex: 1; background: #1e1910; color: var(--text); border: 1px solid #6a5634; border-radius: 3px; padding: 5px 8px; font-family: inherit; font-size: 14px; }
+.sv-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.sv-list { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
+.sv-row { display: flex; gap: 6px; align-items: center; padding: 5px 8px; border: 1px solid #4a3f2b; border-radius: 4px; background: rgba(0,0,0,0.2); }
+.sv-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.sv-main span { font-size: 13px; } .sv-main small { font-size: 11px; color: var(--muted); }
+.sv-row button { padding: 3px 8px; font-size: 12px; }
+#menu-saves { margin-top: 10px; }
+#menu-saves h3 { text-align: center; }
+button.big { font-size: 15px; padding: 7px 18px; border-color: var(--gold); color: var(--gold); }

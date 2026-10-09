@@ -40,6 +40,9 @@
     <span class="ico">☠</span><span id="tb-wars">Barış</span>
   </div>
   <div class="tb-spacer"></div>
+  <div id="tb-menu" class="tb-block clickable" title="Oyun menüsü: kaydet, yükle (Ctrl+S hızlı kayıt)">
+    <span class="ico">☰</span><span>Menü</span>
+  </div>
   <div id="tb-events" class="tb-block clickable" title="Olaylar ve haberler (L)">
     <span class="ico">✉</span><span>Olaylar</span><span id="tb-ev-count" class="hidden"></span>
   </div>
@@ -66,6 +69,8 @@
 
 <!-- Genel sayfa penceresi: ekonomi, ordular, atölyeler, olaylar -->
 <div id="pagewin" class="hidden"></div>
+<div id="gamemenu" class="hidden"></div>
+<input type="file" id="load-file" accept=".kayit,.json,.txt" class="hidden">
 <div id="toasts"></div>
 
 <!-- Savaş durumu: üstte açılır kapanır -->
@@ -120,6 +125,7 @@
     <div class="menu-other">
       <button id="btn-pick-map">Haritadan başka bir ülke seç</button>
     </div>
+    <div id="menu-saves"></div>
     <p class="hint">Kontroller: sol tık seç · sol tıkla sürükle kaydır · Shift + sürükle ordu seç · sağ tık ordu / filo yürüt, ülkeye sağ tık diplomasi · O komuta · N donanma · P üretim ·
       WASD / oklar kaydır (Shift hızlı) · tekerlek ya da Q/E yakınlaştır · Boşluk duraklat · 1-5 hız</p>
   </div>
@@ -198,6 +204,8 @@
 <script src="js/music.js"></script>
 <script src="js/ui_art.js"></script>
 <script src="js/ui_pages.js"></script>
+<script src="js/save.js"></script>
+<script src="js/ui_save.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

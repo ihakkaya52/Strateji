@@ -59,6 +59,8 @@
 
   U.bindMusic = function () {
     const m = MU();
+    if (U._musicBound) return;
+    U._musicBound = true;
     if (!m) { $('tb-music').classList.add('hidden'); return; }
     const pop = $('mus-pop');
     const sync = () => {
