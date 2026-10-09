@@ -36,7 +36,7 @@ SEA_LAT0 = -46.0       # deniz bölgeleri bu enlemin kuzeyinde
 # Amerika kıtası: haritada keşfedilmemiş kara olarak durur (henüz il yok)
 AMERICAS_BOX = (-180.0, -56.0, -26.0, 72.0)
 # Avustralya'nın doğusu, Yeni Gine'nin ucu ve Yeni Zelanda: o da keşfe kapalı kara
-OCEANIA_BOX = (150.0, -56.0, 180.0, -0.5)
+OCEANIA_BOX = (150.0, -56.0, 180.0, 72.0)   # Kamçatka ve Çukotka da: dünya yuvarlak, harita kesintisiz döner
 AFRICA_MIN_LAT = 10.0  # Afrika'nın bu enlemin güneyi keşfedilmemiş topraktır
 # Keşfedilmemiş bölgeler (boylam/enlem kutuları): kara burada çizilir ama eyalet yoktur
 UNEXPLORED_BOXES = [
@@ -432,10 +432,17 @@ def main():
         unk.append([round(v, 2) for xy in list(p.exterior.coords)[:-1] for v in xy])
         for h in p.interiors:
             unk.append([round(v, 2) for xy in list(h.coords)[:-1] for v in xy])
+    # sisin kıyı çizgisi: bilinen karaya değen kenarlar çizilmez (dikiş görünmesin)
+    coast = drawn.boundary.difference(land.buffer(0.03)).difference(box(179.95, -300, 181, 300)).difference(box(-181, -300, -179.95, 300))
+    unk_coast = []
+    for ln in getattr(coast, "geoms", [coast]):
+        if isinstance(ln, LineString) and ln.length > 0.05:
+            ln = ln.simplify(0.04)
+            unk_coast.append([round(v, 2) for xy in ln.coords for v in xy])
     unk_labels = [dict(name=n, x=round(proj(lo, la)[0], 2), y=round(proj(lo, la)[1], 2)) for (n, lo, la) in UNEXPLORED_LABELS]
     world = dict(
         bounds=[round(min(minx, ux0), 2), round(min(miny, uy0), 2), round(max(maxx, ux1), 2), round(max(maxy, uy1), 2)],
-        unexplored=unk, unexploredLabels=unk_labels,
+        unexplored=unk, unexploredCoast=unk_coast, unexploredLabels=unk_labels,
         nations=nations, provinces=provinces, edges=edges, vassals=VASSALS,
         seas=build_seas(full_land, keep, newid, geoms, provinces),
         geo=build_geo(full_land, provinces, seeds, keep, newid, geoms),

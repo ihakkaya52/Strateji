@@ -53,6 +53,11 @@ M.init = function (canvas) {
     for (let i = 2; i < r.length; i += 2) M.unkPath.lineTo(r[i], r[i + 1]);
     M.unkPath.closePath();
   }
+  M.unkCoast = new Path2D();
+  for (const s of W.unexploredCoast || []) {
+    M.unkCoast.moveTo(s[0], s[1]);
+    for (let i = 2; i < s.length; i += 2) M.unkCoast.lineTo(s[i], s[i + 1]);
+  }
   M.fogY = Math.max(...M.seaBbox.map(b => b[3]), -Infinity);
   // deniz bölgeleri arasındaki sınırlar (kıyı çizgisi hariç)
   M.seaEdgePath = new Path2D();
@@ -100,6 +105,7 @@ M.gridAt = function (wx, wy) {
 
 M.seaAt = function (sx, sy) {
   const w = M.toWorld(sx, sy), ctx = M.ctx;
+  w.x = M.wrapX(w.x);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   for (let i = 0; i < M.seaPaths.length; i++) {
     const b = M.seaBbox[i];
@@ -123,8 +129,8 @@ M.toScreen = (wx, wy) => ({ x: (wx - M.cam.x) * M.cam.scale + M.w / 2, y: (wy - 
 
 M.clampCam = function () {
   const [x0, y0, x1, y1] = window.WORLD.bounds;
-  M.cam.scale = G.clamp(M.cam.scale, Math.max(M.w / (x1 - x0 + 20), 4), 400);
-  M.cam.x = G.clamp(M.cam.x, x0, x1);
+  M.cam.scale = G.clamp(M.cam.scale, Math.max(M.w / M.WORLD_W, 4), 400);
+  M.cam.x = M.wrapX(M.cam.x);   // yatayda sonsuz: sınırı geçince öbür uçtan devam
   M.cam.y = G.clamp(M.cam.y, y0, y1);
 };
 
@@ -149,6 +155,7 @@ M.centerOn = function (pid, scale) {
 
 M.provinceAt = function (sx, sy) {
   const w = M.toWorld(sx, sy), ctx = M.ctx;
+  w.x = M.wrapX(w.x);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const P = window.WORLD.provinces;
   for (let i = 0; i < P.length; i++) {
@@ -386,6 +393,60 @@ M.draw = function () {
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, M.w, M.h);
 
+  // dünya yuvarlak: harita yatayda tekrar eder; görünen her kopya ayrı çizilir
+  const copies = M.copies();
+  M.counterRects = []; M.fleetRects = []; M.battleRects = [];
+  const visBy = {};
+  for (const k of copies) M.withCopy(k, () => { visBy[k] = M.drawBase(); });
+  {
+    const ox = M.w / 2 - cam.x * sc, oy = M.h / 2 - cam.y * sc;
+    // ekran koordinatlarına geç ve parşömen dokusunu bindir
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = 0.55;
+    const pat = M.paper();
+    pat.setTransform(new DOMMatrix([1.6, 0, 0, 1.6, (ox * 0.25) % 410, (oy * 0.25) % 410]));
+    ctx.fillStyle = pat;
+    ctx.fillRect(0, 0, M.w, M.h);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  // tam ekran karartmalar bir kez
+  if (S && M.garrisonView) { ctx.fillStyle = 'rgba(10,8,5,0.42)'; ctx.fillRect(0, 0, M.w, M.h); }
+  if (S && M.tradeView) { ctx.fillStyle = 'rgba(12,9,5,0.28)'; ctx.fillRect(0, 0, M.w, M.h); }
+  for (const k of copies) M.withCopy(k, () => M.drawOver(visBy[k]));
+  if (M.dragBox) {
+    const b = M.dragBox;
+    ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(255,233,168,0.1)';
+    ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
+    ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
+  }
+};
+
+// Görünen dünya kopyaları (-1: batıdaki, 0: asıl, 1: doğudaki)
+M.WORLD_W = 360;
+M.copies = function () {
+  const [x0, , x1] = window.WORLD.bounds, v = M.toWorld(0, 0), v2 = M.toWorld(M.w, M.h), out = [];
+  for (const k of [-1, 0, 1]) if (x1 + k * M.WORLD_W >= v.x && x0 + k * M.WORLD_W <= v2.x) out.push(k);
+  return out.length ? out : [0];
+};
+M.withCopy = function (k, fn) {
+  if (!k) return fn();
+  const cx = M.cam.x;
+  M.cam.x = cx - k * M.WORLD_W;
+  try { return fn(); } finally { M.cam.x = cx; }
+};
+M.wrapX = x => {
+  const x0 = window.WORLD.bounds[0];
+  return ((x - x0) % M.WORLD_W + M.WORLD_W) % M.WORLD_W + x0;
+};
+// En kısa yönde yatay fark (sınırdan geçerek gitmek daha kısaysa onu seçer)
+M.dxWrap = (a, b) => { let d = (b - a) % M.WORLD_W; if (d > M.WORLD_W / 2) d -= M.WORLD_W; if (d < -M.WORLD_W / 2) d += M.WORLD_W; return d; };
+
+M.drawBase = function () {
+  const S = G.S, ctx = M.ctx, dpr = M.dpr, cam = M.cam, sc = cam.scale;
+  const P = S ? S.provinces : window.WORLD.provinces;
   const ox = M.w / 2 - cam.x * sc, oy = M.h / 2 - cam.y * sc;
   ctx.setTransform(sc * dpr, 0, 0, sc * dpr, ox * dpr, oy * dpr);
   const v = M.toWorld(0, 0), v2 = M.toWorld(M.w, M.h);
@@ -500,16 +561,14 @@ M.draw = function () {
   ctx.setLineDash([]);
   if (S) M.drawFronts(sc);
 
-  // ekran koordinatlarına geç ve parşömen dokusunu bindir
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = 0.55;
-  const pat = M.paper();
-  pat.setTransform(new DOMMatrix([1.6, 0, 0, 1.6, (ox * 0.25) % 410, (oy * 0.25) % 410]));
-  ctx.fillStyle = pat;
-  ctx.fillRect(0, 0, M.w, M.h);
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = 'source-over';
+  return vis;
+};
+
+M.drawOver = function (vis) {
+  const S = G.S, ctx = M.ctx, sc = M.cam.scale;
+  const P = S ? S.provinces : window.WORLD.provinces;
+  const geo = M.mode === 'geo';
+  ctx.setTransform(M.dpr, 0, 0, M.dpr, 0, 0);
   M.drawUnexploredNames();
   if (S && M.garrisonView) M.drawGarrisons(vis, P, true);
   if (S && M.mode === 'culture') M.drawCultureLabels();
@@ -528,13 +587,6 @@ M.draw = function () {
     M.drawBattles();
     M.drawExploration();
     if (M.tradeView) M.drawTrade();
-  }
-  if (M.dragBox) {
-    const b = M.dragBox;
-    ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 1;
-    ctx.fillStyle = 'rgba(255,233,168,0.1)';
-    ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
-    ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
   }
 };
 
@@ -652,7 +704,6 @@ M.drawPaths = function () {
 
 M.drawCounters = function () {
   const ctx = M.ctx, S = G.S, P = S.provinces, sc = M.cam.scale;
-  M.counterRects = [];
   if (sc < 7) return;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const small = sc < 16;
@@ -724,7 +775,6 @@ M.drawCounters = function () {
 
 M.drawBattles = function () {
   const ctx = M.ctx, S = G.S, P = S.provinces;
-  M.battleRects = [];
   for (const b of S.battles.values()) {
     const a = P[b.from], t = P[b.target];
     const s1 = M.toScreen(a.x, a.y), s2 = M.toScreen(t.x, t.y);
@@ -815,8 +865,6 @@ M.drawArrows = function () {
 // Harita kararır, kaleler parlar ve garnizon sayıları yazılır
 M.drawGarrisons = function (vis, P) {
   const ctx = M.ctx, S = G.S, sc = M.cam.scale, me = S.player;
-  ctx.fillStyle = 'rgba(10,8,5,0.42)';
-  ctx.fillRect(0, 0, M.w, M.h);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (const i of vis) {
     const p = P[i];
@@ -857,7 +905,7 @@ M.drawUnexplored = function (sc) {
     const g = ctx.createLinearGradient(0, M.fogY - 3, 0, M.fogY + 14);
     g.addColorStop(0, 'rgba(12,18,18,0)'); g.addColorStop(1, 'rgba(12,18,18,0.32)');
     ctx.fillStyle = g;
-    ctx.fillRect(-600, M.fogY - 3, 1200, 200);
+    ctx.fillRect(-180, M.fogY - 3, 360, 200);
   }
   // bilinmeyen batı okyanusu: Atlantik'in ötesi sise gömülür
   if (!M.seaX0) M.seaX0 = Math.min(...M.seaBbox.map(b => b[0]));
@@ -865,7 +913,7 @@ M.drawUnexplored = function (sc) {
     const g = ctx.createLinearGradient(M.seaX0 + 2, 0, M.seaX0 - 14, 0);
     g.addColorStop(0, 'rgba(12,18,18,0)'); g.addColorStop(1, 'rgba(12,18,18,0.32)');
     ctx.fillStyle = g;
-    ctx.fillRect(-600, -300, M.seaX0 + 600, 600);
+    ctx.fillRect(-180, -300, M.seaX0 + 180, 600);
   }
   // doğuda da Pasifik'in bilinmeyeni
   if (!M.seaX1) M.seaX1 = Math.max(...M.seaBbox.map(b => b[2]));
@@ -873,14 +921,16 @@ M.drawUnexplored = function (sc) {
     const g = ctx.createLinearGradient(M.seaX1 - 2, 0, M.seaX1 + 14, 0);
     g.addColorStop(0, 'rgba(12,18,18,0)'); g.addColorStop(1, 'rgba(12,18,18,0.32)');
     ctx.fillStyle = g;
-    ctx.fillRect(M.seaX1 - 2, -300, 600 - M.seaX1, 600);
+    ctx.fillRect(M.seaX1 - 2, -300, 182 - M.seaX1, 600);
   }
   ctx.lineJoin = 'round';
   ctx.strokeStyle = 'rgba(160, 190, 180, 0.08)';
   ctx.lineWidth = 8 / sc;
-  ctx.stroke(M.unkPath);
+  ctx.stroke(M.unkCoast);
   ctx.fillStyle = '#857a64';
   ctx.fill(M.unkPath);
+  ctx.strokeStyle = '#857a64'; ctx.lineWidth = 1.2 / sc;   // parçalar arasında dikiş kalmasın
+  ctx.stroke(M.unkPath);
   const pat = M.hatch('rgba(60,48,32,0.16)');
   pat.setTransform(new DOMMatrix([1.4 / sc, 0, 0, 1.4 / sc, 0, 0]));
   ctx.fillStyle = pat;
@@ -888,7 +938,7 @@ M.drawUnexplored = function (sc) {
   ctx.setLineDash([2 / sc, 3 / sc]);
   ctx.strokeStyle = 'rgba(45,34,20,0.45)';
   ctx.lineWidth = 0.9 / sc;
-  ctx.stroke(M.unkPath);
+  ctx.stroke(M.unkCoast);
   ctx.setLineDash([]);
 };
 
@@ -903,9 +953,6 @@ M.drawHiddenFog = function (P, v, v2, sc) {
     list.push(i);
   }
   if (!list.length) return;
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = 'rgba(160, 190, 180, 0.08)'; ctx.lineWidth = 8 / sc;
-  for (const i of list) ctx.stroke(M.paths[i]);
   ctx.fillStyle = '#857a64'; ctx.strokeStyle = '#857a64'; ctx.lineWidth = 1.2 / sc;
   for (const i of list) { ctx.fill(M.paths[i]); ctx.stroke(M.paths[i]); }
   const pat = M.hatch('rgba(60,48,32,0.16)');
@@ -982,7 +1029,6 @@ M.fleetPos = function (f) {
 
 M.drawFleets = function () {
   const S = G.S, ctx = M.ctx, sc = M.cam.scale;
-  M.fleetRects = [];
   if (!S.fleets) return;
   const slot = new Map();
   // seçili filonun rotası
@@ -1202,8 +1248,6 @@ M.drawCultureLabels = function () {
 M.drawTrade = function () {
   const ctx = M.ctx, S = G.S, TR = G.trade, now = performance.now(), sel = G.ui.tradeSel;
   if (!TR.paths) return;
-  ctx.fillStyle = 'rgba(12,9,5,0.28)';
-  ctx.fillRect(0, 0, M.w, M.h);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   const mine = S.player;
   const curve = pts => {

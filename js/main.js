@@ -420,10 +420,10 @@
         if (dx || dy || drag) M.glide = null;
         else {
           const g = M.glide, f = 1 - Math.exp(-dt / 160);
-          M.cam.x += (g.x - M.cam.x) * f; M.cam.y += (g.y - M.cam.y) * f;
+          M.cam.x += M.dxWrap(M.cam.x, g.x) * f; M.cam.y += (g.y - M.cam.y) * f;
           if (g.scale) M.cam.scale *= Math.pow(g.scale / M.cam.scale, f);
           M.clampCam(); G.mapDirty = true;
-          if (Math.hypot(g.x - M.cam.x, g.y - M.cam.y) * M.cam.scale < 0.5 && (!g.scale || Math.abs(g.scale / M.cam.scale - 1) < 0.01)) M.glide = null;
+          if (Math.hypot(M.dxWrap(M.cam.x, g.x), g.y - M.cam.y) * M.cam.scale < 0.5 && (!g.scale || Math.abs(g.scale / M.cam.scale - 1) < 0.01)) M.glide = null;
         }
       }
     }

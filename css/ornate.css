@@ -535,3 +535,8 @@ button.big { font-size: 15px; padding: 7px 18px; border-color: var(--gold); colo
 /* çok ordu olunca çubuk sağ alttaki düğmelere taşmaz: fazlası ortalanmış olarak üst satıra çıkar */
 #cmdbar:not(.navy):not(.garr) { max-width: calc(100% - 760px); max-height: none; }
 @media (max-width: 700px) { #cmdbar, #cmdbar:not(.navy):not(.garr) { left: 8px; right: 8px; max-width: none; } }
+/* ordu çubuğu sade: arka plan ve çerçeve yok, yalnızca orduların renkli çerçeveleri */
+#cmdbar:not(.navy):not(.garr) { background: none; border: none; box-shadow: none; }
+#cmdbar:not(.navy):not(.garr)::before, #cmdbar:not(.navy):not(.garr)::after { display: none; }
+#cmdbar:not(.navy):not(.garr) .og { background: rgba(20,15,9,0.55); }
+#cmdbar.collapsed:not(.navy):not(.garr)::after { display: block; }
