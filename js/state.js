@@ -174,10 +174,12 @@ G.createArmy = function (tag, pid, men = 8000) {
     fleet: null,            // gemideyse donanma kimliği
   };
   S.armies.push(a);
+  G.ownVer++;
   return a;
 };
 
 G.removeArmy = function (a) {
+  G.ownVer++;
   const S = G.S;
   const i = S.armies.indexOf(a);
   if (i >= 0) S.armies.splice(i, 1);
@@ -218,20 +220,28 @@ G.monthlyManpower = function (tag) {
   return m * (G.S.nations[tag] ? G.S.nations[tag].mpMult : 1);
 };
 
-G.nationStats = function (tag) {
-  const S = G.S;
-  let provs = 0, cities = 0, occupied = 0;
+// Ülke istatistikleri ve il listeleri: her saat (ya da bir il/ordu el değiştirince) tek geçişte bütün ülkeler için
+// toplanır. Önceden her çağrı 3.600 ilin hepsini taradığı için aylık hesaplarda oyun takılıyordu.
+G.ownVer = 0;
+G.statsIdx = function () {
+  const S = G.S, c = G._stats;
+  if (c && c.S === S && c.h === S.hour && c.v === G.ownVer) return c;
+  const st = {}, provs = {};
+  const get = t => (st[t] ||= { provs: 0, cities: 0, occupied: 0, armies: 0, men: 0 });
   for (const p of S.provinces) {
-    if (p.owner === tag) {
-      provs++;
-      if (p.kind !== 'rural') cities++;
-      if (p.ctrl !== tag) occupied++;
-    }
+    if (!p.owner) continue;
+    const o = get(p.owner);
+    o.provs++;
+    if (p.kind !== 'rural') o.cities++;
+    if (p.ctrl !== p.owner) o.occupied++;
+    (provs[p.owner] ||= []).push(p);
   }
-  let armies = 0, men = 0;
-  for (const a of S.armies) if (a.tag === tag) { armies++; men += a.men; }
-  return { provs, cities, occupied, armies, men };
+  for (const a of S.armies) { const o = get(a.tag); o.armies++; o.men += a.men; }
+  return (G._stats = { S, h: S.hour, v: G.ownVer, st, provs });
 };
+const NO_STATS = { provs: 0, cities: 0, occupied: 0, armies: 0, men: 0 };
+G.nationStats = tag => { const o = G.statsIdx().st[tag]; return o ? { ...o } : { ...NO_STATS }; };
+G.provsOf = tag => G.statsIdx().provs[tag] || [];
 
 G.provinceWeight = p => p.kind === 'capital' ? 6 : p.kind === 'city' ? 2 : 1;
 
@@ -354,6 +364,7 @@ G.limitGains = function (winSide, loseSide) {
 // Barış: transfer=true ise işgal edilen topraklar işgalciye geçer. Bütün koalisyon birlikte barışır.
 G.makePeace = function (a, b, transfer, msg) {
   const S = G.S, na = S.nations[a], nb = S.nations[b];
+  G.ownVer++;
   if (!na.enemies.has(b)) return;
   if (transfer) {
     const A0 = G.warSide(a, b), B0 = G.warSide(b, a);
@@ -500,6 +511,7 @@ G.relocateCapital = function (tag) {
 // Hiç toprağı kalmazsa tarihten silinir.
 G.capitulate = function (tag) {
   const S = G.S, n = S.nations[tag];
+  G.ownVer++;
   if (!n.alive) return;
   const enemies = [...n.enemies];
   G.limitGains(new Set(enemies), [tag]);
@@ -558,6 +570,7 @@ G.checkElimination = function () {
 // Eyalet sahipliğini değiştir (olaylar için)
 G.transferProvince = function (pid, tag) {
   const p = G.S.provinces[pid];
+  G.ownVer++;
   p.owner = tag; p.ctrl = tag; p.siege = null;
   G.labelsDirty = true; G.mapDirty = true;
 };

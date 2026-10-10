@@ -55,8 +55,7 @@ G.stab = {};
     const S = G.S, f = [['Temel', 60]];
     if (n.gold < 0) f.push(['Hazine eksi', -20]);
     let own = 0, occ = 0, foreign = 0;
-    for (const p of S.provinces) {
-      if (p.owner !== n.tag) continue;
+    for (const p of G.provsOf(n.tag)) {
       own++;
       if (p.ctrl !== n.tag) occ++;
       if (p.core && p.core !== n.tag) foreign++;

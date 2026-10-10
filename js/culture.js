@@ -329,8 +329,7 @@ G.cul = {};
   C.unity = function (tag) {
     const S = G.S;
     let tot = 0, ok = 0;
-    for (const p of S.provinces) {
-      if (p.owner !== tag) continue;
+    for (const p of G.provsOf(tag)) {
       const w = G.provinceWeight(p);
       tot += w;
       if (C.accepted(tag, p.cul)) ok += w;

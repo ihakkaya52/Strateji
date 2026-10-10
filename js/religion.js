@@ -36,8 +36,7 @@ G.rel = {};
   R.unity = function (tag) {
     const S = G.S, n = S.nations[tag];
     let tot = 0, same = 0;
-    for (const p of S.provinces) {
-      if (p.owner !== tag) continue;
+    for (const p of G.provsOf(tag)) {
       const w = G.provinceWeight(p);
       tot += w;
       const r = p.relig || n.religion;

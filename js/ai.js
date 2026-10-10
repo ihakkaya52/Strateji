@@ -102,7 +102,15 @@ G.ai.considerPeace = function (aiTag, playerTag, transfer) {
   return s > 0 || (days > 180 && s >= -10) || (days > 720 && s >= -25);
 };
 
+// komşuluklar günde bir hesaplanır
 G.ai.neighbors = function () {
+  const S = G.S, day = S.hour / 24 | 0;
+  if (G._nb && G._nb.S === S && G._nb.day === day) return G._nb.map;
+  const map = G.ai.neighborsNow();
+  G._nb = { S, day, map };
+  return map;
+};
+G.ai.neighborsNow = function () {
   const P = G.S.provinces, map = {};
   for (const p of P) {
     if (!p.owner) continue;

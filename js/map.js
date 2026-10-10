@@ -388,20 +388,119 @@ M.areaOf = id => {
 };
 
 // ------------------------------------------------------------ çizim
-M.draw = function () {
-  const S = G.S, ctx = M.ctx, dpr = M.dpr, cam = M.cam, sc = cam.scale;
-  if (G.labelsDirty || !M.labels) { M.rebuildBorders(); M.rebuildLabels(); G.labelsDirty = false; }
-  const P = S ? S.provinces : window.WORLD.provinces;
+// Harita iki katmanda çizilir. Sabit katman (deniz, iller, sınırlar, parşömen dokusu, yazılar) ekranın biraz
+// dışına taşan bir tuvale bir kez çizilip saklanır; kaydırma ve yakınlaştırma sırasında bu görüntü kaydırılıp
+// ölçeklenir ve yalnızca harita değişince ya da görüntü ekranı örtmeyince yeniden çizilir. Hareketli katman
+// (ordular, filolar, kuşatmalar, cepheler, seçim) her karede üste çizilir.
+M.CACHE_MARGIN = 0.22;
+M.tagIdx = new Map();
+const tagId = t => { if (!t) return 0; let v = M.tagIdx.get(t); if (v == null) { v = M.tagIdx.size + 1; M.tagIdx.set(t, v); } return v; };
+M.signature = function () {
+  const S = G.S, P = S ? S.provinces : window.WORLD.provinces;
+  const kult = M.mode === 'culture', din = M.mode === 'religion';
+  let h = 7;
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i];
+    h = (Math.imul(h, 31) + tagId(p.owner) * 4099 + tagId(p.ctrl) + (p.colony ? 77 : 0) + (p.fort || 0) * 131) | 0;
+    if (kult) h = (Math.imul(h, 17) + tagId(p.cul)) | 0;
+    if (din) h = (Math.imul(h, 17) + tagId(p.relig)) | 0;
+  }
+  const me = S && S.nations[S.player];
+  const f = G.selFleet;
+  return [h, M.mode, M.garrisonView ? 1 : 0, M.tradeView ? 1 : 0, M.selNation || '', M.legendHi ? M.legendHi.key : '',
+    f ? f.id + ':' + (S.hour >> 3) : '', me && me.explored ? me.explored.size : 0, S ? Object.keys(S.nations).length : 0,
+    M.labelVer || 0].join('|');
+};
+M.visibleProvs = function () {
+  const P = G.S ? G.S.provinces : window.WORLD.provinces;
+  const v = M.toWorld(0, 0), v2 = M.toWorld(M.w, M.h), vis = [];
+  for (let i = 0; i < P.length; i++) {
+    const b = M.bbox[i];
+    if (b[2] < v.x || b[0] > v2.x || b[3] < v.y || b[1] > v2.y) continue;
+    if (M.hidden(P[i])) continue;
+    vis.push(i);
+  }
+  return vis;
+};
+// saklanan görüntünün ekrandaki yeri; ekranı örtmüyorsa null
+M.cachePlace = function (C) {
+  const cam = M.cam, k = cam.scale / C.sc;
+  const cx = cam.x + M.dxWrap(cam.x, C.cx);
+  let x = (cx - cam.x) * cam.scale + M.w / 2 - C.W / 2 * k;
+  let y = (C.cy - cam.y) * cam.scale + M.h / 2 - C.H / 2 * k;
+  if (x > 0.5 || y > 0.5 || x + C.W * k < M.w - 0.5 || y + C.H * k < M.h - 0.5) return null;
+  if (k === 1) { x = Math.round(x * M.dpr) / M.dpr; y = Math.round(y * M.dpr) / M.dpr; }
+  return { x, y, k };
+};
+// q < 1: kamera hareket halindeyken düşük çözünürlükte hızlı çizim; durunca tam çözünürlükte yeniden çizilir
+M.renderCache = function (sig, q = 1) {
+  const dpr = M.dpr, W = Math.ceil(M.w * (1 + 2 * M.CACHE_MARGIN)), H = Math.ceil(M.h * (1 + 2 * M.CACHE_MARGIN));
+  const r = dpr * q;
+  let C = M.cache;
+  if (!C || C.W !== W || C.H !== H || C.dpr !== dpr || C.r !== r) {
+    const cv = (C && C.cv) || document.createElement('canvas');
+    cv.width = Math.round(W * r); cv.height = Math.round(H * r);
+    C = M.cache = { cv, ctx: cv.getContext('2d'), W, H, dpr, r };
+  }
+  const real = { ctx: M.ctx, w: M.w, h: M.h, dpr: M.dpr };
+  M.ctx = C.ctx; M.w = W; M.h = H; M.dpr = r;
+  try { M.drawStatic(); } finally { M.ctx = real.ctx; M.w = real.w; M.h = real.h; M.dpr = real.dpr; }
+  C.sig = sig; C.cx = M.cam.x; C.cy = M.cam.y; C.sc = M.cam.scale; C.t = performance.now(); C.q = q;
+};
 
+M.draw = function () {
+  const cam = M.cam, sc = cam.scale, now = performance.now();
+  // sınırlar ve ülke adları en fazla yarım saniyede bir yeniden kurulur (savaşta iller sık el değiştirir)
+  if (!M.labels || (G.labelsDirty && now - (M._lblT || 0) > 500)) {
+    M.rebuildBorders(); M.rebuildLabels(); G.labelsDirty = false; M.labelVer = (M.labelVer || 0) + 1; M._lblT = now;
+  } else if (G.labelsDirty && !M._lblTimer) M._lblTimer = setTimeout(() => { M._lblTimer = null; G.mapDirty = true; }, 520);
+  // yakınlaştırma sürerken eski görüntü ölçeklenir; durunca net olarak yeniden çizilir
+  if (sc !== M._prevSc) { M._prevSc = sc; M._scT = now; clearTimeout(M._scTimer); M._scTimer = setTimeout(() => { G.mapDirty = true; }, 190); }
+  const sig = M.signature();
+  const C = M.cache;
+  let place = C && C.dpr === M.dpr ? M.cachePlace(C) : null;
+  if (place && place.k !== 1 && now - M._scT > 170) place = null;
+  // harita verisi değişti: kamera oynamıyorsa sabit katman en fazla 0,35 saniyede bir yenilenir
+  if (place && C.sig !== sig) {
+    if (now - C.t > 350) place = null;
+    else if (!M._sigTimer) M._sigTimer = setTimeout(() => { M._sigTimer = null; G.mapDirty = true; }, 360 - (now - C.t));
+  }
+  // kamera hareket ediyor mu? (kaydırma / yakınlaştırma)
+  const camKey = cam.x.toFixed(4) + ',' + cam.y.toFixed(4) + ',' + sc;
+  if (camKey !== M._camKey) { M._camKey = camKey; M._camT = now; }
+  const moving = now - (M._camT || 0) < 220;
+  if (place && M.cache.q < 1 && !moving) place = null;   // durdu: net çiz
+  if (!place) {
+    M.renderCache(sig, moving ? 0.5 : 1); place = M.cachePlace(M.cache);
+    if (moving) { clearTimeout(M._sharpTimer); M._sharpTimer = setTimeout(() => { G.mapDirty = true; }, 240); }
+  }
+  const ctx = M.ctx, dpr = M.dpr;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(M.cache.cv, place.x * dpr, place.y * dpr, M.cache.W * place.k * dpr, M.cache.H * place.k * dpr);
+  M.counterRects = []; M.fleetRects = []; M.battleRects = [];
+  for (const k of M.copies()) M.withCopy(k, () => M.drawDynamic());
+  if (M.dragBox) {
+    const b = M.dragBox;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(255,233,168,0.1)';
+    ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
+    ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
+  }
+};
+
+// sabit katman (saklanan tuvale çizilir)
+M.drawStatic = function () {
+  const S = G.S, ctx = M.ctx, dpr = M.dpr, cam = M.cam, sc = cam.scale;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   const grd = ctx.createLinearGradient(0, 0, 0, M.h);
   grd.addColorStop(0, '#a9bab4'); grd.addColorStop(1, '#94a8a2');   // suluboya deniz
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, M.w, M.h);
-
   // dünya yuvarlak: harita yatayda tekrar eder; görünen her kopya ayrı çizilir
   const copies = M.copies();
-  M.counterRects = []; M.fleetRects = []; M.battleRects = [];
   const visBy = {};
   for (const k of copies) M.withCopy(k, () => { visBy[k] = M.drawBase(); });
   {
@@ -420,14 +519,41 @@ M.draw = function () {
   // tam ekran karartmalar bir kez
   if (S && M.garrisonView) { ctx.fillStyle = 'rgba(10,8,5,0.42)'; ctx.fillRect(0, 0, M.w, M.h); }
   if (S && M.tradeView) { ctx.fillStyle = 'rgba(12,9,5,0.28)'; ctx.fillRect(0, 0, M.w, M.h); }
-  for (const k of copies) M.withCopy(k, () => M.drawOver(visBy[k]));
-  if (M.dragBox) {
-    const b = M.dragBox;
-    ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 1;
-    ctx.fillStyle = 'rgba(255,233,168,0.1)';
-    ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
-    ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
+  for (const k of copies) M.withCopy(k, () => M.drawOverStatic(visBy[k]));
+};
+
+// hareketli katman (her karede)
+M.drawDynamic = function () {
+  const S = G.S, ctx = M.ctx, dpr = M.dpr, cam = M.cam, sc = cam.scale;
+  const P = S ? S.provinces : window.WORLD.provinces;
+  const ox = M.w / 2 - cam.x * sc, oy = M.h / 2 - cam.y * sc;
+  ctx.setTransform(sc * dpr, 0, 0, sc * dpr, ox * dpr, oy * dpr);
+  // seçili / üzerine gelinen eyalet
+  if (M.hoverProv != null && !M.hidden(P[M.hoverProv])) {
+    ctx.fillStyle = 'rgba(255,255,255,0.13)';
+    ctx.fill(M.paths[M.hoverProv]);
   }
+  if (M.selProv != null) {
+    ctx.fillStyle = 'rgba(255,240,200,0.22)';
+    ctx.fill(M.paths[M.selProv]);
+    ctx.strokeStyle = '#ffe9a8';
+    ctx.lineWidth = 2 / sc;
+    ctx.stroke(M.paths[M.selProv]);
+  }
+  if (S) M.drawFronts(sc);
+  if (!S) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const vis = M.visibleProvs();
+  if (M.garrisonView) M.drawGarrisons(vis, P, true);
+  M.drawPorts(vis, P);
+  M.drawSieges(vis, P);
+  M.drawArrows();
+  M.drawPaths();
+  M.drawCounters();
+  M.drawFleets();
+  M.drawBattles();
+  M.drawExploration();
+  if (M.tradeView) M.drawTrade();
 };
 
 // Görünen dünya kopyaları (-1: batıdaki, 0: asıl, 1: doğudaki)
@@ -489,12 +615,14 @@ M.drawBase = function () {
 
   // kıyı: eski haritalardaki gibi yumuşak, katmanlı su çizgisi
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  // (yalnızca denize komşu iller: iç kesimlerin çizgileri zaten dolgunun altında kalıyordu)
+  const coast = vis.filter(i => P[i].sea && P[i].sea.length);
   ctx.strokeStyle = 'rgba(70, 98, 102, 0.13)';
   ctx.lineWidth = 9 / sc;
-  for (const i of vis) ctx.stroke(M.paths[i]);
+  for (const i of coast) ctx.stroke(M.paths[i]);
   ctx.strokeStyle = 'rgba(55, 82, 86, 0.30)';
   ctx.lineWidth = 3.5 / sc;
-  for (const i of vis) ctx.stroke(M.paths[i]);
+  for (const i of coast) ctx.stroke(M.paths[i]);
 
   // dolgular (coğrafi kipte boyalı arazi zemini)
   const geo = M.mode === 'geo';
@@ -524,18 +652,6 @@ M.drawBase = function () {
     }
   }
   if (S) M.drawColonies(vis, P, sc);
-  // seçili / üzerine gelinen eyalet
-  if (M.hoverProv != null && !M.hidden(P[M.hoverProv])) {
-    ctx.fillStyle = 'rgba(255,255,255,0.13)';
-    ctx.fill(M.paths[M.hoverProv]);
-  }
-  if (M.selProv != null) {
-    ctx.fillStyle = 'rgba(255,240,200,0.22)';
-    ctx.fill(M.paths[M.selProv]);
-    ctx.strokeStyle = '#ffe9a8';
-    ctx.lineWidth = 2 / sc;
-    ctx.stroke(M.paths[M.selProv]);
-  }
 
   // sınırlar: yumuşak, iki katmanlı (geniş gölge + ince mürekkep)
   if (sc > 7 && !geo) {
@@ -569,33 +685,20 @@ M.drawBase = function () {
   ctx.strokeStyle = 'rgba(35,24,12,0.4)';
   ctx.lineWidth = bw * 0.7 / sc;
   ctx.stroke(M.realmBorders);
-  if (S) M.drawFronts(sc);
 
   return vis;
 };
 
-M.drawOver = function (vis) {
-  const S = G.S, ctx = M.ctx, sc = M.cam.scale;
+M.drawOverStatic = function (vis) {
+  const S = G.S, ctx = M.ctx;
   const P = S ? S.provinces : window.WORLD.provinces;
   const geo = M.mode === 'geo';
   ctx.setTransform(M.dpr, 0, 0, M.dpr, 0, 0);
   M.drawUnexploredNames();
-  if (S && M.garrisonView) M.drawGarrisons(vis, P, true);
   if (geo) { M.drawGeoNames(); ctx.globalAlpha = 0.5; }
   M.drawLabels(vis, P);
   ctx.globalAlpha = 1;
-  if (S) {
-    M.drawSeaNames();
-    M.drawPorts(vis, P);
-    M.drawSieges(vis, P);
-    M.drawArrows();
-    M.drawPaths();
-    M.drawCounters();
-    M.drawFleets();
-    M.drawBattles();
-    M.drawExploration();
-    if (M.tradeView) M.drawTrade();
-  }
+  if (S) M.drawSeaNames();
 };
 
 M.drawLabels = function (vis, P) {
@@ -819,7 +922,7 @@ M.drawFronts = function (sc) {
   if (!S.marshals) return;
   for (const o of S.marshals) {
     if (o.tag !== S.player || !o.front) continue;
-    const key = o.id + '|' + o.front + '|' + S.hour;
+    const key = o.id + '|' + o.front + '|' + (S.hour / 24 | 0);   // cephe günde bir hesaplanır
     let edges = M.frontCache.get(o.id);
     if (!edges || edges.key !== key) {
       edges = { key, list: G.command.frontEdges(o.tag, o.front) };

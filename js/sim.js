@@ -84,6 +84,7 @@ G.tick = function () {
   G.stepSieges();
   if (newDay) G.daily();
   if (newMonth) G.monthly();
+  else if (S.monthQ && S.monthQ.length) G.monthStep();
   if (t.h % 12 === 0) { G.ai.update(t.h === 0); G.command.update(); }
 };
 
@@ -548,12 +549,11 @@ G.monthly = function () {
   }
   G.trade.monthly();
   G.econ.monthly();
-  G.stab.monthly();
-  G.dyn.monthly();
-  G.rel.monthly();
-  G.cul.monthly();
-  G.explore.monthly();
-  G.tech.monthly();
-  G.ai.monthly();
-  G.dip.monthly();
+  // geri kalan aylık işler ayın ilk saatlerine yayılır (hepsi aynı anda çalışınca oyun takılıyordu)
+  S.monthQ = ['stab', 'dyn', 'rel', 'cul', 'explore', 'tech', 'ai', 'dip'];
+};
+const MONTH_SYS = { stab: () => G.stab, dyn: () => G.dyn, rel: () => G.rel, cul: () => G.cul, explore: () => G.explore, tech: () => G.tech, ai: () => G.ai, dip: () => G.dip };
+G.monthStep = function () {
+  const S = G.S, k = S.monthQ.shift();
+  if (MONTH_SYS[k]) MONTH_SYS[k]().monthly();
 };
