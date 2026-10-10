@@ -128,6 +128,7 @@
           <p><span class="rl-dot" style="background:${(G.RELIGIONS[n.religion] || {}).color}"></span> ${G.esc(G.rel.fullName(n.religion))} · dinî birlik <b>%${Math.round(G.rel.unity(tag) * 100)}</b></p>
           <p>✝ Misyonerler: ${(n.missions || []).length} / ${n.missionaries} görevde${(n.missions || []).length ? ': ' + n.missions.map(m => `<span class="link" data-prov="${m.prov}">${G.esc(S.provinces[m.prov].name)}</span> %${Math.round(m.prog)}`).join(', ') : ''}</p>
           <p class="muted small">Aynı dinin başka mezhebindeki illere mezhep öğretisi (ayda 1 altın, hızlı), başka dindeki illere misyoner (ayda 2 altın) gönderilir. Aynı dinden halk neredeyse hiç isyan etmez; başka dinden halk ayaklanabilir.</p>
+          ${U.titleHtml ? U.titleHtml(tag) : ''}
           ${G.rel.activeOf(tag) ? `<p class="bad">${G.rel.kindName(G.rel.activeOf(tag).kind)} sürüyor: hedef ${G.esc(S.provinces[G.rel.activeOf(tag).goal].name)}</p>` : ''}
         </div>
         <div class="pg-card"><h3>Halk</h3>
@@ -140,8 +141,20 @@
         </div>
       </div>`;
   };
+  // kutsal unvan: Papa / Halife / İmam-Halife
+  U.titleHtml = function (tag) {
+    const R = G.rel, S = G.S, n = S.nations[tag], k = R.TITLE_OF(n.religion);
+    if (!k) return '';
+    const h = R.holder(k);
+    if (h === tag) return `<p class="good">${k === 'papa' ? '✝' : '☪'} Kutsal unvan: <b>${R.TITLE_NAMES[k]}</b>. Kutsal sefer (${k === 'papa' ? 'Haçlı Seferi' : 'Cihat'}) çağırabilirsiniz.</p>`;
+    const [ok, why] = R.canClaim(tag);
+    return `<p class="muted small">${R.TITLE_LONG[k]}: ${h ? `<b>${G.esc(S.nations[h].name)}</b>` : 'boş'}. Kutsal sefer çağrısını yalnızca unvan sahibi yapabilir.</p>` +
+      (k !== 'papa' ? `<button data-claim="1" ${ok ? '' : 'disabled'} title="${G.esc(why)}">☪ Halifeliği üstlen</button> <span class="muted small">${G.esc(why)}</span>` : '');
+  };
   BIND.hanedan = function (el) {
     el.querySelectorAll('[data-dip-open]').forEach(r => r.onclick = () => { U.closePage(); U.showDiplomacy(r.dataset.dipOpen); });
+    const cl = el.querySelector('[data-claim]');
+    if (cl) cl.onclick = () => { if (G.rel.claim(G.S.player)) U.showEvent('Halifelik', `${G.S.nations[G.S.player].ruler} artık Haremeyn'in hizmetkârı ve İslam âleminin halifesi. Kutsal sefer çağırabilirsiniz.`, [{ text: 'Allah\'ın yeryüzündeki gölgesi' }]); U.renderPage(); };
   };
 
   // Halklar ve kültür: asimilasyon politikası, memurlar, ülkedeki halklar, bayraklar

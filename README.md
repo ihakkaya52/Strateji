@@ -62,6 +62,18 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
 - **Denge:** yapay zekâ savaşlarında tek barışta alınabilecek toprak sınırlı (küçük ülkeler hariç); büyük devletler
   aşırı genişledikçe daha seyrek ve daha temkinli savaşır; Normanlar ve Haçlı devletleri bir savaşta yutulmaz.
 
+## İttifaklar ve kutsal unvanlar
+
+- **İttifaklar** sayfası: adı olan bir ittifak kurun, komşuları ve vasallarınızın komşularını davet edin (kabul ilişkiye, dine,
+  ortak tehdide ve gücünüze bağlı), üyeleri savaşa çağırın, çıkarın ya da ayrılın; dünyadaki ittifaklara katılma isteği
+  gönderin. Üyeler birbirinin müttefikidir: biri saldırıya uğrarsa hepsi savaşa girer, liderin açtığı savaşa üyeler katılır.
+  Yapay zekâ da kendi ittifaklarını kurar. Diplomasi penceresinden de davet edilebilir.
+- **Kutsal sefer** (Haçlı Seferi / Cihat) çağrısını yalnızca **Papa**, **Sünnî Halife** ve **Fâtımî İmam-Halife** yapabilir.
+  Mekke ve Medine'yi alan Müslüman hükümdar (şimdiki halife Mekke'yi tutmuyorsa) **halifeliği üstlenebilir**
+  (Hükümdar ve Hanedan sayfasındaki Din kartı); yapay zekâ da bunu yapar. Papalık yıkılırsa Roma'yı tutan Katolik hükümdar
+  kendi papasını tahta çıkarır.
+- Müttefik ya da vasal sizin ilinizi düşmandan geri alırsa il size döner; barıştan sonra işgalli görünmez.
+
 ## Vasallık (Kutsal Roma)
 
 - 1040'ta Kutsal Roma tek parça değil: imparatorun elinde Frankonya, Ren'deki taç toprakları ve Lombardiya (17 il);

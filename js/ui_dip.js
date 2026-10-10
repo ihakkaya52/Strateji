@@ -64,7 +64,11 @@
         const free = mn.envoys - mn.envoyTo.size;
         btn('envoy', '✉', 'Elçi gönder', free > 0 && !mn.enemies.has(tag), mn.enemies.has(tag) ? 'Savaştayken elçi gönderilemez.' : `Boştaki elçiler: ${free} / ${mn.envoys}`);
       }
-      if (D.allied(me, tag)) btn('unally', '✂', 'İttifakı boz', true, 'İlişki ciddi şekilde bozulur.', 'danger');
+      const myF = G.faction.of(me);
+      if (myF && myF.members.has(tag)) btn('fpage', '🏰', `${myF.name} üyesi`, true, 'İttifaklar sayfasını aç');
+      else if (myF) { const [ok, why] = G.faction.accepts(tag, myF); btn('finv', '🏰', `${myF.name}'na davet et`, ok, why); }
+      if (myF && myF.members.has(tag)) { /* ittifak üyeliği sayfadan yönetilir */ }
+      else if (D.allied(me, tag)) btn('unally', '✂', 'İttifakı boz', true, 'İlişki ciddi şekilde bozulur.', 'danger');
       else { const [ok, why] = D.acceptAlliance(tag, me); btn('ally', '🤝', 'İttifak teklif et', ok && !mn.overlord, mn.overlord ? 'Vasallar ittifak kuramaz.' : why); }
       if (mn.marriages && mn.marriages.has(tag)) btn('nomarry', '💍', 'Akrabalık sürüyor', false, 'Hanedanlarımız evlilikle bağlı.');
       else { const [ok, why] = G.dyn.canMarry(me, tag); btn('marry', '💍', 'Hanedan evliliği', ok, why); }
@@ -180,6 +184,12 @@
         break;
       }
       case 'unally': D.breakAlliance(me, tag); break;
+      case 'fpage': U.closeDiplomacy && U.closeDiplomacy(); U.openPage('ittifak'); return;
+      case 'finv': {
+        const f = G.faction.of(me), ok = f && G.faction.invite(f, tag);
+        U.toast(ok ? `${n.name} ittifakımıza katıldı.` : `${n.name} davetimizi reddetti.`, ok ? 'good' : 'war');
+        break;
+      }
       case 'access': {
         const [ok, why] = D.acceptAccess(tag, me);
         if (ok) { n.accessGranted.add(me); log(`${n.name} ordularımıza geçiş hakkı verdi.`, 'good'); }

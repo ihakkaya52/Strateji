@@ -23,8 +23,51 @@ G.rel = {};
   R.HOLY_YEARS = 5;              // sefer bu kadar sürer
   R.COOLDOWN = 10;               // aynı ülke bu kadar yıl yeni sefer çağıramaz
 
+  // ------------------------------------------------------------ kutsal unvanlar
+  // Kutsal sefer çağrısını yalnızca Papa (Katolikler), Sünnî Halife ve Fâtımî İmam-Halife (Şiîler) yapabilir.
+  R.TITLE_OF = r => (r === 'katolik' ? 'papa' : r === 'sunni' ? 'halife' : r === 'sii' ? 'imam' : null);
+  R.TITLE_NAMES = { papa: 'Papa', halife: 'Halife', imam: 'İmam-Halife' };
+  R.TITLE_LONG = { papa: 'Papalık (Katolik Kilisesi\'nin başı)', halife: 'Sünnî Hilafet', imam: 'Fâtımî İmamet-Hilafeti (Şiî)' };
+  R.CLAIM_GOLD = 200;
+  R.holder = function (k) {
+    const S = G.S, t = S.titles && S.titles[k];
+    if (t && S.nations[t] && S.nations[t].alive) return t;
+    if (k === 'papa') {
+      // papalık devleti yoksa Roma'yı elinde tutan Katolik hükümdar kendi papasını tahta çıkarır
+      const roma = S.provinces.find(p => p.name === 'Roma');
+      if (roma && roma.owner && S.nations[roma.owner].religion === 'katolik') return roma.owner;
+    }
+    return null;
+  };
+  R.holdsTitle = tag => { const n = G.S.nations[tag], k = n && R.TITLE_OF(n.religion); return k && R.holder(k) === tag ? k : null; };
+  const owns = (tag, name) => G.provsOf(tag).some(p => p.name === name);
+  R.canClaim = function (tag) {
+    const S = G.S, n = S.nations[tag], k = n && R.TITLE_OF(n.religion);
+    if (!k || k === 'papa') return [false, 'Bu unvan seçimle ya da Roma ile gelir.'];
+    if (R.holder(k) === tag) return [false, 'Unvan zaten bizde.'];
+    if (n.overlord) return [false, 'Vasallar halifelik iddia edemez.'];
+    if (!owns(tag, 'Mekke') || !owns(tag, 'Medine')) return [false, 'Mekke ve Medine elimizde olmalı (Haremeyn\'in hizmetkârı).'];
+    const h = R.holder(k);
+    if (h && owns(h, 'Mekke')) return [false, 'Şimdiki halife Mekke\'yi elinde tutuyor.'];
+    if (n.gold < R.CLAIM_GOLD) return [false, `${R.CLAIM_GOLD} altın gerekir.`];
+    if ((n.stability ?? 60) < 40) return [false, 'İstikrar en az 40 olmalı.'];
+    return [true, `${R.CLAIM_GOLD} altın. Haremeyn'in sahibi olarak ${R.TITLE_NAMES[k]} unvanını alırız; kutsal sefer çağırabiliriz.`];
+  };
+  R.claim = function (tag) {
+    if (!R.canClaim(tag)[0]) return false;
+    const S = G.S, n = S.nations[tag], k = R.TITLE_OF(n.religion), old = R.holder(k);
+    n.gold -= R.CLAIM_GOLD;
+    S.titles[k] = tag;
+    n.stability = Math.min(100, (n.stability ?? 60) + 10);
+    for (const o of Object.values(S.nations)) if (o.alive && o.tag !== tag && o.religion === n.religion) G.dip.add(tag, o.tag, 15);
+    if (old) G.dip.add(tag, old, -60);
+    G.log(`${n.name} hükümdarı ${n.ruler}, Mekke ve Medine'nin sahibi olarak ${R.TITLE_NAMES[k]} unvanını aldı!`, 'war', [tag, old].filter(Boolean));
+    return true;
+  };
+
   R.init = function () {
     const S = G.S;
+    S.titles ||= { papa: 'PAP', halife: 'ABB', imam: 'FAT' };
     S.holyWars ||= [];
     for (const n of Object.values(S.nations)) {
       n.missionaries ??= n.major ? 2 : 1;
@@ -82,6 +125,10 @@ G.rel = {};
     const S = G.S, n = S.nations[tag], t = S.nations[target];
     const kind = R.holyKind(tag);
     if (!kind) return [false, 'Dinimizin kutsal sefer geleneği yok.'];
+    if (!R.holdsTitle(tag)) {
+      const k = R.TITLE_OF(n.religion), h = k && R.holder(k);
+      return [false, `Kutsal sefer çağrısını yalnızca Papa ve halifeler yapabilir${h ? ` (dinimizde unvan sahibi: ${S.nations[h].name})` : ''}.`];
+    }
     if (!t || !t.alive) return [false, 'Bu ülke yok.'];
     if (R.family(t.religion) === R.family(n.religion)) return [false, 'Kendi dinimizden bir ülkeye kutsal sefer açılmaz.'];
     if (n.overlord) return [false, 'Vasallar kutsal sefer çağıramaz.'];
@@ -265,9 +312,7 @@ G.rel = {};
     const holy = S.provinces.find(p => p.name === 'Kudüs');
     if (!S.relFired.clermont && S.time.y >= 1095 && holy && holy.owner && R.family(S.nations[holy.owner].religion) === 'islam') {
       S.relFired.clermont = true;
-      const pap = S.nations.PAP && S.nations.PAP.alive ? 'PAP' : null;
-      const cath = Object.values(S.nations).filter(n => n.alive && n.religion === 'katolik' && n.major).sort((a, b) => G.dip.power(b.tag) - G.dip.power(a.tag));
-      const leader = pap || (cath[0] && cath[0].tag);
+      const leader = R.holder('papa');
       if (leader && leader !== S.player) {
         G.log('Papa Clermont\'da Hristiyan âlemini Kudüs\'ü kurtarmaya çağırdı: "Deus vult!"', 'war', [leader, holy.owner]);
         R.call(leader, holy.owner, { free: true });
@@ -278,9 +323,11 @@ G.rel = {};
   // Yapay zekâ: kutsal şehirleri kaybeden ya da dinî düşmanına karşı güçlü olan büyük güçler sefer çağırır
   R.ai = function () {
     const S = G.S;
+    // Haremeyn'i alan Müslüman hükümdar halifelik iddia eder
+    for (const n of Object.values(S.nations)) if (n.alive && n.tag !== S.player && R.canClaim(n.tag)[0] && G.rng() < 0.3) R.claim(n.tag);
     if (G.rng() > 0.15) return;
     for (const n of Object.values(S.nations)) {
-      if (!n.alive || n.tag === S.player || !n.major || !R.holyKind(n.tag)) continue;
+      if (!n.alive || n.tag === S.player || !R.holdsTitle(n.tag) || !R.holyKind(n.tag)) continue;
       const nb = [...(G.ai.neighbors()[n.tag] || [])].filter(t => S.nations[t] && S.nations[t].alive && R.family(S.nations[t].religion) !== R.family(n.religion) && R.holyKind(t));
       for (const t of nb) {
         if (!R.canCall(n.tag, t)[0]) continue;

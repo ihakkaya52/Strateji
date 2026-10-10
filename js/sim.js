@@ -436,7 +436,9 @@ G.assaultEstimate = function (p) {
 G.captureProvince = function (p, tag, arr) {
   const S = G.S, old = p.ctrl;
   const wasCapital = G.econ.isCapital(p) && p.owner === old;
-  p.ctrl = tag; p.siege = null; p.garrison = 0;
+  // müttefik ya da vasal, dostunun ilini düşmandan geri alırsa il sahibine döner (onun işgali sayılmaz)
+  p.ctrl = !p.owner || G.atWar(tag, p.owner) ? tag : p.owner;
+  p.siege = null; p.garrison = 0;
   G.mapDirty = true;
   for (const a of arr) a.besieging = false;
   if (p.kind !== 'rural' || tag === S.player || old === S.player) {
@@ -510,6 +512,8 @@ G.daily = function () {
       if (n.tag === S.player) G.log(`${a.name} eğitimini tamamladı (${P[spawn].name}).`, 'good', [n.tag]);
     }
   }
+  // savaşta olmadığı birinin elinde kalmış iller sahibine döner (barıştan sonra dostların geri aldığı iller)
+  for (const p of P) if (p.ctrl && p.owner && p.ctrl !== p.owner && !G.atWar(p.ctrl, p.owner)) { p.ctrl = p.owner; p.siege = null; G.mapDirty = true; }
   // teslimiyet kontrolü
   for (const n of Object.values(S.nations)) if (n.alive && n.enemies.size) G.checkCapitulation(n.tag);
   G.focus.daily();

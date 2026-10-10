@@ -752,3 +752,23 @@ b.good { color: #b8d070; } b.mid { color: #e0c060; } b.bad { color: #e87a60; }
 .sc-tab td.good { color: #b8d070; } .sc-tab td.bad { color: #e87a60; }
 .sc-btns { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
 @media (max-width: 760px) { .sc-top { grid-template-columns: 1fr; } .sc-parts { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------------------------------------------------------------- ittifaklar */
+.fc-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.fc-head input { font-family: var(--title); font-size: 15px; letter-spacing: 1px; padding: 4px 8px; min-width: 240px; background: rgba(0,0,0,.3); color: #f0dca0; border: 1px solid #6a5634; border-radius: 3px; }
+.fc-head .danger { margin-left: auto; }
+.fc-mems { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }
+.fc-mem { display: flex; gap: 9px; align-items: center; border: 1px solid #4a3f2b; border-radius: 4px; padding: 6px 9px; background: rgba(0,0,0,.2); }
+.fc-mem.lead { border-color: var(--gold); }
+.fc-mi { flex: 1; min-width: 0; }
+.fc-mi .link { font-family: var(--title); color: #f0dca0; }
+.fc-badge { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); border: 1px solid var(--gold); border-radius: 3px; padding: 0 4px; }
+.fc-act { display: flex; flex-direction: column; gap: 4px; }
+.fc-act button { font-size: 12px; padding: 2px 8px; }
+.fc-cands { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 5px; }
+.fc-cand { display: flex; align-items: center; gap: 8px; border: 1px solid #4a3f2b; border-radius: 4px; padding: 4px 8px; background: rgba(0,0,0,.15); }
+.fc-cand .muted { flex: 1; min-width: 0; }
+.fc-cand button { font-size: 12px; padding: 2px 8px; }
+.fc-world { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px solid #4a3f2b; border-radius: 4px; padding: 6px 10px; margin-bottom: 5px; background: rgba(0,0,0,.15); }
+.fc-world > div:first-child { flex: 1; min-width: 220px; }
+.fc-flags { display: flex; gap: 3px; flex-wrap: wrap; }
