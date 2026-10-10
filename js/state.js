@@ -4,7 +4,7 @@
 const ARMY_MEN = 3000;          // kuşatma ve hesaplarda temel birim (bir bölük grubu)
 const BOLUK = 1000;             // bir bölüğün tam mevcudu
 const RECRUIT_COST = 8000;      // yeni ordu (8B asker) için insan gücü
-const RECRUIT_DAYS = 60;        // eğitim süresi
+const RECRUIT_DAYS = 40;        // eğitim süresi
 const TRUCE_DAYS = 5 * 365;     // barış sonrası ateşkes
 // Tarihî duruma göre ek başlangıç orduları
 const START_BONUS = { SEL: 5, BYZ: 4, FAT: 2, SNG: 4, LIA: 3, KIE: 2 };

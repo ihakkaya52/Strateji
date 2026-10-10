@@ -4,8 +4,8 @@
 G.dip = {};
 const D = G.dip;
 
-D.JUSTIFY_DAYS = 45;          // savaş gerekçesi hazırlama süresi
-D.JUSTIFY_DAYS_HOLY = 25;     // farklı dinden komşuya karşı (kutsal savaş)
+D.JUSTIFY_DAYS = 30;          // savaş gerekçesi hazırlama süresi
+D.JUSTIFY_DAYS_HOLY = 18;     // farklı dinden komşuya karşı (kutsal savaş)
 D.ENVOY_GAIN = 0.35;          // elçi başına günlük ilişki artışı
 D.ENVOY_CAP = 90;
 

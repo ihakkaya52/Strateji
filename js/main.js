@@ -6,7 +6,9 @@
   G.vassal.setupScenario();
   const M = G.map, U = G.ui;
   const canvas = document.getElementById('map');
-  const MS_PER_HOUR = [0, 260, 110, 45, 16, 4];
+  // bir oyun saatinin gerçek süresi (ms). Hız 3'te bir yıl yaklaşık bir dakika; hız 5'te bilgisayar ne kadar hızlıysa o kadar.
+  const MS_PER_HOUR = [0, 60, 20, 6.5, 2, 0.4];
+  const SIM_BUDGET = 11;   // bir karede hesaba ayrılan en fazla süre (ms): kare hızı düşmesin
 
   G.selected = new Set();
   G.mapDirty = true;
@@ -439,8 +441,10 @@
       acc += dt;
       const ms = MS_PER_HOUR[S.speed];
       let n = 0;
-      while (acc >= ms && n < 240 && !S.paused) { G.tick(); acc -= ms; n++; }
-      if (n >= 240) acc = 0;
+      const t0 = performance.now();
+      while (acc >= ms && !S.paused && performance.now() - t0 < SIM_BUDGET) { G.tick(); acc -= ms; n++; }
+      // hesap yetişmiyorsa geride kalan zaman biriktirilmez (yoksa oyun sarmala girip donar)
+      if (acc > ms * 4) acc = ms * 4;
       if (n) {
         G.mapDirty = true;
         U.refreshTop();

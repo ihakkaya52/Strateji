@@ -401,7 +401,7 @@ M.signature = function () {
   let h = 7;
   for (let i = 0; i < P.length; i++) {
     const p = P[i];
-    h = (Math.imul(h, 31) + tagId(p.owner) * 4099 + tagId(p.ctrl) + (p.colony ? 77 : 0) + (p.fort || 0) * 131) | 0;
+    h = (Math.imul(h, 31) + tagId(p.owner) * 4099 + (p.colony ? 77 : 0)) | 0;   // kale simgeleri bir sonraki yenilemede güncellenir
     if (kult) h = (Math.imul(h, 17) + tagId(p.cul)) | 0;
     if (din) h = (Math.imul(h, 17) + tagId(p.relig)) | 0;
   }
@@ -462,8 +462,10 @@ M.draw = function () {
   if (place && place.k !== 1 && now - M._scT > 170) place = null;
   // harita verisi değişti: kamera oynamıyorsa sabit katman en fazla 0,35 saniyede bir yenilenir
   if (place && C.sig !== sig) {
-    if (now - C.t > 350) place = null;
-    else if (!M._sigTimer) M._sigTimer = setTimeout(() => { M._sigTimer = null; G.mapDirty = true; }, 360 - (now - C.t));
+    // yüksek hızlarda dünya çok hızlı değişir: yenileme seyrekleşir ki kare hızı düşmesin
+    const gap = G.S && !G.S.paused && G.S.speed >= 4 ? 1200 : 350;
+    if (now - C.t > gap) place = null;
+    else if (!M._sigTimer) M._sigTimer = setTimeout(() => { M._sigTimer = null; G.mapDirty = true; }, gap + 10 - (now - C.t));
   }
   // kamera hareket ediyor mu? (kaydırma / yakınlaştırma)
   const camKey = cam.x.toFixed(4) + ',' + cam.y.toFixed(4) + ',' + sc;
@@ -540,10 +542,21 @@ M.drawDynamic = function () {
     ctx.lineWidth = 2 / sc;
     ctx.stroke(M.paths[M.selProv]);
   }
-  if (S) M.drawFronts(sc);
   if (!S) return;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const vis = M.visibleProvs();
+  // işgal taraması (hareketli katmanda: kuşatma ve işgaller sabit katmanı yeniden çizdirmez)
+  if (M.mode === 'political') {
+    for (const i of vis) {
+      const p = P[i];
+      if (!p.ctrl || p.ctrl === p.owner || !S.nations[p.ctrl]) continue;
+      const pat = M.hatch(M.mute(S.nations[p.ctrl].color));
+      pat.setTransform(new DOMMatrix([1 / sc, 0, 0, 1 / sc, 0, 0]));
+      ctx.fillStyle = pat;
+      ctx.fill(M.paths[i]);
+    }
+  }
+  M.drawFronts(sc);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   if (M.garrisonView) M.drawGarrisons(vis, P, true);
   M.drawPorts(vis, P);
   M.drawSieges(vis, P);
@@ -640,17 +653,6 @@ M.drawBase = function () {
   ctx.fillStyle = 'rgba(0,0,0,0)';
   // işgal taraması
   M.drawRivers(sc, geo);
-  if (S && M.mode === 'political') {
-    for (const i of vis) {
-      const p = P[i];
-      if (p.ctrl && p.ctrl !== p.owner) {
-        const pat = M.hatch(M.mute(S.nations[p.ctrl].color));
-        pat.setTransform(new DOMMatrix([1 / sc, 0, 0, 1 / sc, 0, 0]));
-        ctx.fillStyle = pat;
-        ctx.fill(M.paths[i]);
-      }
-    }
-  }
   if (S) M.drawColonies(vis, P, sc);
 
   // sınırlar: yumuşak, iki katmanlı (geniş gölge + ince mürekkep)

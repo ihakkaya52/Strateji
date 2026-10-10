@@ -120,7 +120,7 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   odaklardan kazanılır. Yapay zekâ da rastgele savaş açmaz, önce gerekçe hazırlar.
 - **Koalisyonlar:** Saldırıya uğrayan ülkenin müttefikleri ve garantörleri savaşa girer. Teslim olan ülke yalnızca
   işgal edilen topraklarını kaybeder.
-- **Zaman:** HOI4 gibi saatlik takvim, duraklatma ve 5 hız kademesi.
+- **Zaman:** HOI4 gibi saatlik takvim, duraklatma ve 5 hız kademesi: hız 1 bir yıl ≈ 9 dk, hız 3 ≈ 1 dk, hız 5 bilgisayarın yetiştiği kadar (≈ 10-15 sn). Oyun hesabına kare başına en fazla 11 ms ayrılır, böylece yüksek hızda da harita akıcı kalır.
 - **Komuta zinciri:** Mareşal → en fazla 3 ordu komutanı → her komutanın ordusu. Ordu komutanının yıldızı ordusunun
   büyüklüğünü belirler: 1 yıldız 8B, 5 yıldız 15B asker. Komutanlar savaştıkça tecrübe kazanır ve terfi eder.
   Ordular 1.000 kişilik bölüklerden oluşur; her bölüğün komutanı ve türü (piyade, okçu, süvari) vardır.
