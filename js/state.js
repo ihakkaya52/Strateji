@@ -325,10 +325,41 @@ function peacePair(a, b, transfer, skipWar) {
   return moved;
 }
 
+// Yapay zekâ savaşlarında tek barışta alınabilecek toprak sınırlıdır: büyük bir devlet bir savaşta yutulmaz.
+// (Kazanan tarafta oyuncu varsa şartları kendisi seçer.)
+G.PROTECTED_TAGS = ['NRM', 'KUD', 'ANT', 'EDE'];
+G.limitGains = function (winSide, loseSide) {
+  const S = G.S;
+  if (winSide.has(S.player)) return;
+  const lose = new Set(loseSide);
+  // tarihî olaylara bağlı küçük devletler (Normanlar, Haçlı devletleri) yutulmaz: başkentleri ellerinde kalır
+  for (const t of loseSide) {
+    const n = S.nations[t];
+    if (!n || !G.PROTECTED_TAGS.includes(t) || n.capital == null) continue;
+    const c = S.provinces[n.capital];
+    if (c && c.owner === t && winSide.has(c.ctrl)) { c.ctrl = t; c.siege = null; }
+  }
+  let total = 0;
+  const occ = [];
+  for (const p of S.provinces) if (lose.has(p.owner)) { total++; if (winSide.has(p.ctrl)) occ.push(p); }
+  if (total <= 5) return;   // küçük ülkeler bütünüyle fethedilebilir
+  const cap = 3 + Math.floor(total * 0.2);
+  if (occ.length <= cap) return;
+  // önce kendi asıl illerimiz, sonra bize en çok komşu olanlar
+  const score = p => (winSide.has(p.core) ? -20 : 0) - p.nb.filter(id => winSide.has(S.provinces[id].owner)).length;
+  occ.sort((x, y) => score(x) - score(y));
+  for (const p of occ.slice(cap)) { p.ctrl = p.owner; p.siege = null; }
+};
+
 // Barış: transfer=true ise işgal edilen topraklar işgalciye geçer. Bütün koalisyon birlikte barışır.
 G.makePeace = function (a, b, transfer, msg) {
   const S = G.S, na = S.nations[a], nb = S.nations[b];
   if (!na.enemies.has(b)) return;
+  if (transfer) {
+    const A0 = G.warSide(a, b), B0 = G.warSide(b, a);
+    G.limitGains(new Set(A0), B0);
+    G.limitGains(new Set(B0), A0);
+  }
   // bağımsızlık savaşı sonucu
   let indep = null;
   for (const [rebel, lord] of [[a, b], [b, a]]) {
@@ -471,6 +502,7 @@ G.capitulate = function (tag) {
   const S = G.S, n = S.nations[tag];
   if (!n.alive) return;
   const enemies = [...n.enemies];
+  G.limitGains(new Set(enemies), [tag]);
   let lost = 0;
   for (const p of S.provinces) {
     if (p.owner === tag && p.ctrl !== tag && n.enemies.has(p.ctrl)) { p.owner = p.ctrl; p.siege = null; lost++; }

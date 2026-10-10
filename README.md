@@ -49,6 +49,19 @@ Kurulum gerekmez. `index.html` dosyasını tarayıcıda açmanız yeterli.
   karşı kral Rudolf'un sancağı altında ayaklanır. Papalık seçimle gelir: papa ölünce kardinaller yaşlı bir aday seçer,
   hanedan yoktur. Papalığı oynayan oyuncu Clermont'ta Haçlı seferini kendisi ilan eder (ya da Endülüs'e yöneltir).
 
+## Senaryo sonu, sıralama ve dünya olayları
+
+- **Sıralama** sayfası (üst sayfalarda): devletler toprak, vasal toprağı, ordu, hazine, teknoloji, odaklar ve istikrardan
+  puanlanır; 1040'tan bu yana değişim görünür. **1120'de** oyun durur ve "tarihteki yeriniz" açıklanır (Çağın Hâkimi,
+  Büyük Güç, Yükselen Yıldız, Ayakta Kalan, Gerileyen Devlet); isterseniz oynamaya devam edebilirsiniz.
+- **Dünya geneli tarihî olaylar** (odak ağacı olmayan ülkelerde de): Harald Hardrada (1047), Murâbıtların yükselişi (1053),
+  Bilge Yaroslav'ın ölümü (1054), Thaton'un fethi ve Lumphanan (1057), Melfi Antlaşması (1059), Normanların Sicilya'ya
+  geçişi (1061), Alta bozgunu (1068), Wang Anshi reformları (1069), Merakeş (1070), Bari'nin düşüşü (1071), Kumbi Salih
+  (1076), Guiscard Dıraç'ta (1081), Toledo (1085), Zallâka (1086), Sicilya'nın fethi ve tâifaların sonu (1091), Clermont
+  çağrısı yapıldıysa Urfa, Antakya ve Kudüs Krallığı (1098-99), Jin Hanedanı (1115). Oyuncu adına asla savaş açılmaz.
+- **Denge:** yapay zekâ savaşlarında tek barışta alınabilecek toprak sınırlı (küçük ülkeler hariç); büyük devletler
+  aşırı genişledikçe daha seyrek ve daha temkinli savaşır; Normanlar ve Haçlı devletleri bir savaşta yutulmaz.
+
 ## Vasallık (Kutsal Roma)
 
 - 1040'ta Kutsal Roma tek parça değil: imparatorun elinde Frankonya, Ren'deki taç toprakları ve Lombardiya (17 il);

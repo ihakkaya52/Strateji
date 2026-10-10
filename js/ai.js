@@ -148,7 +148,10 @@ G.ai.monthly = function () {
       break;
     }
     if (n.enemies.size || n.justify || n.claims.size) continue;
-    const chance = n.major ? 0.015 : 0.004;
+    // dünya daha hareketli; ama çok büyümüş devletler (aşırı genişleme) daha temkinli
+    const size = G.nationStats(n.tag).provs;
+    const over = Math.max(0, size - 50) / 40;
+    const chance = (n.major ? 0.03 : 0.008) / (1 + over * over);
     if (G.rng() > chance) continue;
     let best = null;
     for (const o of nbs[n.tag] || []) {
@@ -158,7 +161,7 @@ G.ai.monthly = function () {
       // Katolik hükümdarlar Papa'ya kendiliğinden saldırmaz (yalnızca odak ağaçlarından gelen gerekçeyle)
       if (o === 'PAP' && n.religion === 'katolik') continue;
       const theirs = defPower(o);
-      const need = G.realm(o).includes(S.player) ? 2.2 : 1.7;
+      const need = (G.realm(o).includes(S.player) ? 2.2 : 1.7) * (1 + over);
       if (mine < theirs * need) continue;
       const rel = on.religion !== n.religion ? 1.4 : 1;
       const op = Math.max(0.3, 1 - G.dip.opinion(n.tag, o) / 150);

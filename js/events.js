@@ -108,7 +108,7 @@ G.events.list = [
       // Normanlar Melfi kontluğunu korur; Bizans'ı oynayan oyuncu ise savaşı sürdürebilir.
       if (N && N.alive && S.player !== 'BYZ' && G.atWar('NRM', 'BYZ')) {
         G.makePeace('NRM', 'BYZ', false, 'Bizans, Melfi\'deki Norman kontluğunu şimdilik tanımak zorunda kaldı.');
-        const until = S.hour + 8 * 24 * 365;
+        const until = S.hour + 18 * 24 * 365;   // Melfi antlaşmasına (1059) kadar
         N.truces.BYZ = until; S.nations.BYZ.truces.NRM = until;
         // Normanların gözü Lombard prensliklerinde (Salerno 1077, Benevento, Napoli)
         for (const t of ['SAL', 'BEN', 'NAP']) if (S.nations[t] && S.nations[t].alive) N.claims.add(t);
